@@ -1163,6 +1163,9 @@ function recomputeBatches(){
 }
 // Recompute EVERY aggregate live from STUD so nothing on the dashboard is static.
 let APPLIED_OFFSET=null;
+// Total offers is entered MANUALLY (the CSV has no offer count). Null = not set yet → defaults to placed count.
+let OFFERS_MANUAL=null; try{const _o=localStorage.getItem('pcc_total_offers'); if(_o!==null&&_o!=='')OFFERS_MANUAL=+_o;}catch(e){}
+function setTotalOffers(v){ OFFERS_MANUAL=(v===''||v==null)?null:Math.max(0,Math.round(+v)||0); try{ if(OFFERS_MANUAL==null)localStorage.removeItem('pcc_total_offers'); else localStorage.setItem('pcc_total_offers',OFFERS_MANUAL);}catch(e){} recomputeAll(); }
 function recomputeAll(){
   let applied=0,placed=0,joined=0,pap=0,offers=0,apps=0,trainH=0,papPlaced=0,pkgSum=0,pkgN=0,pkgMax=0;
   STUD.forEach(s=>{
@@ -1174,7 +1177,7 @@ function recomputeAll(){
   });
   if(APPLIED_OFFSET===null)APPLIED_OFFSET=Math.max(0,1906-applied); // start at the confirmed 1906, then grow with new data
   M.total=STUD.length; M.appliedReal=applied; M.applied=applied+APPLIED_OFFSET;
-  M.placed=placed; M.joined=joined; M.pap=pap; M.offers=offers; M.apps=apps;
+  M.placed=placed; M.joined=joined; M.pap=pap; M.offers=(OFFERS_MANUAL!=null?OFFERS_MANUAL:placed); M.apps=apps;
   M.avgPkg=pkgN?+(pkgSum/pkgN).toFixed(2):0; M.maxPkg=+(+pkgMax).toFixed(2);
   M.trainHoursDelivered=2500 + 3*(typeof APPS!=='undefined'&&APPS?APPS.length:0) + 2*(typeof TRATT!=='undefined'&&TRATT?TRATT.length:0); // 2500 base, +3 hrs per application company, +2 per attendance
   if(B.finance) B.finance.papPlaced=papPlaced;
@@ -2063,13 +2066,13 @@ P.placed=()=>{
       <input type="file" id="plFile" accept=".csv" hidden></div>
     <div id="plUpMsg" class="dzmsg" style="padding:0 20px"></div>
     <div style="padding:6px 20px 0"><h3>Placement records</h3><div class="sub" id="plSub"></div></div>
-    <div class="exwrap" style="border:0;max-height:560px;overflow:auto"><table class="ex"><thead><tr><th style="text-align:left">Student</th><th style="text-align:left">Reg</th><th style="text-align:left">Company</th><th>Offers</th><th>CTC</th><th style="text-align:left">Joined</th><th></th></tr></thead><tbody id="plBody"></tbody></table></div>
+    <div class="exwrap" style="border:0;max-height:560px;overflow:auto"><table class="ex"><thead><tr><th style="text-align:left">Student</th><th style="text-align:left">Reg</th><th style="text-align:left">Company</th><th>CTC</th><th style="text-align:left">Joined</th><th></th></tr></thead><tbody id="plBody"></tbody></table></div>
   </div>`;
 };
 function renderPlaced(){
   const set=placedList();
   $('#plSub')&&($('#plSub').textContent=`${nf(set.length)} placed`+(PLQ?` matching “${PLQ}”`:''));
-  $('#plBody')&&($('#plBody').innerHTML=set.length?set.map(s=>{const off=Math.max((s.placedIn||'').split(',').filter(x=>x.trim()).length,s.offers||0,1);return `<tr><td style="text-align:left" class="clk" data-reg="${s.reg}">${s.name||'—'}</td><td style="text-align:left">${s.reg}</td><td style="text-align:left">${s.placedIn||s.companies||'—'}</td><td>${off>1?`<span class="offbadge">${off}</span>`:off}</td><td>${s.pkg?('₹'+s.pkg+'L'):'—'}</td><td style="text-align:left"><div class="jtog" data-reg="${s.reg}"><button class="jy ${s.joined?'on':''}" data-jset="1">Yes</button><button class="jn ${!s.joined?'on':''}" data-jset="0">No</button></div></td><td><button class="btn tiny" data-pldel="${s.reg}">✕</button></td></tr>`;}).join(''):`<tr><td colspan="7" style="text-align:center;color:var(--mut);padding:26px">No placements yet — add one above.</td></tr>`);
+  $('#plBody')&&($('#plBody').innerHTML=set.length?set.map(s=>`<tr><td style="text-align:left" class="clk" data-reg="${s.reg}">${s.name||'—'}</td><td style="text-align:left">${s.reg}</td><td style="text-align:left">${s.placedIn||s.companies||'—'}</td><td>${s.pkg?('₹'+s.pkg+'L'):'—'}</td><td style="text-align:left"><div class="jtog" data-reg="${s.reg}"><button class="jy ${s.joined?'on':''}" data-jset="1">Yes</button><button class="jn ${!s.joined?'on':''}" data-jset="0">No</button></div></td><td><button class="btn tiny" data-pldel="${s.reg}">✕</button></td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:var(--mut);padding:26px">No placements yet — add one above.</td></tr>`);
   $('#plBody')&&$('#plBody').querySelectorAll('.jtog button').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();
     const tog=btn.closest('.jtog'),reg=tog.dataset.reg,val=btn.dataset.jset==='1'; const s=byReg[reg]; if(!s)return;
     saveEdit(reg,{joined:val}); recomputeAll();
@@ -2266,31 +2269,41 @@ function bindAgent(){
     const b=new Blob([lines.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='agent_outreach_'+AGSEG+'.csv';a.click();
   });
 }
-/* ============ TOTAL OFFERS ============ */
+/* ============ TOTAL OFFERS (manual) ============ */
 let OFQ='';
-function offersFiltered(){const q=OFQ.trim().toLowerCase();return offersList().filter(o=>!q||((o.name||'').toLowerCase().includes(q)||(o.reg||'').toLowerCase().includes(q)||(o.company||'').toLowerCase().includes(q)));}
 P.offers=()=>{
-  const all=offersList(); const students=new Set(all.map(o=>o.reg)).size; const companies=new Set(all.map(o=>o.company)).size;
-  const multi=STUD.filter(s=>s.placed&&(s.placedIn||'').split(',').filter(x=>x.trim()).length>1).length;
-  const kpi=[['Total offers',all.length,C.placed],['Students placed',students,C.applied],['Companies',companies,C.enrol],['Multi-offer students',multi,C.stuck]];
+  const placedList=STUD.filter(s=>s.placed);
+  const companies=new Set(); placedList.forEach(s=>(s.placedIn||s.companies||'').split(',').map(x=>x.trim()).filter(Boolean).forEach(c=>companies.add(c.toLowerCase())));
+  const cur=(OFFERS_MANUAL!=null?OFFERS_MANUAL:M.placed);
+  const kpi=[['Total offers',cur,C.placed],['Students placed',M.placed,C.applied],['Companies',companies.size,C.enrol]];
+  const rows=placedList.slice().sort((a,b)=>(b.pkg||0)-(a.pkg||0)).map(s=>`<tr class="clk" data-reg="${s.reg}"><td style="text-align:left">${s.name||'—'}</td><td style="text-align:left">${s.reg||'—'}</td><td style="text-align:left">${s.placedIn||s.companies||'—'}</td><td>${s.pkg?('₹'+s.pkg+'L'):'—'}</td><td style="text-align:left">${s.joined?'<span class="pill j1">Joined</span>':'<span class="pill j2">Not joined</span>'}</td></tr>`).join('');
   return `
-  <div class="grid g4" style="margin-bottom:18px">${kpi.map(([l,v,c])=>`<div class="card kpi"><div class="rail" style="background:${c}"></div><div class="cap"><span class="dot" style="background:${c}"></span>${l}</div><div class="big">${nf(v)}</div></div>`).join('')}</div>
-  <div class="card pad0"><div class="exbar" style="padding:16px 20px 0">
-      <div class="search" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="ofQ" placeholder="Search offers — reg / student / company…" value="${OFQ.replace(/"/g,'&quot;')}"></div>
-      <button class="btn pri" id="ofExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg>Export</button></div>
-    <div style="padding:6px 20px 0"><h3>Offer records</h3><div class="sub" id="ofSub"></div></div>
-    <div class="exwrap" style="border:0;max-height:600px;overflow:auto"><table class="ex"><thead><tr><th style="text-align:left">Reg number</th><th style="text-align:left">Student name</th><th style="text-align:left">Company name</th><th>CTC</th></tr></thead><tbody id="ofBody"></tbody></table></div>
+  <div class="grid g3" style="margin-bottom:18px">${kpi.map(([l,v,c])=>`<div class="card kpi"><div class="rail" style="background:${c}"></div><div class="cap"><span class="dot" style="background:${c}"></span>${l}</div><div class="big">${nf(v)}</div></div>`).join('')}</div>
+  <div class="card" style="margin-bottom:18px"><div class="chd"><div><h3>Total offers — enter manually</h3><div class="sub">Ye number aap khud daalte ho (CSV me offer count nahi hota). Blank chhodo to default = Students placed (${nf(M.placed)}).</div></div></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <input id="ofManual" type="number" min="0" placeholder="${nf(M.placed)}" value="${OFFERS_MANUAL!=null?OFFERS_MANUAL:''}" style="padding:11px 14px;border:1px solid var(--line);border-radius:9px;font-size:16px;font-family:var(--disp);font-weight:600;width:180px">
+      <button class="btn pri" id="ofSave">Save total offers</button>
+      <button class="btn" id="ofReset">Reset to placed count</button>
+      <span id="ofMsg" class="savemsg">✓ Saved</span>
+    </div></div>
+  <div class="card pad0"><div style="padding:16px 22px 4px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+      <div><h3>Placed students</h3><div class="sub" id="ofSub">${nf(placedList.length)} placed · reg · company · CTC · joined</div></div>
+      <div style="display:flex;gap:8px;align-items:center"><div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="ofQ" placeholder="Search placed…" value="${OFQ.replace(/"/g,'&quot;')}"></div><button class="btn" id="ofExport">Export</button></div></div>
+    <div class="exwrap" style="border:0;max-height:560px;overflow:auto"><table class="ex"><thead><tr><th style="text-align:left">Student</th><th style="text-align:left">Reg</th><th style="text-align:left">Company</th><th>CTC</th><th style="text-align:left">Joined</th></tr></thead><tbody id="ofBody">${rows}</tbody></table></div>
   </div>`;
 };
 function renderOffers(){
-  const set=offersFiltered();
-  $('#ofSub')&&($('#ofSub').textContent=`${nf(set.length)} offers`+(OFQ?` matching “${OFQ}”`:''));
-  $('#ofBody')&&($('#ofBody').innerHTML=set.length?set.map(o=>`<tr class="clk" data-reg="${o.reg}"><td style="text-align:left">${o.reg||'—'}</td><td style="text-align:left">${o.name||'—'}</td><td style="text-align:left">${o.company||'—'}</td><td>${o.ctc?('₹'+o.ctc+'L'):'—'}</td></tr>`).join(''):`<tr><td colspan="4" style="text-align:center;color:var(--mut);padding:26px">No offers yet.</td></tr>`);
+  const q=OFQ.trim().toLowerCase();
+  const set=STUD.filter(s=>s.placed).filter(s=>!q||((s.name||'').toLowerCase().includes(q)||(s.reg||'').toLowerCase().includes(q)||((s.placedIn||s.companies||'')).toLowerCase().includes(q))).sort((a,b)=>(b.pkg||0)-(a.pkg||0));
+  $('#ofSub')&&($('#ofSub').textContent=`${nf(set.length)} placed`+(q?` matching “${OFQ}”`:''));
+  $('#ofBody')&&($('#ofBody').innerHTML=set.length?set.map(s=>`<tr class="clk" data-reg="${s.reg}"><td style="text-align:left">${s.name||'—'}</td><td style="text-align:left">${s.reg||'—'}</td><td style="text-align:left">${s.placedIn||s.companies||'—'}</td><td>${s.pkg?('₹'+s.pkg+'L'):'—'}</td><td style="text-align:left">${s.joined?'<span class="pill j1">Joined</span>':'<span class="pill j2">Not joined</span>'}</td></tr>`).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--mut);padding:26px">No placements yet.</td></tr>`);
   $('#ofBody')&&$('#ofBody').querySelectorAll('[data-reg]').forEach(el=>el.addEventListener('click',()=>openModal(el.dataset.reg)));
 }
 function bindOffers(){
   const q=$('#ofQ'); q&&q.addEventListener('input',e=>{OFQ=e.target.value;renderOffers();});
-  $('#ofExport')&&$('#ofExport').addEventListener('click',()=>{const cols=['reg','name','company','ctc'];const esc=v=>{v=(v==null?'':String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};const lines=[['reg','student_name','company','ctc'].join(',')].concat(offersFiltered().map(o=>[o.reg,o.name,o.company,o.ctc].map(esc).join(',')));const b=new Blob([lines.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='total_offers.csv';a.click();});
+  $('#ofSave')&&$('#ofSave').addEventListener('click',()=>{ setTotalOffers($('#ofManual').value.trim()); kstrip(); const m=$('#ofMsg'); m&&m.classList.add('on'); setTimeout(()=>go('offers'),500); });
+  $('#ofReset')&&$('#ofReset').addEventListener('click',()=>{ setTotalOffers(''); kstrip(); setTimeout(()=>go('offers'),400); });
+  $('#ofExport')&&$('#ofExport').addEventListener('click',()=>{const esc=v=>{v=(v==null?'':String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};const lines=[['reg','student_name','company','ctc','joined'].join(',')].concat(STUD.filter(s=>s.placed).map(s=>[s.reg,s.name,s.placedIn||s.companies||'',s.pkg||'',s.joined?'Yes':'No'].map(esc).join(',')));const b=new Blob([lines.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='placed_students.csv';a.click();});
   renderOffers();
 }
 /* ============ CALENDAR ============ */
@@ -2374,7 +2387,7 @@ function openModal(reg){
         ${fld('Companies applied',s.companies)}${fld('Sectors',s.sectors)}
         ${fld('Placed in',s.placedIn)}${fld('Position',s.position)}
         ${fld('Best package',s.pkg?('₹'+s.pkg+' LPA'):'')}${fld('Job type',s.jobType)}
-        ${fld('Location',s.city)}${fld('Offers',s.offers||'')}
+        ${fld('Location',s.city)}
         ${fld('Training hours',s.trainHrs?s.trainHrs:'')}${fld('Training attended',s.trainAttended)}
         ${fld('Shortlisted',s.shortlisted)}${fld('Reached final round',s.finalRound)}
         ${fld('Joined?',s.placed?(s.joined?'Yes':'Not joined'):'')}${fld('Reason (if not joined)',s.reasonNJ)}
@@ -2502,7 +2515,7 @@ function renderSlist(){
 const TITLES={overview:['Overview','Full placement pipeline as a share of all students, plus batch performance'],
   students:['Student Explorer','Search, filter, edit, export — every student'],
   placed:['Placed students','Placement records — add, bulk upload, export, delete'],
-  offers:['Total offers','Every offer — reg · student · company · CTC'],batches:['Batch-wise','Total vs applied vs selected (%)'],
+  offers:['Total offers','Manually-entered total offers + placed students'],batches:['Batch-wise','Total vs applied vs selected (%)'],
   buckets:['Buckets & Actions','J1 → Collection · J2 → Training · J3 → Student Support'],
   training:['Trainings','Attendance CSV, company training photos & records'],
   announce:['Weekly announcements','Latest placements + monthly RM leaderboard (Full time · Internship)'],
