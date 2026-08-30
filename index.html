@@ -485,30 +485,109 @@ table.ex tbody tr{transition:background .12s ease}
 .cal-ev{font-size:10px;font-weight:600;padding:3px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default}
 .cal-ev.iv{background:#EAF0FF;color:#2f43b3}
 .cal-ev.tr{background:var(--amb-soft);color:#a5670f}
+
+/* ===== DYNAMIC / 3D LAYER (bold but readable) ===== */
+body{background:var(--paper);background-image:radial-gradient(60% 50% at 100% 0%,rgba(11,124,196,.06),transparent 60%),radial-gradient(50% 40% at 0% 100%,rgba(14,158,139,.06),transparent 60%)}
+.content{perspective:1400px}
+.card,.kpi,.bkcard{transform-style:preserve-3d;transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s ease,border-color .18s ease;will-change:transform}
+.card:hover,.kpi:hover,.bkcard:hover{box-shadow:0 18px 44px rgba(16,32,52,.16),0 4px 14px rgba(16,32,52,.08);border-color:#D3DBE6}
+.kpi .rail{background-size:200% 200% !important;animation:railShine 4s ease infinite}
+@keyframes railShine{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.brand .logo{background-size:200% 200%;animation:logoShine 5s ease infinite;box-shadow:0 6px 16px rgba(14,158,139,.4)}
+@keyframes logoShine{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.nav a{transition:background .13s,color .13s,transform .13s}
+.nav a:hover{transform:translateX(3px)}
+.nav a.on{box-shadow:0 6px 16px rgba(14,158,139,.35)}
+.livepill i{box-shadow:0 0 0 0 rgba(14,158,139,.6);animation:pulseDot 1.8s infinite}
+@keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(14,158,139,.5)}70%{box-shadow:0 0 0 7px rgba(14,158,139,0)}100%{box-shadow:0 0 0 0 rgba(14,158,139,0)}}
+.panel.on{animation:panelIn .34s cubic-bezier(.2,.8,.2,1)}
+@keyframes panelIn{from{opacity:0;transform:translateY(10px) rotateX(4deg)}to{opacity:1;transform:none}}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--placed)!important;box-shadow:0 0 0 3px rgba(14,158,139,.16)}
+.btn{transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn.pri:hover{box-shadow:0 8px 18px rgba(14,158,139,.35)}
+@media(prefers-reduced-motion:reduce){
+  .card,.kpi,.bkcard,.nav a,.btn{transition:none!important;transform:none!important}
+  .kpi .rail,.brand .logo,.livepill i,.panel.on{animation:none!important}
+}
 </style>
 </head>
 <body>
-<div id="loginGate" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0C1826,#16273A);display:flex;align-items:center;justify-content:center;font-family:'Inter',system-ui,sans-serif">
-  <div style="background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.4);padding:34px 34px 30px;width:340px;max-width:90vw">
-    <div style="display:flex;align-items:center;gap:11px;margin-bottom:6px">
-      <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0E9E8B,#0B7CC4);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;color:#fff;font-size:19px">S</div>
-      <div><div style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#0C1826">Shoolini Online</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:#7B8A9A;text-transform:uppercase">Placement Tracker</div></div>
+<style>
+#loginGate{position:fixed;inset:0;z-index:9999;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:'Inter',system-ui,sans-serif;background:#05070d}
+#loginGate .aurora{position:absolute;inset:-40%;background:
+  radial-gradient(40% 40% at 20% 30%,rgba(14,158,139,.55),transparent 60%),
+  radial-gradient(45% 45% at 80% 25%,rgba(11,124,196,.5),transparent 60%),
+  radial-gradient(40% 40% at 60% 80%,rgba(122,92,196,.45),transparent 60%),
+  radial-gradient(35% 35% at 25% 75%,rgba(224,138,24,.35),transparent 60%);
+  filter:blur(30px);animation:auroraSpin 22s linear infinite}
+@keyframes auroraSpin{0%{transform:rotate(0) scale(1.1)}50%{transform:rotate(180deg) scale(1.25)}100%{transform:rotate(360deg) scale(1.1)}}
+#loginGate .grid3d{position:absolute;inset:0;background-image:linear-gradient(rgba(120,160,220,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(120,160,220,.08) 1px,transparent 1px);background-size:44px 44px;transform:perspective(500px) rotateX(60deg) translateY(20%);transform-origin:top;mask-image:linear-gradient(to bottom,#000,transparent 70%);animation:gridMove 6s linear infinite}
+@keyframes gridMove{from{background-position:0 0}to{background-position:0 44px}}
+#loginGate .orb{position:absolute;border-radius:50%;filter:blur(2px);opacity:.5;animation:floaty 9s ease-in-out infinite}
+#loginGate .orb.o1{width:90px;height:90px;left:12%;top:22%;background:radial-gradient(circle at 30% 30%,#38f0d4,#0e9e8b);animation-delay:0s}
+#loginGate .orb.o2{width:60px;height:60px;right:14%;top:30%;background:radial-gradient(circle at 30% 30%,#6fb0ff,#0b7cc4);animation-delay:1.5s}
+#loginGate .orb.o3{width:120px;height:120px;right:22%;bottom:12%;background:radial-gradient(circle at 30% 30%,#b79bff,#7a5cc4);animation-delay:3s}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-26px)}}
+#loginGate .wrap{position:relative;z-index:2;display:flex;gap:26px;align-items:stretch;flex-wrap:wrap;justify-content:center;padding:20px;perspective:1200px}
+#loginGate .glass{width:340px;max-width:92vw;background:rgba(255,255,255,.09);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.22);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.25);padding:30px 30px 26px;color:#EAF2Fb;transform-style:preserve-3d;transition:transform .12s ease-out;animation:cardIn .7s cubic-bezier(.2,.8,.2,1)}
+@keyframes cardIn{from{opacity:0;transform:translateY(24px) rotateX(12deg)}to{opacity:1;transform:none}}
+#loginGate .glass .row{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+#loginGate .glass .lg{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#0E9E8B,#0B7CC4);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;color:#fff;font-size:21px;box-shadow:0 8px 20px rgba(14,158,139,.5)}
+#loginGate .glass h2{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;letter-spacing:-.2px}
+#loginGate .glass .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.16em;color:#9fb6d6;text-transform:uppercase}
+#loginGate .glass p.hint{font-size:12.5px;color:#a9c0dc;margin:10px 0 18px}
+#loginGate .glass label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9fb6d6;margin-bottom:6px}
+#loginGate .glass input.f{width:100%;padding:12px 13px;border:1px solid rgba(255,255,255,.2);border-radius:10px;font-size:14px;margin-bottom:14px;background:rgba(6,14,26,.5);color:#fff;outline:none;transition:.16s}
+#loginGate .glass input.f:focus{border-color:#38f0d4;box-shadow:0 0 0 3px rgba(56,240,212,.25)}
+#loginGate .glass input.f::placeholder{color:#6f88a8}
+#loginGate .glass .err{color:#ff8f84;font-size:12.5px;min-height:18px;margin-bottom:8px}
+#loginGate .glass button.go{width:100%;padding:13px;border:0;border-radius:11px;background:linear-gradient(135deg,#0E9E8B,#0B7CC4);color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.02em;box-shadow:0 10px 24px rgba(11,124,196,.45);transition:.15s}
+#loginGate .glass button.go:hover{filter:brightness(1.08);transform:translateY(-1px)}
+#loginGate .game{width:320px;max-width:92vw;background:rgba(6,14,26,.55);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.16);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.5);padding:18px;color:#EAF2Fb;display:flex;flex-direction:column;animation:cardIn .8s cubic-bezier(.2,.8,.2,1)}
+#loginGate .game .gh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+#loginGate .game .gh h3{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600}
+#loginGate .game .gh .cap{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:#9fb6d6;text-transform:uppercase}
+#loginGate .game .scores{display:flex;gap:16px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#cfe0f4}
+#loginGate .game .scores b{color:#38f0d4;font-size:16px;font-family:'Space Grotesk',sans-serif}
+#loginGate .snakebox{position:relative;border-radius:12px;overflow:hidden;background:#060d18;border:1px solid rgba(56,240,212,.18)}
+#loginGate #snake{display:block;width:100%;height:auto;image-rendering:pixelated}
+#loginGate .goverlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(4,8,16,.72);color:#fff;text-align:center;cursor:pointer}
+#loginGate .goverlay b{font-family:'Space Grotesk',sans-serif;font-size:17px}
+#loginGate .goverlay span{font-size:12px;color:#a9c0dc}
+#loginGate .game .keys{margin-top:10px;font-size:11px;color:#8ea6c4;text-align:center}
+@media(max-width:720px){#loginGate .game{order:2}}
+@media(prefers-reduced-motion:reduce){#loginGate .aurora,#loginGate .orb,#loginGate .grid3d{animation:none}#loginGate .glass{animation:none}}
+</style>
+<div id="loginGate">
+  <div class="aurora"></div><div class="grid3d"></div>
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <div class="wrap">
+    <div class="glass" id="lgCard">
+      <div class="row"><div class="lg">S</div><div><h2>Shoolini Online</h2><div class="k">Placement Tracker</div></div></div>
+      <p class="hint">Sign in to access the workspace.</p>
+      <label>Username</label>
+      <input id="lgUser" class="f" autocomplete="username" placeholder="you@shoolini.com">
+      <label>Password</label>
+      <input id="lgPass" class="f" type="password" autocomplete="current-password" placeholder="••••••••">
+      <div id="lgErr" class="err"></div>
+      <button id="lgBtn" class="go">Sign in →</button>
     </div>
-    <p style="font-size:12.5px;color:#7B8A9A;margin:8px 0 18px">Sign in to access the workspace.</p>
-    <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#7B8A9A;margin-bottom:6px">Username</label>
-    <input id="lgUser" autocomplete="username" placeholder="you@shoolini.com" style="width:100%;padding:11px 13px;border:1px solid #E2E7EE;border-radius:9px;font-size:14px;margin-bottom:14px">
-    <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#7B8A9A;margin-bottom:6px">Password</label>
-    <input id="lgPass" type="password" autocomplete="current-password" placeholder="••••••••" style="width:100%;padding:11px 13px;border:1px solid #E2E7EE;border-radius:9px;font-size:14px;margin-bottom:8px">
-    <div id="lgErr" style="color:#C0453A;font-size:12.5px;min-height:18px;margin-bottom:8px"></div>
-    <button id="lgBtn" style="width:100%;padding:12px;border:0;border-radius:10px;background:#0E9E8B;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Sign in</button>
+    <div class="game">
+      <div class="gh"><h3>🐍 Neon Snake</h3><span class="cap">Bored? Play while you wait</span></div>
+      <div class="scores"><div>Score<br><b id="snScore">0</b></div><div>Best<br><b id="snBest">0</b></div></div>
+      <div class="snakebox"><canvas id="snake" width="280" height="280"></canvas>
+        <div class="goverlay" id="snOverlay"><b id="snTitle">Tap / Space to start</b><span>Arrow keys or WASD to move</span></div>
+      </div>
+      <div class="keys">↑ ↓ ← → / W A S D &nbsp;·&nbsp; Space = start / pause</div>
+    </div>
   </div>
 </div>
 <script>
 (function(){
   var USER='Nikhil@shoolini.com', PASS='Nikhilheena@12', KEY='pcc_auth_v1';
   var gate=document.getElementById('loginGate');
-  function unlock(){ gate.style.display='none'; }
-  try{ if(sessionStorage.getItem(KEY)==='1'){ unlock(); } }catch(e){}
+  function unlock(){ gate.style.display='none'; SN.stop(); }
   function attempt(){
     var u=document.getElementById('lgUser').value.trim(), p=document.getElementById('lgPass').value;
     if(u.toLowerCase()===USER.toLowerCase() && p===PASS){ try{sessionStorage.setItem(KEY,'1');}catch(e){} unlock(); }
@@ -516,6 +595,67 @@ table.ex tbody tr{transition:background .12s ease}
   }
   document.getElementById('lgBtn').addEventListener('click',attempt);
   ['lgUser','lgPass'].forEach(function(id){ document.getElementById(id).addEventListener('keydown',function(e){ if(e.key==='Enter')attempt(); }); });
+  // pointer tilt on the login card
+  var card=document.getElementById('lgCard');
+  document.querySelector('#loginGate .wrap').addEventListener('mousemove',function(e){
+    var r=card.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+    var rx=Math.max(-7,Math.min(7,-(e.clientY-cy)/22)), ry=Math.max(-7,Math.min(7,(e.clientX-cx)/22));
+    card.style.transform='rotateX('+rx+'deg) rotateY('+ry+'deg)';
+  });
+  document.querySelector('#loginGate .wrap').addEventListener('mouseleave',function(){card.style.transform='';});
+
+  /* ---- Neon Snake ---- */
+  var SN=(function(){
+    var cv=document.getElementById('snake'), ctx=cv.getContext('2d');
+    var N=20, cell=cv.width/N; // 20x20 grid
+    var snake, dir, nextDir, food, score, best=0, timer=null, alive=false, started=false;
+    try{best=parseInt(localStorage.getItem('pcc_snake_hi')||'0',10)||0;}catch(e){}
+    document.getElementById('snBest').textContent=best;
+    var ov=document.getElementById('snOverlay'), ttl=document.getElementById('snTitle');
+    function reset(){ snake=[{x:9,y:10},{x:8,y:10},{x:7,y:10}]; dir={x:1,y:0}; nextDir=dir; score=0; place(); document.getElementById('snScore').textContent=0; }
+    function place(){ do{ food={x:(Math.random()*N)|0,y:(Math.random()*N)|0}; }while(snake.some(s=>s.x===food.x&&s.y===food.y)); }
+    function draw(){
+      ctx.fillStyle='#060d18'; ctx.fillRect(0,0,cv.width,cv.height);
+      // food glow
+      ctx.shadowBlur=14; ctx.shadowColor='#E08A18'; ctx.fillStyle='#ffb444';
+      ctx.beginPath(); ctx.arc(food.x*cell+cell/2,food.y*cell+cell/2,cell/2-2,0,7); ctx.fill();
+      // snake
+      for(var i=0;i<snake.length;i++){ var t=i/snake.length;
+        ctx.shadowBlur=12; ctx.shadowColor='#38f0d4';
+        ctx.fillStyle=i===0?'#8affea':'rgb('+(56+t*20)+','+(240-t*90)+','+(212-t*40)+')';
+        var pad=i===0?1:2; ctx.fillRect(snake[i].x*cell+pad,snake[i].y*cell+pad,cell-pad*2,cell-pad*2);
+      }
+      ctx.shadowBlur=0;
+    }
+    function step(){
+      dir=nextDir;
+      var h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+      if(h.x<0||h.y<0||h.x>=N||h.y>=N||snake.some(s=>s.x===h.x&&s.y===h.y)){ return over(); }
+      snake.unshift(h);
+      if(h.x===food.x&&h.y===food.y){ score++; document.getElementById('snScore').textContent=score; if(score>best){best=score;document.getElementById('snBest').textContent=best;try{localStorage.setItem('pcc_snake_hi',best);}catch(e){}} place(); }
+      else snake.pop();
+      draw();
+    }
+    function over(){ alive=false; clearInterval(timer); ov.style.display='flex'; ttl.textContent='Game over · '+score+' — tap to retry'; }
+    function start(){ if(alive)return; reset(); alive=true; started=true; ov.style.display='none'; clearInterval(timer); timer=setInterval(step,110); draw(); }
+    function pause(){ if(alive){alive=false;clearInterval(timer);ov.style.display='flex';ttl.textContent='Paused — tap to resume';} else if(started){alive=true;ov.style.display='none';timer=setInterval(step,110);} }
+    function stop(){ alive=false; clearInterval(timer); }
+    function setDir(x,y){ if(dir.x+ x===0 && dir.y+y===0)return; nextDir={x:x,y:y}; }
+    ov.addEventListener('click',function(){ if(!alive)start(); });
+    window.addEventListener('keydown',function(e){
+      if(gate.style.display==='none')return;
+      var k=e.key.toLowerCase();
+      if(k===' '){ e.preventDefault(); if(!started||!alive)start(); else pause(); return; }
+      if(k==='arrowup'||k==='w'){setDir(0,-1);e.preventDefault();}
+      else if(k==='arrowdown'||k==='s'){setDir(0,1);e.preventDefault();}
+      else if(k==='arrowleft'||k==='a'){setDir(-1,0);e.preventDefault();}
+      else if(k==='arrowright'||k==='d'){setDir(1,0);e.preventDefault();}
+    });
+    draw&&(function(){ reset(); draw(); })();
+    return {stop:stop,start:start};
+  })();
+
+  try{ if(sessionStorage.getItem(KEY)==='1'){ unlock(); } }catch(e){}
 })();
 </script>
 <div class="app">
@@ -872,6 +1012,7 @@ P.batches=()=>{
         <button class="btn pri" id="admImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9m0 0 4 4m-4-4-4 4M4 3h16"/></svg>Import admissions</button>
         <select id="replBatchSel" class="cosel"><option value="">Select batch to replace…</option>${B.batches.filter(b=>b.total>=3).map(b=>`<option value="${b.batch}">${b.batch} (${nf(b.total)} students)</option>`).join('')}</select>
         <button class="btn" id="replBatchBtn" style="border-color:#C0453A;color:#C0453A">🔄 Replace batch</button>
+        <button class="btn" id="delBatchBtn" style="border-color:#C0453A;color:#C0453A">🗑 Delete selected batch</button>
         <button class="btn" id="bulkUpAll" style="border-color:#0E9E8B;color:#0c8b7a">⬆ Bulk upload all students</button>
         <button class="btn" id="bulkDelAll" style="border-color:#C0453A;color:#C0453A">🗑 Bulk delete all students</button>
         <button class="btn" id="reloadB9" style="border-color:#0B7CC4;color:#0B7CC4">♻ Reload built-in Batch 9</button>
@@ -915,6 +1056,18 @@ function bindBatches(){
       $('#admMsg').innerHTML=`<span style="color:#0c8b7a">✓ Full replace complete — ${nf(n)} students loaded across their batches. Every tab updated.</span>`;
       kstrip(); setTimeout(()=>go('batches'),800); };
     r.readAsText(f);
+  });
+  // Delete just the selected batch (no CSV needed) — dashboard totals update live
+  $('#delBatchBtn')&&$('#delBatchBtn').addEventListener('click',()=>{
+    const batch=$('#replBatchSel')&&$('#replBatchSel').value;
+    if(!batch){$('#admMsg').innerHTML='<span style="color:#C0453A">Pehle dropdown se batch chuno, phir Delete selected batch dabao.</span>';return;}
+    const cnt=STUD.filter(s=>s.batch===batch).length;
+    if(!confirm(`Delete ALL ${nf(cnt)} students in ${batch}? Other batches are NOT affected. Dashboard totals will update.`))return;
+    const keep=STUD.filter(s=>s.batch!==batch); STUD.length=0; keep.forEach(s=>STUD.push(s));
+    Object.keys(byReg).forEach(k=>delete byReg[k]); STUD.forEach(s=>byReg[s.reg]=s);
+    recomputeAll(); kstrip();
+    $('#admMsg').innerHTML=`<span style="color:#C0453A">✓ ${batch} deleted — ${nf(cnt)} students removed. Import/Replace a CSV to load new data for it.</span>`;
+    setTimeout(()=>go('batches'),800);
   });
   // Replace batch — open the file picker straight away (a confirm() first would block the file dialog),
   // then confirm inside the change handler before actually replacing.
@@ -1806,11 +1959,11 @@ function ingestAppRows(rows){
       if(rec.company&&!cur.some(c=>c.toLowerCase()===rec.company.toLowerCase()))cur.push(rec.company);
       saveEdit(reg,{trainAttended:'Yes',applied:true,companies:cur.join(', '),appCount:Math.max(cur.length,(s.appCount||0))});
       if(rec.company||rec.reg||rec.name){APPS.push(rec);n++;affected.push(reg);}
-    } else if(rec.company||rec.reg||rec.name){ // reg not in any batch → holding bucket, NOT counted anywhere
-      ORPH.push(rec); norph++;
+    } else if(rec.company||rec.reg||rec.name){ // reg not in any batch → UNKNOWN application: counts in Total applications + owner split, but NEVER creates a student
+      rec.unknown=true; APPS.push(rec); n++; norph++; if(reg)affected.push(reg);
     }
   });
-  saveApps(); saveOrph(); recomputeAll(); return {n,norph,affected};
+  saveApps(); recomputeAll(); return {n,norph,affected};
 }
 function bindApps(){
   const dz=$('#appDz'), file=$('#appFile');
@@ -1820,7 +1973,7 @@ function bindApps(){
     dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)readAppFile(f);});
     file.addEventListener('change',e=>{const f=e.target.files[0];if(f)readAppFile(f);});
   }
-  function readAppFile(f){const rd=new FileReader();rd.onload=()=>{const res=ingestAppRows(parseCSVtext(rd.result));const after=appStudents();$('#appMsg').innerHTML=`<span style="color:#0c8b7a">✓ ${res.n} applications processed — ${nf(after.unique.length)} unique to pursue, ${nf(after.placed.length)} already placed.</span>`+(res.norph?`<br><span style="color:#a5670f">⚠ ${res.norph} row(s) had a reg number not in any batch — moved to the “Unmatched reg” holding bucket (not counted until you fix the reg).</span>`:'');autoEmailAffected(res.affected||[]);setTimeout(()=>go('apps'),1000);};rd.readAsText(f);}
+  function readAppFile(f){const rd=new FileReader();rd.onload=()=>{const res=ingestAppRows(parseCSVtext(rd.result));const after=appStudents();$('#appMsg').innerHTML=`<span style="color:#0c8b7a">✓ ${res.n} applications processed — ${nf(after.unique.length)} unique to pursue, ${nf(after.placed.length)} already placed.</span>`+(res.norph?`<br><span style="color:#a5670f">ℹ ${res.norph} row(s) had a reg not in any batch — kept as <b>Unknown applications</b> (counted in Total applications & owner split, but NOT added to Total students).</span>`:'');autoEmailAffected(res.affected||[]);setTimeout(()=>go('apps'),1000);};rd.readAsText(f);}
   $('#appTpl')&&$('#appTpl').addEventListener('click',()=>{const b=new Blob(['reg,name,company,contact,email\nPGO24272885,Sarang Chawla,Extramarks,9876543210,sarang@example.com\nPGO24166235,Amit Kumar Verma,eClerx,9812345678,amit@example.com\n'],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='applications_template.csv';a.click();});
   const reg=$('#apReg');
   reg&&reg.addEventListener('blur',()=>{const k=normRegKey(reg.value);if(byReg[k]){if(!$('#apName').value)$('#apName').value=byReg[k].name||'';if(!$('#apContact').value)$('#apContact').value=byReg[k].phone||'';}});
@@ -1828,15 +1981,13 @@ function bindApps(){
     const co=$('#apCo').value.trim(); const k=normRegKey($('#apReg').value);
     const nm=$('#apName').value.trim(), ct=$('#apContact').value.trim();
     if(!co&&!k&&!nm)return;
-    if(k&&!byReg[k]){ // reg not in any batch → holding bucket, not counted
-      ORPH.push({id:'a'+Date.now()+'_'+Math.random().toString(36).slice(2,7),company:co,reg:k,name:nm,contact:ct,date:todayISO()});
-      saveOrph(); const m0=$('#apMsg2');m0.textContent='⚠ Reg not in any batch — sent to Unmatched bucket';m0.classList.add('on');setTimeout(()=>go('apps'),900); return;
-    }
+    const isUnknown=!!(k&&!byReg[k]);
     if(k&&byReg[k]){ const s=byReg[k]; const cur=(s.companies||'').split(',').map(x=>x.trim()).filter(Boolean);
       if(co&&!cur.some(c=>c.toLowerCase()===co.toLowerCase()))cur.push(co);
       saveEdit(k,{trainAttended:'Yes',applied:true,companies:cur.join(', '),appCount:Math.max(cur.length,(s.appCount||0))}); }
-    APPS.push({id:'a'+Date.now()+'_'+Math.random().toString(36).slice(2,7),company:co,reg:k,name:nm||(byReg[k]?byReg[k].name:''),contact:ct||(byReg[k]?byReg[k].phone:''),batch:byReg[k]?byReg[k].batch:'',date:todayISO()});
-    saveApps(); recomputeAll(); if(k&&byReg[k])autoEmailAffected([k]); const m=$('#apMsg2');m.classList.add('on');setTimeout(()=>go('apps'),650);
+    APPS.push({id:'a'+Date.now()+'_'+Math.random().toString(36).slice(2,7),company:co,reg:k,name:nm||(byReg[k]?byReg[k].name:''),contact:ct||(byReg[k]?byReg[k].phone:''),batch:byReg[k]?byReg[k].batch:'',date:todayISO(),unknown:isUnknown});
+    saveApps(); recomputeAll(); if(k&&byReg[k])autoEmailAffected([k]);
+    const m=$('#apMsg2'); m.textContent=isUnknown?'✓ Added as Unknown application (not in students)':'✓ Added'; m.classList.add('on'); setTimeout(()=>go('apps'),650);
   });
   $('#dlAssigned')&&$('#dlAssigned').addEventListener('click',downloadAssigned);
   $('#waLink')&&$('#waLink').addEventListener('change',e=>{APPLINK=e.target.value;go('apps');});
@@ -2396,7 +2547,22 @@ function go(t){
   if(t==='batches') bindBatches();
   // onion bar grow
   c.querySelectorAll('.obar[data-ow]').forEach(el=>{const w=Math.max(9,+el.dataset.ow);el.style.width='9%';requestAnimationFrame(()=>requestAnimationFrame(()=>el.style.width=w+'%'));});
+  tiltIn(c);
   window.scrollTo({top:0});
+}
+// Pointer-driven 3D tilt on cards/KPIs (capped, disabled under reduced-motion). Tables/numbers stay flat.
+const REDUCE_MOTION=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+function tiltIn(root){
+  if(REDUCE_MOTION)return;
+  root.querySelectorAll('.card,.kpi,.bkcard').forEach(el=>{
+    if(el._tilt)return; el._tilt=true;
+    if(el.querySelector('table,.exwrap'))return; // keep data tables flat & readable
+    el.addEventListener('mousemove',e=>{
+      const r=el.getBoundingClientRect(); const px=(e.clientX-r.left)/r.width-0.5, py=(e.clientY-r.top)/r.height-0.5;
+      el.style.transform='rotateX('+(-py*6).toFixed(2)+'deg) rotateY('+(px*6).toFixed(2)+'deg) translateZ(6px)';
+    });
+    el.addEventListener('mouseleave',()=>{el.style.transform='';});
+  });
 }
 function countUp(root){
   root.querySelectorAll('.kpi .big, .kfig').forEach(el=>{
@@ -2446,18 +2612,21 @@ function markApplicantsTrained(){
 }
 
 /* ---- ORPHAN bucket (unmatched reg numbers) ---- */
+// Unknown applications = APPS rows whose reg is not in any batch. They DO count in Total applications
+// and are split among process owners, but are NEVER added to Total students.
+function unknownApps(){ return APPS.filter(a=>a.unknown||(a.reg&&!byReg[normRegKey(a.reg)])||(!a.reg)); }
 function orphanCard(){
-  if(!ORPH.length) return '';
-  const rows=ORPH.map(o=>`<tr>
-    <td style="text-align:left">${o.name||'—'}</td><td style="text-align:left"><span class="reg">${o.reg||'—'}</span></td>
+  const list=unknownApps(); if(!list.length) return '';
+  const rows=list.map(o=>`<tr>
+    <td style="text-align:left">${o.name||'—'}</td><td style="text-align:left"><span class="reg">${o.reg||'(no reg)'}</span></td>
     <td style="text-align:left">${o.company||'—'}</td><td style="text-align:left">${o.contact||'—'}</td>
     <td style="text-align:left"><input class="orphfix" data-oid="${o.id}" placeholder="correct reg…" style="padding:7px 9px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;width:150px"></td>
-    <td style="text-align:left"><button class="btn tiny orphsave" data-oid="${o.id}">Save</button> <button class="btn tiny orphdel" data-oid="${o.id}">✕</button></td></tr>`).join('');
-  return `<div class="card pad0" style="margin-bottom:18px;border:1px solid #E7C68A">
+    <td style="text-align:left"><button class="btn tiny orphsave" data-oid="${o.id}">Link</button> <button class="btn tiny orphdel" data-oid="${o.id}">✕</button></td></tr>`).join('');
+  return `<div class="card pad0" style="margin-bottom:18px;border:1px solid #7A5CC4">
     <div style="padding:16px 22px 4px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-      <div><h3>⚠ Unmatched reg numbers — holding bucket (${nf(ORPH.length)})</h3>
-        <div class="sub">These applications carry a reg number that is <b>not in any batch</b>. They are <b>not</b> counted in Total students or Applications. Enter a correct reg that exists in a batch and Save — it then moves into the live data.</div></div>
-      <button class="btn" id="orphClear" style="border-color:#C0453A;color:#C0453A">Delete all unmatched</button></div>
+      <div><h3>❔ Unknown applications — reg not in any batch (${nf(list.length)})</h3>
+        <div class="sub">Inke reg number kisi bhi batch me nahi mile. Ye <b>Total applications me count hote hain</b> aur <b>process owners me divide</b> hote hain, par <b>Total students me add NAHI hote</b>. Agar sahi reg pata ho to daal ke <b>Link</b> karo — tab ye us student se jud jaayega.</div></div>
+      <button class="btn" id="orphClear" style="border-color:#C0453A;color:#C0453A">Delete all unknown</button></div>
     <div class="exwrap" style="border:0;max-height:360px;overflow:auto"><table class="ex"><thead><tr><th style="text-align:left">Name</th><th style="text-align:left">Given reg</th><th style="text-align:left">Company</th><th style="text-align:left">Contact</th><th style="text-align:left">Correct reg number</th><th style="text-align:left">Action</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function bindOrphans(){
@@ -2465,16 +2634,18 @@ function bindOrphans(){
     const oid=b.dataset.oid, inp=document.querySelector('.orphfix[data-oid="'+oid+'"]'), newReg=normRegKey(inp&&inp.value);
     if(!newReg){alert('Enter a reg number.');return;}
     if(!byReg[newReg]){alert('That reg number is still not in any batch. Enter a reg that exists in a loaded batch.');return;}
-    const o=ORPH.find(x=>String(x.id)===String(oid)); if(!o)return;
+    const o=APPS.find(x=>String(x.id)===String(oid)); if(!o)return;
     const s=byReg[newReg]; const cur=(s.companies||'').split(',').map(x=>x.trim()).filter(Boolean);
     if(o.company&&!cur.some(c=>c.toLowerCase()===o.company.toLowerCase()))cur.push(o.company);
     saveEdit(newReg,{trainAttended:'Yes',applied:true,companies:cur.join(', '),appCount:Math.max(cur.length,(s.appCount||0))});
-    APPS.push({id:o.id,company:o.company||'',reg:newReg,name:o.name||s.name,contact:o.contact||s.phone||'',batch:s.batch,date:o.date||todayISO()});
-    ORPH=ORPH.filter(x=>String(x.id)!==String(oid)); saveApps(); saveOrph(); recomputeAll(); go('apps');
+    o.reg=newReg; o.unknown=false; if(!o.name)o.name=s.name; if(!o.contact)o.contact=s.phone||''; o.batch=s.batch;
+    saveApps(); recomputeAll(); go('apps');
   }));
-  document.querySelectorAll('.orphdel').forEach(b=>b.addEventListener('click',()=>{ ORPH=ORPH.filter(x=>String(x.id)!==String(b.dataset.oid)); saveOrph(); go('apps'); }));
-  const oc=document.getElementById('orphClear'); oc&&oc.addEventListener('click',()=>{ if(confirm('Delete all '+ORPH.length+' unmatched application(s)?')){ORPH=[];saveOrph();go('apps');} });
+  document.querySelectorAll('.orphdel').forEach(b=>b.addEventListener('click',()=>{ APPS=APPS.filter(x=>String(x.id)!==String(b.dataset.oid)); saveApps(); recomputeAll(); go('apps'); }));
+  const oc=document.getElementById('orphClear'); oc&&oc.addEventListener('click',()=>{ const ids=new Set(unknownApps().map(a=>String(a.id))); if(ids.size&&confirm('Delete all '+ids.size+' unknown application(s)?')){APPS=APPS.filter(x=>!ids.has(String(x.id)));saveApps();recomputeAll();go('apps');} });
 }
+// One-time migration: fold any previously-parked ORPH entries into APPS as unknown applications.
+try{ if(ORPH&&ORPH.length){ ORPH.forEach(o=>{ o.unknown=true; if(!APPS.some(a=>String(a.id)===String(o.id)))APPS.push(o); }); ORPH=[]; saveOrph(); saveApps(); } }catch(e){}
 
 /* ---- OUTREACH tab ---- */
 const OUT_LS='pcc_outreach_v1';
