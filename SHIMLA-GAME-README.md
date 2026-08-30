@@ -1,37 +1,34 @@
-# 🏔️ SHIMLA: Open World
+# 🏔️ Shimla Ridge Drive
 
-A GTA-style top-down **open-world game set in the real Shimla** (Queen of Hills, Himachal Pradesh),
-built as a single self-contained HTML file — no build step, no dependencies.
+A GTA-style, third-person 3D mini open-world set on the **real Scandal Point / The Ridge /
+Mall Road** stretch of Shimla — with a Vice City–style dusk look. Single self-contained HTML
+file (Three.js), **runs on mobile** with touch controls.
 
-Just open **`shimla-game.html`** in any modern browser.
+Open **`shimla-game.html`** in any modern browser, or play the hosted version.
 
-## 🎮 Features
-- **The whole city of Shimla** as a drivable open world, laid out to match the 3D map:
-  Mall Road, The Ridge, Scandal Point, Christ Church, Jakhoo Temple & Hill (2,455 m),
-  Lakkar Bazaar, Gaiety Theatre, HP Secretariat, Bantony Castle, HP University, Kali Bari Temple,
-  and neighbourhoods — Sanjauli, Summer Hill, Chhota Shimla, Boileauganj, Kachi Ghati, Dhalli,
-  Bharari, Navbahar, North Shimla, Dudhli.
-- **GTA-style mechanics**: walk around on foot, **enter/exit cars** (`E`), drive with real steering,
-  traffic, pedestrians, a **wanted system with police**, health, and Shimla cash (₹).
-- **Missions** that send you across the city (pray at Jakhoo, momos at Lakkar Bazaar,
-  deliver files to the Secretariat, etc.) with rewards.
-- **Play as yourself** — upload your photo on the start screen and it becomes the
-  **main character's face** (persisted in your browser).
-- Live **circular minimap**, mission markers, day/night cycle, deodar-pine forest, and
-  **Fast Travel** to any location.
+## 🎮 What's in it
+- **The real Ridge promenade**: recreated **Town Hall** (grey Tudor, steep dormer roofs +
+  clock tower), **Christ Church**, the **Mall Road shop row** with lit signboards
+  (HDFC, Puma, Levi's, Madame, Bata, Woodland, Café Sol, Titan…), cobblestone Ridge plaza,
+  valley railing at Scandal Point, deodar forest, misty mountain backdrop, street lamps,
+  benches and a walking crowd — under a warm **dusk sky with fog and long shadows**.
+- **Bike + car + on foot**: ride a Vice-City-style bike, drive cars, or walk. Third-person
+  follow camera with close / top-down modes and drag-to-look.
+- **Enter the shops**: walk to a shop door and press **F** (or the ACTION button) to step
+  **inside** — a real interior with counter, shelves and a shopkeeper. Press again to exit.
+- **Play as yourself**: upload your photo on the start screen and it becomes the hero's face
+  (saved in your browser).
+- Objectives, minimap, health/cash HUD.
 
 ## ⌨️ Controls
-| Key | Action |
-|-----|--------|
-| `W A S D` / arrows | Move on foot / drive |
-| `E` | Enter / exit nearest car |
-| `SHIFT` | Sprint |
-| `SPACE` | Handbrake / horn |
-| Buttons (top) | Nearest car · Fast Travel · Pause |
+**Desktop:** `W A S D` move / drive · `F` enter / exit (vehicle or shop) · `SHIFT` sprint ·
+`Mouse drag` look · `Wheel` zoom · 🎥 View button for camera modes.
 
-## 📷 Setting your character image
-On the start screen click **"Upload your photo"** and pick any image — it's cropped to the
-character's face and saved locally in your browser (`localStorage`), so it persists between sessions.
-If you don't upload one, a stylised default avatar is used.
+**Mobile:** left **thumbstick** to move/steer · **ACTION** to enter/exit · **BRAKE** · **CAM**.
 
-> A tribute to Shimla — Elevation 2,205 m · District Shimla · Himachal Pradesh.
+## 📷 Character photo
+Start screen → **"Upload your photo"**. The image is cropped to the hero's face and stored
+locally (`localStorage`) so it persists. No upload = a default avatar.
+
+> A stylised tribute to the Queen of Hills, tuned to run smoothly on a phone — not a photo-exact
+> model. The Ridge · Mall Road · Scandal Point · Shimla, Himachal Pradesh.
