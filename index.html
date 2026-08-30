@@ -438,10 +438,11 @@ table.ex tbody tr{transition:background .12s ease}
 .scorepill.warm{background:var(--amb-soft);color:#a5670f}
 .scorepill.cold{background:var(--rust-soft);color:#C0453A}
 .fchip{display:inline-block;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:2px 7px;color:var(--ink2);margin:1px 0}
-.wabtn,.mailbtn{display:inline-block;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:7px;text-decoration:none;margin-right:5px}
+.wabtn,.mailbtn,.callbtn{display:inline-block;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:7px;text-decoration:none;margin-right:5px}
 .wabtn{background:#25D366;color:#fff}
 .mailbtn{background:var(--ind-soft);color:#2f43b3}
-.wabtn:hover{background:#1eb658}.mailbtn:hover{filter:brightness(.96)}
+.callbtn{background:var(--joined);color:#fff}
+.wabtn:hover{background:#1eb658}.mailbtn:hover{filter:brightness(.96)}.callbtn:hover{filter:brightness(.94)}
 /* agent console + buckets + bulk outreach */
 .agconsole{border:1px solid var(--line)}
 .agc-row{display:flex;gap:10px;align-items:center}
@@ -1734,9 +1735,9 @@ P.apps=()=>{
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input id="waLink" placeholder="Paste WhatsApp group / assessment link (mandatory)" style="padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;min-width:280px" value="${(APPLINK||'').replace(/"/g,'&quot;')}">
     <button class="btn" id="ownBulkMail">✉️ Bulk email owner</button><button class="btn pri" id="dlAssigned">⬇ CSV</button></div></div>
     <div class="exwrap" style="border:0;max-height:460px;overflow:auto"><table class="ex"><thead><tr><th style="text-align:left">Owner</th><th style="text-align:left">Student</th><th style="text-align:left">Reg</th><th style="text-align:left">Contact</th><th style="text-align:left">Companies applied</th><th style="text-align:left">Reach out</th></tr></thead>
-      <tbody>${unique.map(s=>{const ph=String(s.contact||'').replace(/[^0-9]/g,'').replace(/^0+/,'');const wa=ph?'https://wa.me/91'+ph.slice(-10)+'?text='+encodeURIComponent(appMsg(s.companies)):'';const ml=s.email?'mailto:'+s.email+'?subject='+encodeURIComponent('Mandatory: your application for '+(s.companies||'the company'))+'&body='+encodeURIComponent(appMsg(s.companies)):'';
+      <tbody>${unique.map(s=>{const ph=String(s.contact||'').replace(/[^0-9]/g,'').replace(/^0+/,'');const wa=ph?'https://wa.me/91'+ph.slice(-10)+'?text='+encodeURIComponent(appMsg(s.companies)):'';const ml=s.email?'mailto:'+s.email+'?subject='+encodeURIComponent('Mandatory: your application for '+(s.companies||'the company'))+'&body='+encodeURIComponent(appMsg(s.companies)):'';const tel=ph?'tel:+91'+ph.slice(-10):'';
       return `<tr class="clk" data-reg="${s.reg}"><td style="text-align:left"><span class="ownpill" style="background:${OWNCOL[s.owner]}22;color:${OWNCOL[s.owner]}">${s.owner}</span></td><td style="text-align:left">${s.name||'—'}</td><td style="text-align:left">${s.reg||'—'}</td><td style="text-align:left">${s.contact||'—'}</td><td style="text-align:left">${s.companies||'—'}</td>
-      <td style="text-align:left" onclick="event.stopPropagation()">${wa?`<a class="wabtn" href="${wa}" target="_blank">WhatsApp</a>`:''}${ml?`<a class="mailbtn" href="${ml}">Email</a>`:''}${!wa&&!ml?'<span class="reg">no contact</span>':''}</td></tr>`;}).join('')}</tbody></table></div></div>
+      <td style="text-align:left" onclick="event.stopPropagation()">${tel?`<a class="callbtn" href="${tel}">📞 Call</a>`:''}${wa?`<a class="wabtn" href="${wa}" target="_blank">WhatsApp</a>`:''}${ml?`<a class="mailbtn" href="${ml}">Email</a>`:''}${!wa&&!ml&&!tel?'<span class="reg">no contact</span>':''}</td></tr>`;}).join('')}</tbody></table></div></div>
   ${placed.length?`<div class="card pad0" style="margin-bottom:18px"><div style="padding:16px 22px 4px"><h3>Already placed — filtered out</h3><div class="sub">These applicants are already placed; where they are placed is shown so you don't chase them again.</div></div>
     <div class="exwrap" style="border:0;max-height:320px;overflow:auto"><table class="ex"><thead><tr><th style="text-align:left">Student</th><th style="text-align:left">Reg</th><th style="text-align:left">Contact</th><th style="text-align:left">Placed at</th><th style="text-align:left">Applied to</th></tr></thead>
       <tbody>${placed.map(s=>`<tr class="clk" data-reg="${s.reg}"><td style="text-align:left">${s.name||'—'}</td><td style="text-align:left">${s.reg||'—'}</td><td style="text-align:left">${s.contact||'—'}</td><td style="text-align:left"><span class="pill j1">${s.placedCo||'—'}</span></td><td style="text-align:left">${s.companies||'—'}</td></tr>`).join('')}</tbody></table></div></div>`:''}
@@ -2197,7 +2198,8 @@ function openModal(reg){
   const stat=s.joined?'Joined':s.placed?'Placed':bl;
   const cr=+(s.commRating||0);
   const ov=$('#ov');
-  ov.innerHTML=`<div class="modal"><div class="mhead"><div><h3>${s.name||'—'}</h3><div class="reg">${s.reg} · ${stat}</div></div><button class="x" id="mx">×</button></div>
+  const _ph=String(s.phone||'').replace(/[^0-9]/g,'').replace(/^0+/,''); const _tel=_ph?('tel:+91'+_ph.slice(-10)):'';
+  ov.innerHTML=`<div class="modal"><div class="mhead"><div><h3>${s.name||'—'}</h3><div class="reg">${s.reg} · ${stat}</div></div><div style="display:flex;align-items:center;gap:8px">${_tel?`<a class="callbtn" href="${_tel}">📞 Call</a>`:''}<button class="x" id="mx">×</button></div></div>
     <div class="mbody">
       <div class="msec">Profile</div>
       <div class="mgrid">
@@ -2622,7 +2624,7 @@ function autoEmailAffected(regs){
 }
 function emailSettingsCard(){
   const cfg=EMAILCFG;
-  return `<div class="card" style="margin-bottom:18px"><div class="chd"><div><h3>📧 Auto-email — ${cfg.owner}'s applicants (EmailJS)</h3><div class="sub">Jaise hi koi application add ho, ${cfg.owner} ke applicants ko mail apne-aap chali jaati hai. Ek baar EmailJS keys daalo (free account: emailjs.com). Internet on hona chahiye. ${window.emailjs?'<b style="color:#0c8b7a">SDK loaded ✓</b>':'<b style="color:#C0453A">SDK not loaded — check internet</b>'}</div></div></div>
+  return `<div class="card" style="margin-bottom:18px"><div class="chd"><div><h3>📧 Auto-email — ${cfg.owner}'s applicants (EmailJS · Outlook)</h3><div class="sub">Jaise hi koi application add ho, ${cfg.owner} ke applicants ko mail apne-aap <b>Outlook</b> se chali jaati hai. EmailJS pe ek free account banao → <b>Email Services → Outlook / Office365</b> connect karo → uska Service ID neeche daalo. Internet on hona chahiye. ${window.emailjs?'<b style="color:#0c8b7a">SDK loaded ✓</b>':'<b style="color:#C0453A">SDK not loaded — check internet</b>'}</div></div></div>
     <div class="entry-grid" style="grid-template-columns:repeat(3,1fr)">
       <label>EmailJS Public Key<input id="emPub" value="${(cfg.pub||'').replace(/"/g,'&quot;')}" placeholder="xxxxxxxx"></label>
       <label>Service ID<input id="emSvc" value="${(cfg.svc||'').replace(/"/g,'&quot;')}" placeholder="service_xxx"></label>
@@ -2635,7 +2637,7 @@ function emailSettingsCard(){
       <button class="btn" id="emSendAll">Send now to all un-mailed ${cfg.owner}</button>
       <span id="emailStatus" class="reg"></span>
     </div>
-    <div class="note" style="margin-top:10px">EmailJS template me ye variables rakho: <b>{{to_email}} {{to_name}} {{company}} {{subject}} {{message}}</b>. Template ke "To Email" field me <b>{{to_email}}</b> daalo. Keys sirf is browser me save hoti hain.</div></div>`;
+    <div class="note" style="margin-top:10px">Setup: EmailJS → <b>Email Services → Outlook</b> connect karo (Service ID milega) → ek Template banao (Template ID) → Account se Public Key lo. Template me ye variables rakho: <b>{{to_email}} {{to_name}} {{company}} {{subject}} {{message}}</b>, aur "To Email" field me <b>{{to_email}}</b> daalo. Mail aapke Outlook se jaayegi. Keys sirf is browser me save hoti hain.</div></div>`;
 }
 function bindEmail(){
   const g=id=>document.getElementById(id);
