@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHIMLA: Open World</title>
+<style>
+  :root{
+    --accent:#ffcc00; --danger:#e0453a; --good:#37c26a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;background:#0a0f0a;font-family:'Segoe UI',system-ui,sans-serif;color:#fff}
+  #game{display:block;width:100vw;height:100vh;cursor:crosshair;background:#1c2a1e}
+
+  /* ---------- HUD ---------- */
+  .hud{position:fixed;inset:0;pointer-events:none;z-index:10}
+  .topbar{position:absolute;top:14px;left:14px;display:flex;gap:10px;align-items:flex-start}
+  .panel{background:rgba(8,14,10,.72);border:1px solid rgba(255,255,255,.12);border-radius:10px;
+         padding:9px 13px;backdrop-filter:blur(6px);box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .money{font-family:'Consolas',monospace;font-size:22px;font-weight:700;color:#8affc0;letter-spacing:.5px}
+  .money small{color:#5c7a66;font-size:12px}
+  .stars{font-size:20px;letter-spacing:3px;color:#444}
+  .stars .on{color:var(--danger);text-shadow:0 0 8px rgba(224,69,58,.7)}
+  .healthwrap{width:180px}
+  .healthwrap .lbl{font-size:10px;color:#9fb3a4;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+  .bar{height:9px;background:rgba(255,255,255,.12);border-radius:5px;overflow:hidden}
+  .bar > i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#e0453a,#ffb03a,#37c26a);transition:width .2s}
+
+  /* mission banner */
+  .mission{position:absolute;top:14px;right:14px;max-width:290px;text-align:right}
+  .mission .tag{font-size:10px;letter-spacing:2px;color:var(--accent);text-transform:uppercase}
+  .mission .obj{font-size:15px;font-weight:600;margin-top:3px;line-height:1.25}
+  .mission .dist{font-size:12px;color:#9fb3a4;margin-top:4px;font-family:monospace}
+
+  /* location toast */
+  #toast{position:absolute;left:50%;top:20%;transform:translateX(-50%) translateY(-10px);
+         opacity:0;transition:all .4s;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast .big{font-size:34px;font-weight:800;text-shadow:0 4px 14px rgba(0,0,0,.8);letter-spacing:1px}
+  #toast .sub{font-size:14px;color:var(--accent);letter-spacing:3px;text-transform:uppercase;margin-top:2px}
+
+  /* minimap */
+  .minimap{position:absolute;bottom:16px;right:16px;width:190px;height:190px;border-radius:50%;
+           overflow:hidden;border:3px solid rgba(255,255,255,.25);box-shadow:0 8px 26px rgba(0,0,0,.55)}
+  #mini{display:block;width:100%;height:100%}
+
+  /* controls hint */
+  .controls{position:absolute;bottom:16px;left:16px;font-size:12px;line-height:1.7;color:#c8d6cc}
+  .controls b{display:inline-block;min-width:78px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);
+              border-radius:5px;padding:1px 7px;margin-right:6px;font-family:monospace;color:#fff;text-align:center}
+  .controls .row{margin-bottom:3px}
+
+  /* character card */
+  .charcard{position:absolute;bottom:220px;right:16px;width:190px}
+  .charcard .frame{width:64px;height:64px;border-radius:12px;overflow:hidden;border:2px solid var(--accent);
+        background:#333;float:right;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+  .charcard .frame img{width:100%;height:100%;object-fit:cover;display:block}
+  .charcard .frame canvas{width:100%;height:100%;display:block}
+
+  /* buttons that must be clickable */
+  .actions{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:8px;pointer-events:auto}
+  .btn{background:rgba(8,14,10,.8);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:8px;
+       padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600;backdrop-filter:blur(6px)}
+  .btn:hover{background:rgba(255,204,0,.22);border-color:var(--accent)}
+
+  /* start screen */
+  #start{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;
+         background:radial-gradient(circle at 50% 30%,#1c3d29,#0a140d 70%);text-align:center;padding:24px}
+  #start h1{font-size:clamp(38px,8vw,86px);font-weight:900;letter-spacing:4px;
+            background:linear-gradient(180deg,#fff,#ffcc00);-webkit-background-clip:text;background-clip:text;color:transparent;
+            text-shadow:0 6px 30px rgba(255,204,0,.25)}
+  #start h2{font-size:clamp(13px,2vw,18px);letter-spacing:8px;color:#8affc0;margin-top:-4px;text-transform:uppercase}
+  #start p{max-width:520px;color:#b7c8bc;margin:18px 0 6px;line-height:1.6;font-size:14px}
+  #start .go{margin-top:22px;font-size:18px;padding:14px 40px;background:var(--accent);color:#111;border:none;font-weight:800;
+             border-radius:10px;cursor:pointer;letter-spacing:1px;box-shadow:0 10px 30px rgba(255,204,0,.35)}
+  #start .go:hover{transform:translateY(-2px)}
+  #start .setup{display:flex;gap:22px;align-items:center;margin-top:24px;flex-wrap:wrap;justify-content:center}
+  #start .avatar{width:110px;height:110px;border-radius:16px;overflow:hidden;border:3px solid var(--accent);background:#222;
+                 box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  #start .avatar img,#start .avatar canvas{width:100%;height:100%;object-fit:cover;display:block}
+  #start .avatar-side{text-align:left;font-size:13px;color:#b7c8bc}
+  #start label.upl{display:inline-block;margin-top:8px;cursor:pointer;color:#111;background:#8affc0;
+                   padding:8px 16px;border-radius:8px;font-weight:700;font-size:13px}
+  #start input[type=text]{margin-top:8px;background:#0c1610;border:1px solid #2a4433;color:#fff;padding:8px 12px;
+                          border-radius:8px;font-size:14px;width:220px;display:block}
+  .foot{position:absolute;bottom:14px;font-size:11px;color:#5c7a66}
+
+  /* game over */
+  #over{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;
+        background:rgba(10,4,4,.86)}
+  #over h1{font-size:70px;font-weight:900;color:var(--danger);letter-spacing:4px;text-shadow:0 6px 24px rgba(224,69,58,.5)}
+  #over p{color:#ddd;margin:10px 0 20px}
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div class="hud">
+  <div class="topbar">
+    <div class="panel"><div class="money">₹<span id="money">2,500</span> <small>SHIMLA CASH</small></div></div>
+    <div class="panel"><div class="stars" id="stars">☆☆☆☆☆</div></div>
+    <div class="panel healthwrap">
+      <div class="lbl">Health</div>
+      <div class="bar"><i id="hpbar"></i></div>
+    </div>
+  </div>
+
+  <div class="mission panel">
+    <div class="tag">◆ Current Mission</div>
+    <div class="obj" id="mObj">Reach The Ridge</div>
+    <div class="dist" id="mDist">-- m</div>
+  </div>
+
+  <div id="toast"><div class="big" id="toastBig">SANJAULI</div><div class="sub">Neighbourhood</div></div>
+
+  <div class="charcard">
+    <div class="frame" id="charFrame"></div>
+  </div>
+
+  <div class="minimap"><canvas id="mini" width="190" height="190"></canvas></div>
+
+  <div class="controls">
+    <div class="row"><b>W A S D</b>Move / Drive</div>
+    <div class="row"><b>E</b>Enter / Exit car</div>
+    <div class="row"><b>SHIFT</b>Sprint</div>
+    <div class="row"><b>SPACE</b>Handbrake / Horn</div>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="btn" id="btnCar">🚗 Nearest Car</button>
+  <button class="btn" id="btnMap">🗺️ Fast Travel</button>
+  <button class="btn" id="btnPause">⏸ Pause</button>
+</div>
+
+<!-- START SCREEN -->
+<div id="start">
+  <h1>SHIMLA</h1>
+  <h2>Open World</h2>
+  <p>Ride through the Queen of Hills — cruise Mall Road, climb to Jakhoo Temple, race the ridgeline past Christ Church and Scandal Point, and explore every neighbourhood of the real Shimla in this GTA-style open world.</p>
+
+  <div class="setup">
+    <div class="avatar" id="startAvatar"></div>
+    <div class="avatar-side">
+      <div style="font-weight:700;color:#fff;font-size:15px">Your Character</div>
+      <div>Play as yourself — set your photo as the<br>main character's face.</div>
+      <label class="upl">📷 Upload your photo
+        <input type="file" id="photoInput" accept="image/*" style="display:none">
+      </label>
+      <input type="text" id="nameInput" placeholder="Character name" maxlength="16" value="Nikhil">
+    </div>
+  </div>
+
+  <button class="go" id="startBtn">▶ ENTER SHIMLA</button>
+  <div class="foot">A tribute to the Queen of Hills · Himachal Pradesh · Elev. 2,205 m</div>
+</div>
+
+<!-- GAME OVER -->
+<div id="over">
+  <h1>WASTED</h1>
+  <p id="overMsg">You were rushed to IGMC Hospital.</p>
+  <button class="go" id="respawnBtn" style="background:var(--accent);color:#111;border:none;padding:12px 34px;border-radius:10px;font-weight:800;cursor:pointer">Respawn</button>
+</div>
+
+<script>
+"use strict";
+/* =========================================================================
+   SHIMLA: OPEN WORLD  — a top-down GTA-style game set in real Shimla
+   Single-file HTML5 canvas game. No dependencies.
+   ========================================================================= */
+
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0;
+function resize(){ W = cv.width = innerWidth; H = cv.height = innerHeight; }
+addEventListener('resize', resize); resize();
+
+/* ---------- WORLD DEFINITION (coordinates loosely match the 3D map) ---------- */
+const WORLD = { w: 5200, h: 3600 };
+
+// Landmarks (green dots on map), Important places (magenta), Neighbourhoods (grey)
+// x,y in world space. type: landmark | place | hood. color + tall marker.
+const LOCATIONS = [
+  // --- Northern ridge / hills ---
+  { name:"Jakhoo Hill",             x:2450, y:360,  type:"landmark", note:"2,455 m" },
+  { name:"Jakhoo Temple",           x:2560, y:520,  type:"landmark" },
+  { name:"Kali Bari Temple",        x:3550, y:470,  type:"landmark" },
+  { name:"North Shimla",            x:3480, y:820,  type:"hood" },
+  { name:"Dudhli",                  x:4650, y:720,  type:"hood" },
+  // --- Central ridge (the tourist core) ---
+  { name:"The Ridge",               x:2820, y:940,  type:"place" },
+  { name:"Christ Church",           x:2560, y:1080, type:"landmark" },
+  { name:"Scandal Point",           x:3050, y:1150, type:"place" },
+  { name:"Mall Road",               x:2500, y:1450, type:"place" },
+  { name:"Gaiety Theatre",          x:2000, y:1650, type:"landmark" },
+  { name:"Lakkar Bazaar",           x:2380, y:1720, type:"place" },
+  { name:"HP Secretariat",          x:3450, y:1780, type:"landmark" },
+  { name:"Bantony Castle",          x:3950, y:1470, type:"landmark" },
+  { name:"Navbahar",                x:4450, y:1780, type:"hood" },
+  // --- West ---
+  { name:"Summer Hill",             x:1050, y:900,  type:"hood" },
+  { name:"Bharari",                 x:360,  y:1350, type:"hood" },
+  { name:"Sanjauli",                x:430,  y:1900, type:"hood" },
+  { name:"Dhalli",                  x:360,  y:2250, type:"hood" },
+  // --- South ---
+  { name:"Chhota Shimla",           x:1980, y:1980, type:"hood" },
+  { name:"HP University",           x:2560, y:2500, type:"landmark" },
+  { name:"Boileauganj",             x:3200, y:2820, type:"hood" },
+  { name:"Kachi Ghati",             x:3700, y:3050, type:"hood" },
+];
+function loc(n){ return LOCATIONS.find(l=>l.name===n); }
+
+// Road network: list of node pairs (by location name) forming drivable roads.
+const ROADS = [
+  ["Summer Hill","Christ Church"],["Christ Church","The Ridge"],["The Ridge","Scandal Point"],
+  ["Scandal Point","Kali Bari Temple"],["Scandal Point","HP Secretariat"],
+  ["Christ Church","Mall Road"],["Mall Road","Gaiety Theatre"],["Mall Road","Lakkar Bazaar"],
+  ["Lakkar Bazaar","Scandal Point"],["The Ridge","Jakhoo Temple"],["Jakhoo Temple","Jakhoo Hill"],
+  ["Scandal Point","North Shimla"],["North Shimla","Kali Bari Temple"],["North Shimla","Dudhli"],
+  ["HP Secretariat","Bantony Castle"],["Bantony Castle","Navbahar"],["Navbahar","Dudhli"],
+  ["Summer Hill","Bharari"],["Bharari","Sanjauli"],["Sanjauli","Dhalli"],["Sanjauli","Summer Hill"],
+  ["Gaiety Theatre","Chhota Shimla"],["Chhota Shimla","HP University"],["HP University","Boileauganj"],
+  ["Boileauganj","Kachi Ghati"],["Chhota Shimla","HP Secretariat"],["Mall Road","Chhota Shimla"],
+  ["Dhalli","Chhota Shimla"],["HP Secretariat","Navbahar"],["HP University","Chhota Shimla"],
+  ["Boileauganj","HP Secretariat"],
+];
+const ROAD_W = 34;
+
+// Precompute road segments
+const roadSegs = ROADS.map(([a,b])=>{ const A=loc(a),B=loc(b); return {ax:A.x,ay:A.y,bx:B.x,by:B.y}; });
+
+/* ---------- deterministic pseudo-random for scenery ---------- */
+function mulberry(seed){ return function(){ let t=seed+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
+const rnd = mulberry(20482205);
+
+// Scatter pine trees (Shimla = deodar/pine forest), avoiding roads a bit.
+const trees = [];
+for(let i=0;i<1400;i++){
+  const x = rnd()*WORLD.w, y = rnd()*WORLD.h;
+  trees.push({x,y,r:8+rnd()*10,sh:rnd()});
+}
+// Buildings: clusters near hoods/places
+const buildings = [];
+function addCluster(cx,cy,count,spread,tall){
+  for(let i=0;i<count;i++){
+    const a=rnd()*Math.PI*2, d=rnd()*spread;
+    const x=cx+Math.cos(a)*d, y=cy+Math.sin(a)*d;
+    const w=16+rnd()*26, h=16+rnd()*26;
+    // avoid center overlap of location marker
+    buildings.push({x:x-w/2,y:y-h/2,w,h,c:pickBuildingColor(rnd()),roof:tall&&rnd()>.5});
+  }
+}
+function pickBuildingColor(r){
+  const cols=["#c98b5e","#b7674a","#9a9a9a","#d8c07a","#7d9bb0","#c25b4e","#8a6d52"];
+  return cols[Math.floor(r*cols.length)];
+}
+LOCATIONS.forEach(l=>{
+  const n = l.type==="hood"? 60 : l.type==="place"? 45 : 30;
+  addCluster(l.x,l.y,n, l.type==="hood"?130:90, l.type!=="hood");
+});
+// extra dense downtown
+addCluster(2650,1300,240,320,true);
+addCluster(3200,1500,160,260,true);
+
+/* ---------- ENTITIES ---------- */
+const player = {
+  x: loc("Mall Road").x, y: loc("Mall Road").y+40,
+  vx:0, vy:0, r:13, dir:0, speed:0,
+  hp:100, money:2500, wanted:0, inCar:false, car:null, name:"Nikhil"
+};
+
+// Cars: player parkable + traffic
+const cars = [];
+function makeCar(x,y,color,traffic){
+  return {x,y,vx:0,vy:0,angle:Math.random()*6.28,speed:0,color,traffic:!!traffic,
+          w:46,h:24,route:null,routeI:0,cool:0,hp:100,horn:0};
+}
+// parked cars near landmarks
+["Mall Road","The Ridge","Sanjauli","HP University","Chhota Shimla","Bantony Castle","Navbahar","Boileauganj","Summer Hill"]
+  .forEach(n=>{const L=loc(n); cars.push(makeCar(L.x+30,L.y+30,carColor(),false));});
+// traffic cars roaming roads
+const trafficColors=["#d43a3a","#3a6dd4","#f0c020","#e8e8e8","#37c26a","#222"];
+function carColor(){return trafficColors[Math.floor(Math.random()*trafficColors.length)];}
+for(let i=0;i<18;i++){
+  const seg=roadSegs[Math.floor(Math.random()*roadSegs.length)];
+  const t=Math.random();
+  const c=makeCar(seg.ax+(seg.bx-seg.ax)*t, seg.ay+(seg.by-seg.ay)*t, carColor(), true);
+  c.seg=seg; c.dirSign=Math.random()>.5?1:-1; c.t=t; c.spd=0.6+Math.random()*0.8;
+  cars.push(c);
+}
+// Pedestrians
+const peds=[];
+for(let i=0;i<70;i++){
+  const L=LOCATIONS[Math.floor(Math.random()*LOCATIONS.length)];
+  peds.push({x:L.x+(Math.random()-.5)*160,y:L.y+(Math.random()-.5)*160,
+    vx:0,vy:0,tx:0,ty:0,cool:0,alive:true,c:`hsl(${Math.random()*360},45%,60%)`,skin:`hsl(30,40%,${55+Math.random()*20}%)`});
+}
+
+/* ---------- CHARACTER FACE (uploaded photo) ---------- */
+let faceImg = null;           // uploaded Image
+let faceCanvas = document.createElement('canvas'); faceCanvas.width=faceCanvas.height=48;
+const fctx = faceCanvas.getContext('2d');
+function drawDefaultFace(c){
+  // stylised avatar resembling the reference: dark hair, brown shirt, tan skin
+  const g=c.getContext? c.getContext('2d') : c; const S=c.width||48;
+  g.clearRect(0,0,S,S);
+  g.fillStyle="#3a5a3f"; g.fillRect(0,0,S,S);
+  // shoulders / brown shirt
+  g.fillStyle="#7a4a26"; g.beginPath(); g.ellipse(S/2,S*1.05,S*0.5,S*0.42,0,0,7); g.fill();
+  // neck
+  g.fillStyle="#c99a6a"; g.fillRect(S*0.42,S*0.6,S*0.16,S*0.2);
+  // face
+  g.fillStyle="#d6a878"; g.beginPath(); g.ellipse(S/2,S*0.46,S*0.26,S*0.30,0,0,7); g.fill();
+  // hair
+  g.fillStyle="#20150f"; g.beginPath(); g.ellipse(S/2,S*0.28,S*0.29,S*0.20,0,Math.PI,0); g.fill();
+  g.fillRect(S*0.21,S*0.24,S*0.58,S*0.1);
+  // eyes
+  g.fillStyle="#1a120c"; g.fillRect(S*0.38,S*0.44,S*0.06,S*0.05); g.fillRect(S*0.56,S*0.44,S*0.06,S*0.05);
+  // smile
+  g.strokeStyle="#7a4a30"; g.lineWidth=1.4; g.beginPath(); g.arc(S/2,S*0.5,S*0.1,0.15,Math.PI-0.15); g.stroke();
+}
+function refreshFaceCanvas(){
+  if(faceImg){
+    fctx.clearRect(0,0,48,48);
+    // cover-fit
+    const s=Math.min(faceImg.width,faceImg.height);
+    fctx.drawImage(faceImg,(faceImg.width-s)/2,(faceImg.height-s)/2,s,s,0,0,48,48);
+  } else drawDefaultFace(faceCanvas);
+  renderCharCards();
+}
+function renderCharCards(){
+  const frame=document.getElementById('charFrame');
+  frame.innerHTML=""; const clone=faceCanvas.cloneNode(); clone.getContext('2d').drawImage(faceCanvas,0,0); frame.appendChild(clone);
+  const av=document.getElementById('startAvatar'); av.innerHTML="";
+  const c2=faceCanvas.cloneNode(); c2.getContext('2d').drawImage(faceCanvas,0,0); av.appendChild(c2);
+}
+drawDefaultFace(faceCanvas); renderCharCards();
+
+// load saved photo/name
+try{
+  const saved=localStorage.getItem('shimla_face');
+  if(saved){ const im=new Image(); im.onload=()=>{faceImg=im;refreshFaceCanvas();}; im.src=saved; }
+  const nm=localStorage.getItem('shimla_name'); if(nm){document.getElementById('nameInput').value=nm; player.name=nm;}
+}catch(e){}
+
+document.getElementById('photoInput').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=ev=>{ const im=new Image(); im.onload=()=>{
+      faceImg=im; refreshFaceCanvas();
+      try{ // downscale before saving to localStorage
+        const t=document.createElement('canvas'); t.width=t.height=128;
+        const s=Math.min(im.width,im.height);
+        t.getContext('2d').drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,128,128);
+        localStorage.setItem('shimla_face',t.toDataURL('image/jpeg',0.85));
+      }catch(_){}
+    }; im.src=ev.target.result; };
+  rd.readAsDataURL(f);
+});
+
+/* ---------- INPUT ---------- */
+const keys={};
+addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true;
+  if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(e.key.toLowerCase())) e.preventDefault();
+  if(e.key.toLowerCase()==='e') toggleCar();
+});
+addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
+
+function toggleCar(){
+  if(player.inCar){
+    // exit
+    const c=player.car; player.inCar=false;
+    player.x=c.x+Math.cos(c.angle+1.57)*30; player.y=c.y+Math.sin(c.angle+1.57)*30;
+    player.car=null; c.driver=false;
+  } else {
+    // enter nearest car within range
+    let best=null,bd=60*60;
+    for(const c of cars){ const d=(c.x-player.x)**2+(c.y-player.y)**2; if(d<bd){bd=d;best=c;} }
+    if(best){ player.inCar=true; player.car=best; best.driver=true; best.traffic=false;
+      toast(carName(best),"Vehicle acquired"); }
+  }
+}
+const carNames=["HRTC Taxi","Ridge Cruiser","Deodar 4x4","Sumo Gold","Himalayan","Toy-Train Van","Apple Hauler"];
+function carName(c){ if(!c._name) c._name=carNames[Math.floor(Math.random()*carNames.length)]; return c._name; }
+
+/* ---------- MISSIONS ---------- */
+const MISSIONS=[
+  {obj:"Reach The Ridge for the evening crowd", target:"The Ridge", reward:800},
+  {obj:"Pray at Jakhoo Temple (top of the hill)", target:"Jakhoo Temple", reward:1200},
+  {obj:"Grab momos at Lakkar Bazaar", target:"Lakkar Bazaar", reward:600},
+  {obj:"Deliver files to HP Secretariat", target:"HP Secretariat", reward:1500},
+  {obj:"Photoshoot at Scandal Point", target:"Scandal Point", reward:700},
+  {obj:"Tour the haunted Bantony Castle", target:"Bantony Castle", reward:1400},
+  {obj:"Attend a lecture at HP University", target:"HP University", reward:900},
+  {obj:"Sunset at Summer Hill", target:"Summer Hill", reward:1000},
+  {obj:"Night ride down to Kachi Ghati", target:"Kachi Ghati", reward:1600},
+  {obj:"Free roam — explore all of Shimla!", target:null, reward:0},
+];
+let missionI=0;
+function setMission(i){ missionI=i; const m=MISSIONS[i];
+  document.getElementById('mObj').textContent=m.obj;
+}
+setMission(0);
+
+/* ---------- HELPERS ---------- */
+function toast(big,sub){
+  const t=document.getElementById('toast');
+  document.getElementById('toastBig').textContent=big;
+  t.querySelector('.sub').textContent=sub||"";
+  t.classList.add('show'); clearTimeout(toast._t);
+  toast._t=setTimeout(()=>t.classList.remove('show'),1800);
+}
+let curArea="";
+function nearestLocation(){
+  let best=null,bd=1e9;
+  for(const l of LOCATIONS){ const d=(l.x-player.x)**2+(l.y-player.y)**2; if(d<bd){bd=d;best=l;} }
+  return {l:best,d:Math.sqrt(bd)};
+}
+function fmt(n){ return n.toLocaleString('en-IN'); }
+function updateHUD(){
+  document.getElementById('money').textContent=fmt(player.money);
+  document.getElementById('hpbar').style.width=Math.max(0,player.hp)+'%';
+  const s=document.getElementById('stars');
+  let html=""; for(let i=0;i<5;i++) html+=`<span class="${i<player.wanted?'on':''}">★</span>`;
+  s.innerHTML=html;
+  const m=MISSIONS[missionI];
+  if(m.target){ const L=loc(m.target); const d=Math.hypot(L.x-player.x,L.y-player.y);
+    document.getElementById('mDist').textContent=Math.round(d)+' m';
+  } else document.getElementById('mDist').textContent='∞';
+}
+
+/* ---------- COLLISION (buildings) ---------- */
+function collideBuildings(nx,ny,r){
+  for(const b of buildings){
+    if(nx>b.x-r&&nx<b.x+b.w+r&&ny>b.y-r&&ny<b.y+b.h+r){
+      return true;
+    }
+  }
+  return false;
+}
+
+/* ---------- UPDATE ---------- */
+let paused=false, gameStarted=false, dayT=0.35;
+function update(dt){
+  if(paused||!gameStarted) return;
+  dayT=(dayT+dt*0.006)%1;
+
+  // ----- player / car control -----
+  const up=keys['w']||keys['arrowup'], down=keys['s']||keys['arrowdown'],
+        left=keys['a']||keys['arrowleft'], right=keys['d']||keys['arrowright'],
+        sprint=keys['shift'], brake=keys[' '];
+
+  if(player.inCar){
+    const c=player.car;
+    const accel = up?0.28:(down?-0.20:0);
+    c.speed += accel; c.speed *= brake?0.86:0.965;
+    c.speed = Math.max(-3.2, Math.min(7.5, c.speed));
+    const steer = (left?-1:0)+(right?1:0);
+    if(Math.abs(c.speed)>0.2) c.angle += steer*0.045*(c.speed>0?1:-1)*Math.min(1,Math.abs(c.speed)/3);
+    const nx=c.x+Math.cos(c.angle)*c.speed, ny=c.y+Math.sin(c.angle)*c.speed;
+    if(!collideBuildings(nx,ny,16)){ c.x=nx; c.y=ny; }
+    else { c.speed*=-0.3; player.hp-=Math.abs(c.speed)>1?0.6:0; }
+    c.x=Math.max(10,Math.min(WORLD.w-10,c.x)); c.y=Math.max(10,Math.min(WORLD.h-10,c.y));
+    player.x=c.x; player.y=c.y; player.dir=c.angle; player.speed=c.speed;
+    if(brake&&Math.abs(c.speed)<0.5){ c.horn=1; }
+  } else {
+    let ax=(right?1:0)-(left?1:0), ay=(down?1:0)-(up?1:0);
+    const sp=(sprint?3.2:2.0);
+    if(ax||ay){ const m=Math.hypot(ax,ay); ax/=m; ay/=m; player.dir=Math.atan2(ay,ax); }
+    const nx=player.x+ax*sp, ny=player.y+ay*sp;
+    if(!collideBuildings(nx,player.y,player.r)) player.x=nx;
+    if(!collideBuildings(player.x,ny,player.r)) player.y=ny;
+    player.x=Math.max(6,Math.min(WORLD.w-6,player.x));
+    player.y=Math.max(6,Math.min(WORLD.h-6,player.y));
+    player.speed=Math.hypot(ax,ay)*sp;
+  }
+
+  // ----- traffic cars -----
+  for(const c of cars){
+    if(c===player.car) continue;
+    if(c.traffic&&c.seg){
+      c.t += (c.spd*c.dirSign)/Math.max(60,Math.hypot(c.seg.bx-c.seg.ax,c.seg.by-c.seg.ay));
+      if(c.t>1){c.t=1;c.dirSign=-1;} if(c.t<0){c.t=0;c.dirSign=1;}
+      const tx=c.seg.ax+(c.seg.bx-c.seg.ax)*c.t, ty=c.seg.ay+(c.seg.by-c.seg.ay)*c.t;
+      c.angle=Math.atan2(ty-c.y,tx-c.x)||c.angle; c.x=tx; c.y=ty;
+    }
+    if(c.horn>0)c.horn-=dt*0.02;
+  }
+
+  // ----- pedestrians -----
+  for(const p of peds){
+    if(!p.alive) continue;
+    p.cool-=dt;
+    if(p.cool<=0){ p.tx=p.x+(Math.random()-.5)*160; p.ty=p.y+(Math.random()-.5)*160; p.cool=1500+Math.random()*2500; }
+    const dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy)||1;
+    p.x+=dx/d*0.4; p.y+=dy/d*0.4;
+    // hit by player car
+    if(player.inCar&&Math.abs(player.speed)>2){
+      if((p.x-player.x)**2+(p.y-player.y)**2 < 22*22){
+        p.alive=false; addWanted(1); player.money=Math.max(0,player.money-200);
+        toast("PEDESTRIAN DOWN","-₹200 · Wanted +1");
+      }
+    }
+  }
+
+  // ----- police response to wanted -----
+  if(player.wanted>0){ police.forEach(updateCop); }
+  copSpawnTimer-=dt;
+  if(player.wanted>=2 && copSpawnTimer<=0 && police.length<player.wanted+1){
+    spawnCop(); copSpawnTimer=4000;
+  }
+  // wanted decays slowly if you behave
+  wantedDecay-=dt; if(wantedDecay<=0){ if(player.wanted>0 && player.speed<3){/* stay still lowers */ if(Math.random()<0.15){addWanted(-1);} } wantedDecay=3000; }
+
+  // ----- mission check -----
+  const m=MISSIONS[missionI];
+  if(m.target){
+    const L=loc(m.target);
+    if(Math.hypot(L.x-player.x,L.y-player.y)<70){
+      player.money+=m.reward;
+      toast("MISSION COMPLETE","+₹"+m.reward);
+      if(missionI<MISSIONS.length-1) setMission(missionI+1);
+    }
+  }
+
+  // ----- area toast -----
+  const near=nearestLocation();
+  if(near.d<95 && near.l.name!==curArea){
+    curArea=near.l.name;
+    const sub = near.l.type==="hood"?"Neighbourhood":near.l.type==="place"?"Landmark":near.l.note||"Point of Interest";
+    toast(near.l.name.toUpperCase(),sub);
+  } else if(near.d>200){ curArea=""; }
+
+  // ----- health / death -----
+  if(player.hp<=0){ gameOver(); }
+  player.hp=Math.min(100,player.hp+dt*0.002); // slow regen
+}
+
+// ----- police -----
+const police=[];
+let copSpawnTimer=0, wantedDecay=3000;
+function spawnCop(){
+  const ang=Math.random()*6.28, dist=500;
+  police.push({x:player.x+Math.cos(ang)*dist, y:player.y+Math.sin(ang)*dist, angle:0, speed:0});
+}
+function updateCop(c){
+  const dx=player.x-c.x, dy=player.y-c.y, d=Math.hypot(dx,dy)||1;
+  c.angle=Math.atan2(dy,dx);
+  const spd=player.inCar?4.6:3.4;
+  c.x+=dx/d*spd; c.y+=dy/d*spd;
+  if(d<26){ player.hp-=0.4; if(player.speed<2) c._grab=(c._grab||0)+1; }
+}
+function addWanted(n){ player.wanted=Math.max(0,Math.min(5,player.wanted+n)); }
+
+/* ---------- CAMERA ---------- */
+const cam={x:player.x,y:player.y};
+function updateCamera(){
+  cam.x += (player.x-cam.x)*0.12;
+  cam.y += (player.y-cam.y)*0.12;
+}
+
+/* ---------- RENDER ---------- */
+function worldToScreen(x,y){ return [x-cam.x+W/2, y-cam.y+H/2]; }
+
+function draw(){
+  // sky/ground tint by time of day
+  const night = Math.max(0, Math.cos(dayT*Math.PI*2)); // 0 day .. 1 night-ish
+  const isNight = dayT>0.5;
+  ctx.fillStyle = isNight ? "#0e1a14" : "#20422c";
+  ctx.fillRect(0,0,W,H);
+
+  // ground texture: forest base
+  ctx.save();
+  ctx.translate(W/2-cam.x, H/2-cam.y);
+
+  // grass patches
+  drawGround(isNight);
+
+  // roads
+  drawRoads(isNight);
+
+  // scenery + buildings + entities sorted by y for pseudo-3D
+  const drawList=[];
+  for(const t of trees) if(inView(t.x,t.y,60)) drawList.push({y:t.y,kind:'tree',o:t});
+  for(const b of buildings) if(inView(b.x,b.y,80)) drawList.push({y:b.y+b.h,kind:'bld',o:b});
+  for(const p of peds) if(p.alive&&inView(p.x,p.y,40)) drawList.push({y:p.y,kind:'ped',o:p});
+  for(const c of cars) if(inView(c.x,c.y,60)) drawList.push({y:c.y,kind:'car',o:c});
+  for(const c of police) drawList.push({y:c.y,kind:'cop',o:c});
+  drawList.push({y:player.y,kind:'player',o:player});
+  drawList.sort((a,b)=>a.y-b.y);
+  for(const d of drawList){
+    if(d.kind==='tree') drawTree(d.o,isNight);
+    else if(d.kind==='bld') drawBuilding(d.o,isNight);
+    else if(d.kind==='ped') drawPed(d.o);
+    else if(d.kind==='car') drawCar(d.o);
+    else if(d.kind==='cop') drawCop(d.o);
+    else if(d.kind==='player') drawPlayer();
+  }
+
+  // location labels
+  drawLabels(isNight);
+
+  // mission marker beam
+  drawMissionBeam();
+
+  ctx.restore();
+
+  // night overlay
+  if(isNight){
+    ctx.fillStyle=`rgba(6,10,26,${0.35*night})`; ctx.fillRect(0,0,W,H);
+  }
+
+  drawMinimap();
+  updateHUD();
+}
+function inView(x,y,pad){
+  const sx=x-cam.x+W/2, sy=y-cam.y+H/2;
+  return sx>-pad&&sx<W+pad&&sy>-pad&&sy<H+pad;
+}
+
+function drawGround(night){
+  // large soft patches for hills
+  const seed=mulberry(7);
+  ctx.globalAlpha=0.5;
+  for(let i=0;i<120;i++){
+    const x=seed()*WORLD.w, y=seed()*WORLD.h, r=60+seed()*160;
+    ctx.fillStyle= night? (seed()>.5?"#12281c":"#0f2016") : (seed()>.5?"#2b5537":"#245030");
+    ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  // world border cliff
+  ctx.strokeStyle="rgba(0,0,0,.4)"; ctx.lineWidth=20;
+  ctx.strokeRect(0,0,WORLD.w,WORLD.h);
+}
+function drawRoads(night){
+  ctx.lineCap="round"; ctx.lineJoin="round";
+  // road base
+  ctx.strokeStyle= night?"#2a2a2e":"#4a4a50"; ctx.lineWidth=ROAD_W;
+  for(const s of roadSegs){ ctx.beginPath(); ctx.moveTo(s.ax,s.ay); ctx.lineTo(s.bx,s.by); ctx.stroke(); }
+  // center dashes
+  ctx.strokeStyle= night?"#5a5a30":"#e8d24a"; ctx.lineWidth=2.4; ctx.setLineDash([14,16]);
+  for(const s of roadSegs){ ctx.beginPath(); ctx.moveTo(s.ax,s.ay); ctx.lineTo(s.bx,s.by); ctx.stroke(); }
+  ctx.setLineDash([]);
+}
+function drawTree(t,night){
+  // shadow
+  ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(t.x+3,t.y+3,t.r*0.9,t.r*0.4,0,0,7); ctx.fill();
+  // deodar/pine: layered triangles
+  const g = night?"#153a20":"#256b34";
+  ctx.fillStyle=g;
+  for(let k=0;k<3;k++){
+    const rr=t.r*(1-k*0.22), yy=t.y - k*t.r*0.55;
+    ctx.beginPath(); ctx.moveTo(t.x,yy-rr*1.5); ctx.lineTo(t.x-rr,yy+rr*0.5); ctx.lineTo(t.x+rr,yy+rr*0.5); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle="#5b3a22"; ctx.fillRect(t.x-2,t.y+t.r*0.4,4,t.r*0.5);
+}
+function drawBuilding(b,night){
+  ctx.fillStyle="rgba(0,0,0,.25)"; ctx.fillRect(b.x+4,b.y+5,b.w,b.h);
+  ctx.fillStyle=b.c; ctx.fillRect(b.x,b.y,b.w,b.h);
+  // roof shading (tin roofs of shimla)
+  ctx.fillStyle= b.roof? "rgba(180,60,50,.55)" : "rgba(255,255,255,.10)";
+  ctx.fillRect(b.x,b.y,b.w,Math.min(6,b.h*0.35));
+  ctx.strokeStyle="rgba(0,0,0,.3)"; ctx.lineWidth=1; ctx.strokeRect(b.x,b.y,b.w,b.h);
+  // lit windows at night
+  if(night){ ctx.fillStyle="rgba(255,214,120,.85)";
+    for(let wx=b.x+3;wx<b.x+b.w-3;wx+=7) for(let wy=b.y+6;wy<b.y+b.h-3;wy+=7)
+      if((wx*wy)%3===0) ctx.fillRect(wx,wy,2.4,2.4);
+  }
+}
+function drawPed(p){
+  ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(p.x+1,p.y+6,5,2.5,0,0,7); ctx.fill();
+  ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,7); ctx.fill();       // body
+  ctx.fillStyle=p.skin; ctx.beginPath(); ctx.arc(p.x,p.y-4,3,0,7); ctx.fill();     // head
+}
+function drawCar(c){
+  ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(c.angle);
+  ctx.fillStyle="rgba(0,0,0,.3)"; ctx.fillRect(-c.w/2+3,-c.h/2+4,c.w,c.h);
+  ctx.fillStyle=c.color; roundRect(-c.w/2,-c.h/2,c.w,c.h,5); ctx.fill();
+  // windshield
+  ctx.fillStyle="rgba(20,30,40,.85)"; roundRect(c.w*0.05,-c.h/2+3,c.w*0.28,c.h-6,2); ctx.fill();
+  ctx.fillStyle="rgba(120,150,170,.6)"; roundRect(-c.w*0.28,-c.h/2+3,c.w*0.22,c.h-6,2); ctx.fill();
+  // headlights
+  ctx.fillStyle="#fff6c0"; ctx.fillRect(c.w/2-3,-c.h/2+2,3,4); ctx.fillRect(c.w/2-3,c.h/2-6,3,4);
+  ctx.restore();
+  if(c.horn>0){ ctx.fillStyle="rgba(255,255,255,.9)"; ctx.font="bold 13px sans-serif"; ctx.fillText("PEEP!",c.x-14,c.y-22); }
+}
+function drawCop(c){
+  ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(c.angle);
+  ctx.fillStyle="rgba(0,0,0,.3)"; ctx.fillRect(-25,-11,50,26);
+  ctx.fillStyle="#1a3d8f"; roundRect(-24,-13,48,26,5); ctx.fill();
+  ctx.fillStyle="#fff"; ctx.fillRect(-24,-4,48,8);
+  // lightbar
+  const t=Date.now()%400<200; ctx.fillStyle=t?"#ff2a2a":"#2a6bff"; ctx.fillRect(-6,-6,5,12);
+  ctx.fillStyle=t?"#2a6bff":"#ff2a2a"; ctx.fillRect(1,-6,5,12);
+  ctx.restore();
+}
+function drawPlayer(){
+  const p=player;
+  ctx.fillStyle="rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(p.x+2,p.y+8,10,4,0,0,7); ctx.fill();
+  if(p.inCar) return; // car already drawn
+  // body (brown shirt like reference)
+  ctx.save(); ctx.translate(p.x,p.y);
+  ctx.fillStyle="#7a4a26"; ctx.beginPath(); ctx.arc(0,2,9,0,7); ctx.fill();
+  // head = face image, clipped circle
+  ctx.save(); ctx.beginPath(); ctx.arc(0,-6,8,0,7); ctx.clip();
+  ctx.drawImage(faceCanvas,-8,-14,16,16); ctx.restore();
+  ctx.strokeStyle="rgba(0,0,0,.4)"; ctx.lineWidth=1.4; ctx.beginPath(); ctx.arc(0,-6,8,0,7); ctx.stroke();
+  // facing indicator
+  ctx.fillStyle="rgba(255,204,0,.9)"; ctx.beginPath();
+  ctx.arc(Math.cos(p.dir)*12,Math.sin(p.dir)*12+2,2.2,0,7); ctx.fill();
+  ctx.restore();
+  // name tag
+  ctx.fillStyle="#fff"; ctx.font="bold 11px sans-serif"; ctx.textAlign="center";
+  ctx.strokeStyle="rgba(0,0,0,.7)"; ctx.lineWidth=3; ctx.strokeText(p.name,p.x,p.y-20);
+  ctx.fillText(p.name,p.x,p.y-20); ctx.textAlign="left";
+}
+function drawLabels(night){
+  ctx.textAlign="center";
+  for(const l of LOCATIONS){
+    if(!inView(l.x,l.y,140)) continue;
+    const col = l.type==="landmark"?"#37c26a": l.type==="place"?"#e14ad0":"#cfd6da";
+    // marker pole
+    ctx.strokeStyle="rgba(255,255,255,.5)"; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(l.x,l.y); ctx.lineTo(l.x,l.y-30); ctx.stroke();
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(l.x,l.y,4,0,7); ctx.fill();
+    // label chip
+    ctx.font="bold 12px 'Segoe UI',sans-serif";
+    const tw=ctx.measureText(l.name).width;
+    ctx.fillStyle="rgba(8,14,10,.82)"; roundRect(l.x-tw/2-7,l.y-46,tw+14,18,5); ctx.fill();
+    ctx.fillStyle="#fff"; ctx.fillText(l.name,l.x,l.y-33);
+    if(l.note){ ctx.fillStyle=col; ctx.font="10px sans-serif"; ctx.fillText(l.note,l.x,l.y-49); }
+  }
+  ctx.textAlign="left";
+}
+function drawMissionBeam(){
+  const m=MISSIONS[missionI]; if(!m.target) return;
+  const L=loc(m.target);
+  const pulse=(Math.sin(Date.now()/300)+1)/2;
+  ctx.fillStyle=`rgba(255,204,0,${0.15+pulse*0.2})`;
+  ctx.beginPath(); ctx.arc(L.x,L.y,55,0,7); ctx.fill();
+  ctx.strokeStyle="rgba(255,204,0,.9)"; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.arc(L.x,L.y,60,0,7); ctx.stroke();
+  // arrow above player pointing to target if far
+  const d=Math.hypot(L.x-player.x,L.y-player.y);
+  if(d>180){
+    const a=Math.atan2(L.y-player.y,L.x-player.x);
+    ctx.save(); ctx.translate(player.x+Math.cos(a)*46,player.y+Math.sin(a)*46); ctx.rotate(a);
+    ctx.fillStyle="rgba(255,204,0,.95)"; ctx.beginPath();
+    ctx.moveTo(10,0); ctx.lineTo(-6,-7); ctx.lineTo(-6,7); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function roundRect(x,y,w,h,r){ ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+/* ---------- MINIMAP ---------- */
+const mini=document.getElementById('mini'), mctx=mini.getContext('2d');
+function drawMinimap(){
+  const R=95, scale=0.052;
+  mctx.clearRect(0,0,190,190);
+  mctx.fillStyle="#12261a"; mctx.beginPath(); mctx.arc(R,R,R,0,7); mctx.fill();
+  mctx.save(); mctx.beginPath(); mctx.arc(R,R,R,0,7); mctx.clip();
+  mctx.translate(R,R);
+  // roads
+  mctx.strokeStyle="#3d5546"; mctx.lineWidth=2;
+  for(const s of roadSegs){ mctx.beginPath();
+    mctx.moveTo((s.ax-player.x)*scale,(s.ay-player.y)*scale);
+    mctx.lineTo((s.bx-player.x)*scale,(s.by-player.y)*scale); mctx.stroke(); }
+  // location dots
+  for(const l of LOCATIONS){
+    const dx=(l.x-player.x)*scale, dy=(l.y-player.y)*scale;
+    mctx.fillStyle=l.type==="landmark"?"#37c26a":l.type==="place"?"#e14ad0":"#9aa7ad";
+    mctx.beginPath(); mctx.arc(dx,dy,2.5,0,7); mctx.fill();
+  }
+  // mission target
+  const m=MISSIONS[missionI];
+  if(m.target){ const L=loc(m.target);
+    mctx.fillStyle="#ffcc00"; mctx.beginPath();
+    mctx.arc((L.x-player.x)*scale,(L.y-player.y)*scale,4,0,7); mctx.fill(); }
+  // police
+  mctx.fillStyle="#3a6dff";
+  for(const c of police){ mctx.beginPath(); mctx.arc((c.x-player.x)*scale,(c.y-player.y)*scale,2.5,0,7); mctx.fill(); }
+  // player
+  mctx.fillStyle="#fff"; mctx.save(); mctx.rotate(player.dir+Math.PI/2);
+  mctx.beginPath(); mctx.moveTo(0,-5); mctx.lineTo(4,4); mctx.lineTo(-4,4); mctx.closePath(); mctx.fill();
+  mctx.restore(); mctx.restore();
+  // ring + N
+  mctx.strokeStyle="rgba(255,255,255,.3)"; mctx.lineWidth=2; mctx.beginPath(); mctx.arc(R,R,R-1,0,7); mctx.stroke();
+  mctx.fillStyle="#e0453a"; mctx.font="bold 11px sans-serif"; mctx.textAlign="center"; mctx.fillText("N",R,14);
+}
+
+/* ---------- GAME OVER / RESPAWN ---------- */
+function gameOver(){
+  paused=true;
+  document.getElementById('over').style.display='flex';
+}
+document.getElementById('respawnBtn').onclick=()=>{
+  const L=loc("Mall Road");
+  player.x=L.x; player.y=L.y+40; player.hp=100; player.wanted=0; player.inCar=false; player.car=null;
+  player.money=Math.max(0,player.money-500);
+  police.length=0;
+  document.getElementById('over').style.display='none'; paused=false;
+};
+
+/* ---------- FAST TRAVEL ---------- */
+document.getElementById('btnMap').onclick=()=>{
+  if(!gameStarted) return;
+  const names=LOCATIONS.map(l=>l.name).join(", ");
+  const pick=prompt("Fast travel to which Shimla location?\n\n"+names,"Jakhoo Temple");
+  if(!pick) return;
+  const L=LOCATIONS.find(l=>l.name.toLowerCase()===pick.trim().toLowerCase());
+  if(L){ player.x=L.x; player.y=L.y+30; if(player.inCar){player.car.x=L.x;player.car.y=L.y+30;} toast("Fast Travelled","→ "+L.name); }
+  else toast("Unknown place","Try exact name");
+};
+document.getElementById('btnCar').onclick=()=>{ if(gameStarted&&!player.inCar) toggleCar(); else if(player.inCar) toggleCar(); };
+document.getElementById('btnPause').onclick=()=>{ paused=!paused; document.getElementById('btnPause').textContent=paused?'▶ Resume':'⏸ Pause'; };
+
+/* ---------- START ---------- */
+document.getElementById('startBtn').onclick=()=>{
+  const nm=document.getElementById('nameInput').value.trim()||"Player";
+  player.name=nm; try{localStorage.setItem('shimla_name',nm);}catch(e){}
+  document.getElementById('start').style.display='none';
+  gameStarted=true;
+  toast("WELCOME TO SHIMLA","Elevation 2,205 m");
+};
+
+/* ---------- MAIN LOOP ---------- */
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(50,now-last); last=now;
+  update(dt);
+  updateCamera();
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
