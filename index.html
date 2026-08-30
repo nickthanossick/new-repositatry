@@ -916,16 +916,18 @@ function bindBatches(){
       kstrip(); setTimeout(()=>go('batches'),800); };
     r.readAsText(f);
   });
-  // Replace batch
+  // Replace batch — open the file picker straight away (a confirm() first would block the file dialog),
+  // then confirm inside the change handler before actually replacing.
   $('#replBatchBtn')&&$('#replBatchBtn').addEventListener('click',()=>{
     const sel=$('#replBatchSel'); const batch=sel&&sel.value;
-    if(!batch){$('#admMsg').innerHTML='<span style="color:#C0453A">Please select a batch to replace first.</span>';return;}
-    if(!confirm(`Replace ALL ${nf(STUD.filter(s=>s.batch===batch).length)} students in ${batch}?\n\nThe old data will be removed and your CSV will be loaded in its place. Placements and other records from other batches are NOT affected.`))return;
-    replFile.click();
+    if(!batch){$('#admMsg').innerHTML='<span style="color:#C0453A">Pehle upar dropdown se batch chuno (jaise Batch 9), phir Replace batch dabao.</span>';return;}
+    $('#admMsg').innerHTML=`<span style="color:#3A4A5C">Choose the new CSV for <b>${batch}</b>…</span>`;
+    replFile.value=''; replFile.click();
   });
   replFile&&replFile.addEventListener('change',e=>{
     const f=e.target.files[0]; if(!f)return;
-    const batch=$('#replBatchSel').value; if(!batch)return;
+    const batch=$('#replBatchSel').value; if(!batch){replFile.value='';return;}
+    if(!confirm(`Replace ALL ${nf(STUD.filter(s=>s.batch===batch).length)} students in ${batch} with this CSV?\n\nThe old ${batch} data will be deleted and the CSV will become the final ${batch} data. Other batches are NOT affected.`)){replFile.value='';return;}
     const r=new FileReader();
     r.onload=()=>{
       const rows=parseCSVtext(r.result); if(!rows.length)return;
