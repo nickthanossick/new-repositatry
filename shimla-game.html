@@ -276,12 +276,12 @@ function makeCar(x,y,color,traffic){
   return {x,y,vx:0,vy:0,angle:Math.random()*6.28,speed:0,color,traffic:!!traffic,
           w:46,h:24,route:null,routeI:0,cool:0,hp:100,horn:0};
 }
+const trafficColors=["#d43a3a","#3a6dd4","#f0c020","#e8e8e8","#37c26a","#222"];
+function carColor(){return trafficColors[Math.floor(Math.random()*trafficColors.length)];}
 // parked cars near landmarks
 ["Mall Road","The Ridge","Sanjauli","HP University","Chhota Shimla","Bantony Castle","Navbahar","Boileauganj","Summer Hill"]
   .forEach(n=>{const L=loc(n); cars.push(makeCar(L.x+30,L.y+30,carColor(),false));});
 // traffic cars roaming roads
-const trafficColors=["#d43a3a","#3a6dd4","#f0c020","#e8e8e8","#37c26a","#222"];
-function carColor(){return trafficColors[Math.floor(Math.random()*trafficColors.length)];}
 for(let i=0;i<18;i++){
   const seg=roadSegs[Math.floor(Math.random()*roadSegs.length)];
   const t=Math.random();
