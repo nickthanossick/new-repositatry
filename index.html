@@ -565,9 +565,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--placed)!
   <div class="wrap">
     <div class="glass" id="lgCard">
       <div class="row"><div class="lg">S</div><div><h2>Shoolini Online</h2><div class="k">Placement Tracker</div></div></div>
-      <p class="hint">Sign in to access the workspace.</p>
-      <label>Username</label>
-      <input id="lgUser" class="f" autocomplete="username" placeholder="you@shoolini.com">
+      <p class="hint">Enter your password to access the workspace.</p>
       <label>Password</label>
       <input id="lgPass" class="f" type="password" autocomplete="current-password" placeholder="••••••••">
       <div id="lgErr" class="err"></div>
@@ -585,16 +583,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--placed)!
 </div>
 <script>
 (function(){
-  var USER='Nikhil@shoolini.com', PASS='Nikhilheena@12', KEY='pcc_auth_v1';
+  var PASS='04031994', KEY='pcc_auth_v1';
   var gate=document.getElementById('loginGate');
   function unlock(){ gate.style.display='none'; SN.stop(); }
   function attempt(){
-    var u=document.getElementById('lgUser').value.trim(), p=document.getElementById('lgPass').value;
-    if(u.toLowerCase()===USER.toLowerCase() && p===PASS){ try{sessionStorage.setItem(KEY,'1');}catch(e){} unlock(); }
-    else { document.getElementById('lgErr').textContent='Incorrect username or password.'; }
+    var p=document.getElementById('lgPass').value;
+    if(p===PASS){ try{sessionStorage.setItem(KEY,'1');}catch(e){} unlock(); }
+    else { document.getElementById('lgErr').textContent='Incorrect password.'; }
   }
   document.getElementById('lgBtn').addEventListener('click',attempt);
-  ['lgUser','lgPass'].forEach(function(id){ document.getElementById(id).addEventListener('keydown',function(e){ if(e.key==='Enter')attempt(); }); });
+  document.getElementById('lgPass').addEventListener('keydown',function(e){ if(e.key==='Enter')attempt(); });
   // pointer tilt on the login card
   var card=document.getElementById('lgCard');
   document.querySelector('#loginGate .wrap').addEventListener('mousemove',function(e){
