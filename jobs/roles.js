@@ -42,7 +42,9 @@ window.ROLES = [
   { id: 'sales-mgr',     label: 'Sales Manager',                   keywords: ['sales manager', 'sales lead', 'regional sales'] },
   { id: 'csr',           label: 'Customer Service Rep',            keywords: ['customer service', 'service representative', 'csr'] },
   { id: 'ins-loan',      label: 'Insurance / Loan Sales',          keywords: ['insurance sales', 'loan sales', 'financial advisor', 'insurance advisor'] },
-  { id: 'trainee',       label: 'Trainee / Graduate Associate',    keywords: ['trainee', 'graduate associate', 'graduate program', 'apprentice', 'management trainee'] }
+  { id: 'trainee',       label: 'Trainee / Graduate Associate',    keywords: ['trainee', 'graduate associate', 'graduate program', 'apprentice', 'management trainee'] },
+  /* Broad catch-all so many more India roles qualify while staying entry/business oriented. */
+  { id: 'general',       label: 'Other business / entry roles',     keywords: ['associate', 'executive', 'coordinator', 'specialist', 'officer', 'analyst', 'intern', 'internship', 'consultant', 'advisor', 'representative', 'administrator', 'assistant', 'operations', 'account', 'partner', 'growth', 'marketing', 'recruiter', 'talent', 'hr ', 'human resource', 'finance', 'accountant', 'cashier', 'store', 'logistics', 'supply', 'procurement', 'catalog', 'content', 'community', 'delivery', 'program', 'project', 'analytics', 'research'] }
 ];
 
 /* ----- Sector groupings (for the chip filters) ----- */

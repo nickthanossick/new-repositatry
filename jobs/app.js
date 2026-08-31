@@ -13,7 +13,7 @@
   var STORE_KEY = 'careerstiger_store_v1';
   var STORE_TTL_MS = 20 * 60 * 1000;   // how "fresh" a stored snapshot is before we auto-fetch
   var FETCH_TIMEOUT_MS = 12000;
-  var CONCURRENCY = 6;
+  var CONCURRENCY = 8;
   var MAX_JOBS = 500;                    // hard cap on the accumulating pool
   var AUTO_REFRESH_MS = 90 * 1000;       // dynamic: pull new jobs every 90s
 
@@ -385,9 +385,19 @@
     el('jobsFound').textContent = total;
     el('fresherCount').textContent = freshers;
     el('newCount').textContent = STATE.lastAdded;
-    var msg = fromCache ? ('Loaded ' + total + ' saved jobs · fetching more…')
-      : ('Live · ' + total + ' jobs collected' + (STATE.lastAdded ? ' (+' + STATE.lastAdded + ' new)' : '') +
-         ' · ' + live + '/' + boards + ' companies hiring');
+    var progress = ' · ' + Math.min(total, MAX_JOBS) + '/' + MAX_JOBS;
+    var msg;
+    if (fromCache) {
+      msg = 'Loaded ' + total + ' saved jobs · fetching more…';
+    } else if (total >= MAX_JOBS) {
+      msg = 'Live · ' + total + ' jobs collected (max reached) · ' + live + '/' + boards + ' companies hiring';
+    } else if (STATE.lastAdded > 0) {
+      msg = 'Live · +' + STATE.lastAdded + ' new · ' + total + ' jobs collected' + progress +
+        ' · ' + live + '/' + boards + ' companies hiring';
+    } else {
+      msg = 'Up to date · ' + total + ' jobs collected' + progress +
+        ' · ' + live + '/' + boards + ' companies hiring · auto-refresh on';
+    }
     el('status').innerHTML = esc(msg);
   }
 
