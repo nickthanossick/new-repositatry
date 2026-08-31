@@ -1865,6 +1865,14 @@ function appMsg(company){
 }
 // Deduplicate applications into distinct students, split placed vs unique, assign owners equally.
 // coFilter → only consider applications to that company (so the view is per-company, not combined).
+// PAP / enrolment-model badge for an applicant row
+function modelPill(s){
+  if(!s.inBatch) return '<span class="reg">— not in batch</span>';
+  const m=(s.model||'').trim();
+  if(m==='PAP') return '<span class="pill pap">PAP ✓</span>';
+  if(!m) return '<span class="reg">—</span>';
+  return `<span class="pill j2">${m}</span>`;
+}
 function appStudents(coFilter){
   const src=(coFilter&&coFilter!=='all')?APPS.filter(a=>a.company===coFilter):APPS;
   const map={};
@@ -1876,6 +1884,7 @@ function appStudents(coFilter){
     if(a.email&&!map[key].email)map[key].email=a.email;});
   const list=Object.values(map).map(s=>{const m=s.reg&&byReg[s.reg];const placed=!!(m&&m.placed);
     return {reg:s.reg,name:s.name||(m?m.name:''),contact:s.contact||(m?m.phone:''),email:s.email||(m?m.email:''),companies:[...s.cos].join(', '),
+      model:m?(m.model||''):'',inBatch:!!m,
       placed,placedCo:placed?(m.placedIn||m.companies||'—'):''};});
   const placed=list.filter(s=>s.placed).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   const unique=list.filter(s=>!s.placed).sort((a,b)=>((a.reg||a.name)+'').localeCompare((b.reg||b.name)+''));
@@ -1884,9 +1893,9 @@ function appStudents(coFilter){
 }
 function downloadAssigned(){
   const {unique}=appStudents(APPPROCCO);
-  const cols=['owner','reg','name','contact','companies_applied','status'];
+  const cols=['owner','reg','name','pap_model','contact','companies_applied','status'];
   const esc=v=>{v=(v==null?'':String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
-  const lines=[cols.join(',')].concat(unique.map(s=>[s.owner,s.reg,s.name,s.contact,s.companies,'Unique — to pursue'].map(esc).join(',')));
+  const lines=[cols.join(',')].concat(unique.map(s=>[s.owner,s.reg,s.name,(!s.inBatch?'Not in batch':(s.model||'—')),s.contact,s.companies,'Unique — to pursue'].map(esc).join(',')));
   const b=new Blob([lines.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='unique_applicants_assigned.csv';a.click();
 }
 P.apps=()=>{
@@ -1936,9 +1945,9 @@ P.apps=()=>{
   <div class="card pad0" style="margin-bottom:18px"><div style="padding:16px 22px 4px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap"><div><h3>Unique applicants — assigned</h3><div class="sub">Each student: WhatsApp &amp; Email buttons. Message auto-fills their company &amp; the mandatory group link below.</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input id="waLink" placeholder="Paste WhatsApp group / assessment link (mandatory)" style="padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;min-width:280px" value="${(APPLINK||'').replace(/"/g,'&quot;')}">
     <button class="btn" id="ownBulkMail">✉️ Bulk email owner</button><button class="btn pri" id="dlAssigned">⬇ CSV</button></div></div>
-    <div class="exwrap" style="border:0;max-height:460px;overflow:auto"><table class="ex"><thead><tr><th style="text-align:left">Owner</th><th style="text-align:left">Student</th><th style="text-align:left">Reg</th><th style="text-align:left">Contact</th><th style="text-align:left">Companies applied</th><th style="text-align:left">Reach out</th></tr></thead>
+    <div class="exwrap" style="border:0;max-height:460px;overflow:auto"><table class="ex"><thead><tr><th style="text-align:left">Owner</th><th style="text-align:left">Student</th><th style="text-align:left">Reg</th><th style="text-align:left">PAP / Model</th><th style="text-align:left">Contact</th><th style="text-align:left">Companies applied</th><th style="text-align:left">Reach out</th></tr></thead>
       <tbody>${unique.map(s=>{const ph=String(s.contact||'').replace(/[^0-9]/g,'').replace(/^0+/,'');const wa=ph?'https://wa.me/91'+ph.slice(-10)+'?text='+encodeURIComponent(appMsg(s.companies)):'';const ml=s.email?'mailto:'+s.email+'?subject='+encodeURIComponent('Mandatory: your application for '+(s.companies||'the company'))+'&body='+encodeURIComponent(appMsg(s.companies)):'';const tel=ph?'tel:+91'+ph.slice(-10):'';
-      return `<tr class="clk" data-reg="${s.reg}"><td style="text-align:left"><span class="ownpill" style="background:${OWNCOL[s.owner]}22;color:${OWNCOL[s.owner]}">${s.owner}</span></td><td style="text-align:left">${s.name||'—'}</td><td style="text-align:left">${s.reg||'—'}</td><td style="text-align:left">${s.contact||'—'}</td><td style="text-align:left">${s.companies||'—'}</td>
+      return `<tr class="clk" data-reg="${s.reg}"><td style="text-align:left"><span class="ownpill" style="background:${OWNCOL[s.owner]}22;color:${OWNCOL[s.owner]}">${s.owner}</span></td><td style="text-align:left">${s.name||'—'}</td><td style="text-align:left">${s.reg||'—'}</td><td style="text-align:left">${modelPill(s)}</td><td style="text-align:left">${s.contact||'—'}</td><td style="text-align:left">${s.companies||'—'}</td>
       <td style="text-align:left" onclick="event.stopPropagation()">${tel?`<a class="callbtn" href="${tel}">📞 Call</a>`:''}${wa?`<a class="wabtn" href="${wa}" target="_blank">WhatsApp</a>`:''}${ml?`<a class="mailbtn" href="${ml}">Email</a>`:''}${!wa&&!ml&&!tel?'<span class="reg">no contact</span>':''}</td></tr>`;}).join('')}</tbody></table></div></div>
   ${placed.length?`<div class="card pad0" style="margin-bottom:18px"><div style="padding:16px 22px 4px"><h3>Already placed — filtered out</h3><div class="sub">These applicants are already placed; where they are placed is shown so you don't chase them again.</div></div>
     <div class="exwrap" style="border:0;max-height:320px;overflow:auto"><table class="ex"><thead><tr><th style="text-align:left">Student</th><th style="text-align:left">Reg</th><th style="text-align:left">Contact</th><th style="text-align:left">Placed at</th><th style="text-align:left">Applied to</th></tr></thead>
