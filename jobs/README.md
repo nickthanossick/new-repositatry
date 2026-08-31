@@ -61,6 +61,24 @@ company's fetch status and how many India-matching jobs it returned. Prune any r
   that runs in a browser can ultimately be inspected. For real protection, move the fetching to
   a private server. The readable source lives in this `jobs/` folder for your own maintenance.
 
+## Live ecosystem — hourly backend scraper
+
+Besides the in-browser fetch, a **GitHub Actions workflow** (`.github/workflows/scrape-jobs.yml`)
+runs `jobs/scrape.js` **every hour**, server-side (no CORS/limits), and commits the results to
+`jobs/data/jobs.json`. The app loads that file on startup (from `./data/jobs.json`, or the
+`raw.githubusercontent.com` URL for the standalone build), so the board shows a large,
+**always-growing** pool instantly — jobs keep arriving hourly even when no one has the tab open.
+The status bar shows `feed updated Xm ago`.
+
+- **Accumulation + retention:** each run merges new postings by apply URL and keeps every job
+  seen in the last **21 days** (cap 2000), so the pool climbs toward and holds **1000+** over
+  the first hours/days of running.
+- **⚠️ GitHub rule:** the hourly `schedule:` cron only fires from the repository's **default
+  branch**. On a feature branch it runs on **push** and via **Run workflow** (manual). Merge the
+  branch to `main` for the automatic hourly cadence.
+- **Single source of truth:** the scraper `require()`s the same `roles.js` + `companies.js` the
+  app uses, so the company list, India vocabulary and role keywords never drift.
+
 ## Notes / limitations
 
 - Pure voice-BPO giants (Teleperformance, Concentrix, WNS, Genpact) run enterprise portals

@@ -17,13 +17,24 @@
   var MAX_JOBS = 2000;                   // hard cap on the accumulating pool
   var AUTO_REFRESH_MS = 90 * 1000;       // dynamic: pull new jobs every 90s
 
+  // Server feed: a GitHub Actions scraper refreshes this file hourly (no CORS/limits
+  // server-side), so the board loads a large, always-growing pool instantly — even
+  // before the in-browser live fetch runs. First URL that responds wins:
+  //   1) ./data/jobs.json  — when the app is hosted next to /data (GitHub Pages)
+  //   2) raw.githubusercontent — works from the local single-file build too (raw = CORS *)
+  var FEED_URLS = [
+    './data/jobs.json',
+    'https://raw.githubusercontent.com/nickthanossick/new-repositatry/claude/job-portal-scraper-nbb6bu/jobs/data/jobs.json'
+  ];
+
   var STATE = {
     jobs: [],                 // accumulating, India-filtered, normalized jobs
     diagnostics: [],
     filters: { experience: 'fresher', sector: 'all', role: 'all', city: 'all', posted: 'week', q: '' },
     loading: false,
     lastAdded: 0,
-    autoTimer: null
+    autoTimer: null,
+    feedAt: null              // generatedAt of the server feed (jobs.json)
   };
 
   /* ---------------- utilities ---------------- */
@@ -269,6 +280,47 @@
     return added;
   }
 
+  /* ---------------- server feed (hourly-scraped jobs.json) ---------------- */
+  function fetchFeedFrom(url) {
+    return timeoutFetch(url).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    });
+  }
+  // Try each candidate URL in order; resolve with the first that returns usable data.
+  function loadServerFeed() {
+    var idx = 0;
+    function attempt() {
+      if (idx >= FEED_URLS.length) return Promise.resolve(null);
+      return fetchFeedFrom(FEED_URLS[idx++])
+        .then(function (data) { return (data && data.jobs) ? data : attempt(); })
+        .catch(function () { return attempt(); });
+    }
+    return attempt();
+  }
+  // Merge the feed's jobs into the pool (re-validated India-only), like a browser fetch.
+  function ingestFeed(data) {
+    if (!data || !data.jobs) return 0;
+    STATE.feedAt = data.generatedAt || null;
+    var feedJobs = data.jobs.filter(function (j) { return j.applyUrl && isIndiaLocation(j.location); })
+      .map(function (j) {
+        return { id: j.id, title: j.title, company: j.company, location: j.location,
+          department: j.department, applyUrl: j.applyUrl, postedAt: j.postedAt,
+          roleTags: j.roleTags || [], experience: j.experience || 'unknown',
+          city: j.city || cityOf(j.location) };
+      });
+    return mergeJobs(feedJobs);
+  }
+  function feedAgeText() {
+    if (!STATE.feedAt) return '';
+    var mins = Math.floor((Date.now() - new Date(STATE.feedAt).getTime()) / 60000);
+    if (isNaN(mins) || mins < 0) return '';
+    if (mins < 1) return 'updated just now';
+    if (mins < 60) return 'updated ' + mins + 'm ago';
+    var hrs = Math.floor(mins / 60);
+    return 'updated ' + hrs + (hrs === 1 ? 'h ago' : 'h ago');
+  }
+
   /* ---------------- persistence (the accumulating store) ---------------- */
   function saveStore() {
     try { localStorage.setItem(STORE_KEY, JSON.stringify({ t: Date.now(), jobs: STATE.jobs, diagnostics: STATE.diagnostics })); }
@@ -439,17 +491,19 @@
     el('fresherCount').textContent = freshers;
     el('newCount').textContent = STATE.lastAdded;
     var progress = ' · ' + Math.min(total, MAX_JOBS) + '/' + MAX_JOBS;
+    var feed = feedAgeText();
+    var feedTag = feed ? ' · feed ' + feed : '';
     var msg;
     if (fromCache) {
       msg = 'Loaded ' + total + ' saved jobs · fetching more…';
     } else if (total >= MAX_JOBS) {
-      msg = 'Live · ' + total + ' jobs collected (max reached) · ' + live + '/' + boards + ' companies hiring';
+      msg = 'Live · ' + total + ' jobs collected (max reached) · ' + live + '/' + boards + ' companies hiring' + feedTag;
     } else if (STATE.lastAdded > 0) {
       msg = 'Live · +' + STATE.lastAdded + ' new · ' + total + ' jobs collected' + progress +
-        ' · ' + live + '/' + boards + ' companies hiring';
+        ' · ' + live + '/' + boards + ' companies hiring' + feedTag;
     } else {
       msg = 'Up to date · ' + total + ' jobs collected' + progress +
-        ' · ' + live + '/' + boards + ' companies hiring · auto-refresh on';
+        ' · ' + live + '/' + boards + ' companies hiring · auto-refresh on' + feedTag;
     }
     el('status').innerHTML = esc(msg);
   }
@@ -530,8 +584,25 @@
       render(); renderDiagnostics();
       updateCounters(true, 0, STATE.diagnostics.length);
     }
-    refresh(false);
-    startAuto();
+
+    // Load the hourly-scraped server feed first (big, always-growing pool), then run
+    // the in-browser live fetch on top. This is what makes the board feel like a live
+    // ecosystem — jobs keep arriving every hour even when no one has the tab open.
+    loadServerFeed().then(function (data) {
+      if (data) {
+        el('status').innerHTML = '<span class="spin"></span> Loading live jobs feed…';
+        ingestFeed(data);
+        buildCityOptions();
+        render();
+        saveStore();
+        var age = feedAgeText();
+        el('status').innerHTML = esc((age ? age.charAt(0).toUpperCase() + age.slice(1) + ' · ' : '') +
+          STATE.jobs.length + ' jobs loaded · scanning for more…');
+      }
+    }).finally(function () {
+      refresh(false);
+      startAuto();
+    });
   }
 
   /* ---------------- login gate (password only) ----------------

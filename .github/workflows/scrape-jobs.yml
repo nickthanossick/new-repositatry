@@ -1,0 +1,52 @@
+name: Scrape live jobs
+
+# Runs the CareersTiger scraper and commits jobs/data/jobs.json back to the branch.
+# - schedule: hourly (NOTE: GitHub only fires cron from the repo's DEFAULT branch,
+#   so the hourly cadence activates once this branch is merged to main).
+# - workflow_dispatch: manual "Run workflow" for on-demand refresh / seeding.
+# - push: seeds/refreshes immediately on a CODE push, but ignores the data file
+#   itself so the bot's own commit does not re-trigger the workflow (no loop).
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+  push:
+    branches:
+      - claude/job-portal-scraper-nbb6bu
+    paths-ignore:
+      - 'jobs/data/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scrape-jobs-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Scrape jobs
+        run: node jobs/scrape.js
+
+      - name: Commit updated jobs.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- jobs/data/jobs.json; then
+            echo "No changes to jobs.json"
+          else
+            git add jobs/data/jobs.json
+            git commit -m "chore(jobs): refresh live jobs [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
