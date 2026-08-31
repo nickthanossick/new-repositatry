@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ApplyDirect — Real India Jobs (Freshers · BPO · Sales)</title>
+<meta name="description" content="Live, real jobs from real companies in India. Freshers welcome — BPO, customer support, telecalling and sales roles. Every Apply link opens the company's own application page. No Naukri. No LinkedIn.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">AD</div>
+      <div class="brand-text">
+        <div class="brand-name">ApplyDirect</div>
+        <div class="brand-sub">Real India jobs · direct company apply</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="diagToggle" class="ghost-btn" type="button">Diagnostics</button>
+      <button id="refreshBtn" class="primary-btn" type="button">↻ Refresh live</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Live jobs from real companies — apply on <span>their own site</span>.</h1>
+    <p class="lede">
+      Freshers &amp; experienced · BPO, customer support, telecalling &amp; sales · India only.
+      Every listing links straight to the company's application page — no Naukri, no LinkedIn.
+    </p>
+    <div class="stats">
+      <div class="stat"><span id="coScanned">0</span><label>boards scanned</label></div>
+      <div class="stat"><span id="coLive">0</span><label>boards with jobs</label></div>
+      <div class="stat"><span id="jobsFound">0</span><label>India jobs found</label></div>
+    </div>
+  </div>
+</section>
+
+<section class="controls">
+  <div class="wrap">
+    <div class="chips" role="tablist" aria-label="Sector">
+      <button class="chip" data-sector="all" type="button">All roles</button>
+      <button class="chip" data-sector="bpo" type="button">BPO / Support</button>
+      <button class="chip" data-sector="sales" type="button">Sales / BD</button>
+    </div>
+
+    <div class="filters">
+      <input id="search" class="search" type="search" placeholder="Search title, company, city…" autocomplete="off">
+      <select id="experienceFilter" aria-label="Experience level">
+        <option value="fresher" selected>Freshers</option>
+        <option value="experienced">Experienced</option>
+        <option value="all">All levels</option>
+      </select>
+      <select id="roleFilter" aria-label="Role"></select>
+      <select id="cityFilter" aria-label="City"><option value="all">All cities</option></select>
+    </div>
+
+    <div class="statusline">
+      <span id="status">Loading…</span>
+      <span class="count-pill"><b id="resultCount">0</b> shown</span>
+    </div>
+  </div>
+</section>
+
+<section id="diagPanel" class="diag-panel" hidden>
+  <div class="wrap">
+    <p class="diag-note">
+      Per-board fetch status (runs live in your browser). Rows with <b>0 India matches</b> or a
+      <b>FAILED</b> status are safe to prune from <code>companies.js</code>. Green = jobs found.
+    </p>
+    <div id="diagBody"></div>
+  </div>
+</section>
+
+<main class="wrap">
+  <div id="grid" class="grid">
+    <div class="empty">Scanning company career boards…</div>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>
+      ApplyDirect pulls openings directly from company Applicant Tracking Systems
+      (Greenhouse, Lever, Ashby, SmartRecruiters, Recruitee) in your browser, in real time.
+      We never route you through job aggregators or LinkedIn — <b>Apply</b> always opens the
+      hiring company's own application page.
+    </p>
+  </div>
+</footer>
+
+<script src="roles.js"></script>
+<script src="companies.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
