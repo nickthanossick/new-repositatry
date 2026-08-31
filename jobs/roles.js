@@ -1,3 +1,7 @@
+/*!
+ * CareersTiger Jobs — © 2026 CareersTiger. All rights reserved.
+ * Proprietary and confidential. Unauthorized copying or distribution is prohibited.
+ */
 /* roles.js — target roles + India location vocabulary + fresher/experience signals.
  *
  * Each role is a keyword group. A job "matches" a role if any of its keywords appears

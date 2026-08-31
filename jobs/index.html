@@ -1,10 +1,17 @@
 <!DOCTYPE html>
+<!--
+  CareersTiger Jobs — © 2026 CareersTiger. All rights reserved.
+  Proprietary and confidential. Unauthorized copying, modification, or
+  distribution of this software is strictly prohibited.
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ApplyDirect — Real India Jobs (Freshers · BPO · Sales)</title>
-<meta name="description" content="Live, real jobs from real companies in India. Freshers welcome — BPO, customer support, telecalling and sales roles. Every Apply link opens the company's own application page. No Naukri. No LinkedIn.">
+<title>CareersTiger Jobs — Real India Jobs (Freshers · BPO · Sales)</title>
+<meta name="description" content="CareersTiger Jobs — live, real jobs from real companies in India. Freshers first: BPO, customer support, telecalling and sales roles. Every Apply link opens the company's own application page.">
+<meta name="author" content="CareersTiger">
+<meta name="copyright" content="© 2026 CareersTiger. All rights reserved.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -12,33 +19,72 @@
 </head>
 <body>
 
+<!-- ===== Tiger mascot (reusable inline SVG) ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="tigerMascot" viewBox="0 0 120 120">
+    <!-- ears -->
+    <circle cx="28" cy="30" r="16" fill="#f97316"/>
+    <circle cx="92" cy="30" r="16" fill="#f97316"/>
+    <circle cx="28" cy="30" r="8" fill="#1c140b"/>
+    <circle cx="92" cy="30" r="8" fill="#1c140b"/>
+    <!-- head -->
+    <path d="M60 18c26 0 42 18 42 44 0 28-20 46-42 46S18 90 18 62c0-26 16-44 42-44z" fill="#f97316"/>
+    <!-- stripes -->
+    <path d="M60 20v16" stroke="#1c140b" stroke-width="5" stroke-linecap="round"/>
+    <path d="M44 26l5 14M76 26l-5 14" stroke="#1c140b" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M22 54l16 4M98 54l-16 4" stroke="#1c140b" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M22 70l15 2M98 70l-15 2" stroke="#1c140b" stroke-width="4.5" stroke-linecap="round"/>
+    <!-- muzzle -->
+    <ellipse cx="60" cy="82" rx="30" ry="24" fill="#fff3e6"/>
+    <!-- eyes -->
+    <ellipse cx="45" cy="60" rx="8" ry="9" fill="#fff"/>
+    <ellipse cx="75" cy="60" rx="8" ry="9" fill="#fff"/>
+    <circle cx="46" cy="61" r="4.2" fill="#1c140b"/>
+    <circle cx="74" cy="61" r="4.2" fill="#1c140b"/>
+    <circle cx="47.3" cy="59.5" r="1.4" fill="#fff"/>
+    <circle cx="75.3" cy="59.5" r="1.4" fill="#fff"/>
+    <!-- nose + mouth -->
+    <path d="M53 76h14l-7 8z" fill="#e05a3a"/>
+    <path d="M60 84v7M60 91c-5 0-8-3-8-3M60 91c5 0 8-3 8-3" stroke="#1c140b" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- whiskers -->
+    <path d="M30 80h16M30 88l16-3M90 80H74M90 88l-16-3" stroke="#caa07a" stroke-width="2" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
 <header class="topbar">
   <div class="wrap topbar-inner">
     <div class="brand">
-      <div class="brand-mark">AD</div>
+      <svg class="brand-mark" aria-hidden="true"><use href="#tigerMascot"/></svg>
       <div class="brand-text">
-        <div class="brand-name">ApplyDirect</div>
+        <div class="brand-name">CareersTiger <span>Jobs</span></div>
         <div class="brand-sub">Real India jobs · direct company apply</div>
       </div>
     </div>
     <div class="top-actions">
       <button id="diagToggle" class="ghost-btn" type="button">Diagnostics</button>
-      <button id="refreshBtn" class="primary-btn" type="button">↻ Refresh live</button>
+      <button id="refreshBtn" class="primary-btn" type="button">↻ Fetch new jobs</button>
     </div>
   </div>
 </header>
 
 <section class="hero">
-  <div class="wrap">
-    <h1>Live jobs from real companies — apply on <span>their own site</span>.</h1>
-    <p class="lede">
-      Freshers &amp; experienced · BPO, customer support, telecalling &amp; sales · India only.
-      Every listing links straight to the company's application page — no Naukri, no LinkedIn.
-    </p>
-    <div class="stats">
-      <div class="stat"><span id="coScanned">0</span><label>boards scanned</label></div>
-      <div class="stat"><span id="coLive">0</span><label>boards with jobs</label></div>
-      <div class="stat"><span id="jobsFound">0</span><label>India jobs found</label></div>
+  <div class="wrap hero-inner">
+    <div class="hero-copy">
+      <h1>Freshers, meet your <span>next job</span> — apply on the company's own site.</h1>
+      <p class="lede">
+        Live jobs from real companies across India · BPO, customer support, telecalling &amp; sales.
+        Every listing links straight to the company's application page. Fresh openings are added on
+        every refresh, so the board keeps growing.
+      </p>
+      <div class="stats">
+        <div class="stat"><span id="jobsFound">0</span><label>jobs collected</label></div>
+        <div class="stat"><span id="fresherCount">0</span><label>fresher-friendly</label></div>
+        <div class="stat"><span id="newCount">0</span><label>new this refresh</label></div>
+      </div>
+    </div>
+    <div class="hero-mascot">
+      <svg viewBox="0 0 120 120" aria-label="CareersTiger mascot"><use href="#tigerMascot"/></svg>
+      <div class="mascot-tag">Grrreat jobs, zero middlemen 🐯</div>
     </div>
   </div>
 </section>
@@ -54,7 +100,7 @@
     <div class="filters">
       <input id="search" class="search" type="search" placeholder="Search title, company, city…" autocomplete="off">
       <select id="experienceFilter" aria-label="Experience level">
-        <option value="fresher" selected>Freshers</option>
+        <option value="fresher" selected>Freshers first</option>
         <option value="experienced">Experienced</option>
         <option value="all">All levels</option>
       </select>
@@ -64,6 +110,7 @@
 
     <div class="statusline">
       <span id="status">Loading…</span>
+      <label class="auto-wrap"><input type="checkbox" id="autoRefresh" checked> Auto-refresh</label>
       <span class="count-pill"><b id="resultCount">0</b> shown</span>
     </div>
   </div>
@@ -72,8 +119,8 @@
 <section id="diagPanel" class="diag-panel" hidden>
   <div class="wrap">
     <p class="diag-note">
-      Per-board fetch status (runs live in your browser). Rows with <b>0 India matches</b> or a
-      <b>FAILED</b> status are safe to prune from <code>companies.js</code>. Green = jobs found.
+      Live source health (runs in your browser). Rows with <b>0 matches</b> or a
+      <b>FAILED</b> status can be pruned from the source registry. Green = jobs found.
     </p>
     <div id="diagBody"></div>
   </div>
@@ -81,18 +128,21 @@
 
 <main class="wrap">
   <div id="grid" class="grid">
-    <div class="empty">Scanning company career boards…</div>
+    <div class="empty">Fetching live jobs…</div>
   </div>
 </main>
 
 <footer class="foot">
-  <div class="wrap">
-    <p>
-      ApplyDirect pulls openings directly from company Applicant Tracking Systems
-      (Greenhouse, Lever, Ashby, SmartRecruiters, Recruitee) in your browser, in real time.
-      We never route you through job aggregators or LinkedIn — <b>Apply</b> always opens the
-      hiring company's own application page.
-    </p>
+  <div class="wrap foot-inner">
+    <svg class="foot-tiger" aria-hidden="true"><use href="#tigerMascot"/></svg>
+    <div>
+      <p>
+        CareersTiger Jobs pulls openings <b>directly from hiring companies</b> in real time and
+        keeps adding new ones as you browse. We never route you through job aggregators or social
+        networks — <b>Apply</b> always opens the company's own application page.
+      </p>
+      <p class="copyline">© 2026 CareersTiger. All rights reserved. Proprietary &amp; confidential.</p>
+    </div>
   </div>
 </footer>
 
