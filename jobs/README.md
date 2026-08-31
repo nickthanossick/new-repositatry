@@ -7,7 +7,8 @@ hiring companies** in the visitor's browser, filters them to **India + fresher/e
 target roles**, and shows an **Apply** button that opens the **company's own application page**.
 
 - ✅ Real jobs, real companies, fetched in real time.
-- ✅ **Accumulating board** — old jobs stay, new jobs add on every refresh, up to **500**.
+- 🔒 **Password gate** — the board opens only after the password (`Nik@123`) is entered.
+- ✅ **Accumulating board** — old jobs stay, new jobs add on every refresh, up to **2000**.
 - ✅ **Auto-refresh** pulls fresh openings every ~90 seconds (toggle in the UI).
 - ✅ India-only, **freshers first**, heavy on **BPO / customer support / telecalling / sales**.
 - ✅ Every apply link = the hiring company's own application page.
@@ -49,6 +50,16 @@ company's fetch status and how many India-matching jobs it returned. Prune any r
    **Freshers first**; anything not clearly senior is treated as fresher-friendly.
 4. **Accumulation** — fetched jobs merge into a `localStorage` pool (deduped by apply URL),
    newest flagged **NEW**, capped at 500. **Fetch new jobs** / auto-refresh keep adding.
+
+## Login & code protection
+
+- **Login:** password only, `Nik@123`. Checked client-side; a valid session is remembered
+  via `sessionStorage` for that browser tab.
+- **Anti-copy:** the shipped single-file build ships the JS **base64-encoded** (company list
+  and engine are not in plain sight), disables right-click / view-source shortcuts, and prints
+  a proprietary notice to the console. These are **deterrents**, not hard security — any code
+  that runs in a browser can ultimately be inspected. For real protection, move the fetching to
+  a private server. The readable source lives in this `jobs/` folder for your own maintenance.
 
 ## Notes / limitations
 

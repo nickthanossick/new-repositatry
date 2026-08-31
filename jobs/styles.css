@@ -15,6 +15,29 @@ body{background:#faf6f0;color:var(--ink);font-family:var(--body);font-size:14px;
 .wrap{max-width:1160px;margin:0 auto;padding:0 20px}
 a{color:inherit}
 
+/* login gate */
+.login-gate{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;transition:opacity .4s ease}
+.login-gate.gone{opacity:0;pointer-events:none}
+.login-bg{position:absolute;inset:0;background:radial-gradient(120% 120% at 80% 10%,#3a2a14 0%,var(--bg) 55%);overflow:hidden}
+.login-bg::before,.login-bg::after{content:"";position:absolute;border-radius:50%;filter:blur(60px);opacity:.5}
+.login-bg::before{width:340px;height:340px;background:#f97316;top:-80px;left:-60px;animation:float1 9s ease-in-out infinite}
+.login-bg::after{width:300px;height:300px;background:#b45309;bottom:-90px;right:-40px;animation:float2 11s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,30px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,-40px)}}
+.login-card{position:relative;background:rgba(28,20,11,.72);backdrop-filter:blur(14px);border:1px solid #4a3a24;border-radius:20px;padding:34px 30px 24px;width:min(92vw,380px);text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.login-tiger{width:88px;height:88px;animation:bob 3.4s ease-in-out infinite;filter:drop-shadow(0 8px 16px rgba(0,0,0,.4))}
+.login-brand{font-family:var(--disp);font-weight:700;font-size:24px;color:#fff;margin-top:8px}
+.login-brand span{color:var(--tiger)}
+.login-sub{color:#c9b48f;font-size:13px;margin-top:6px;margin-bottom:18px}
+.login-row{display:flex;gap:8px}
+.login-row input{flex:1;min-width:0;background:#120d07;border:1px solid #4a3a24;color:#fff;border-radius:11px;padding:12px 14px;font-size:14px;font-family:var(--body)}
+.login-row input:focus{outline:none;border-color:var(--tiger)}
+.login-row button{background:linear-gradient(135deg,var(--tiger),var(--tiger2));color:#241704;border:0;border-radius:11px;padding:12px 16px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+.login-err{color:#f3b0a8;font-size:12.5px;min-height:18px;margin-top:10px;font-weight:600}
+.login-foot{color:#8b7a63;font-size:11px;margin-top:14px}
+.login-card.shake{animation:shake .4s}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+
 /* top bar */
 .topbar{background:var(--bg);color:#f6efe4;position:sticky;top:0;z-index:20;border-bottom:1px solid #33271a}
 .topbar-inner{display:flex;align-items:center;justify-content:space-between;height:64px}

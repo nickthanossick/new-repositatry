@@ -14,7 +14,7 @@
   var STORE_TTL_MS = 20 * 60 * 1000;   // how "fresh" a stored snapshot is before we auto-fetch
   var FETCH_TIMEOUT_MS = 12000;
   var CONCURRENCY = 8;
-  var MAX_JOBS = 500;                    // hard cap on the accumulating pool
+  var MAX_JOBS = 2000;                   // hard cap on the accumulating pool
   var AUTO_REFRESH_MS = 90 * 1000;       // dynamic: pull new jobs every 90s
 
   var STATE = {
@@ -455,8 +455,10 @@
     });
   }
 
-  /* ---------------- boot ---------------- */
-  document.addEventListener('DOMContentLoaded', function () {
+  /* ---------------- the actual app (runs only after login) ---------------- */
+  function startApp() {
+    if (STATE.started) return;
+    STATE.started = true;
     buildRoleOptions();
     wire();
     var allChip = document.querySelector('.chip[data-sector="all"]');
@@ -474,6 +476,72 @@
     }
     refresh(false);
     startAuto();
+  }
+
+  /* ---------------- login gate (password only) ----------------
+   * Note: this is a client-side gate for casual privacy, not hard security —
+   * the page still runs entirely in the browser. See the anti-copy notes below.
+   */
+  var AUTH_KEY = 'careerstiger_auth_v1';
+  // Password is checked against this token (kept out of plain sight in the shipped build).
+  var PW_TOKEN = atob('TmlrQDEyMw==');   // decodes to the account password
+
+  function revealApp() {
+    var login = el('loginGate');
+    if (login) { login.classList.add('gone'); setTimeout(function () { login.hidden = true; }, 450); }
+    startApp();
+  }
+
+  function tryLogin() {
+    var input = el('pw');
+    var val = input ? input.value : '';
+    if (val === PW_TOKEN) {
+      try { sessionStorage.setItem(AUTH_KEY, '1'); } catch (e) {}
+      revealApp();
+    } else {
+      var card = el('loginCard');
+      if (card) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); }
+      var err = el('loginErr'); if (err) err.textContent = 'Wrong password. Try again.';
+      if (input) { input.value = ''; input.focus(); }
+    }
+  }
+
+  function initLogin() {
+    var already = false;
+    try { already = sessionStorage.getItem(AUTH_KEY) === '1'; } catch (e) {}
+    if (already) { revealApp(); return; }
+    var btn = el('pwBtn'), input = el('pw');
+    if (btn) btn.addEventListener('click', tryLogin);
+    if (input) input.addEventListener('keydown', function (e) { if (e.key === 'Enter') tryLogin(); });
+    if (input) input.focus();
+  }
+
+  /* ---------------- light anti-copy deterrents ----------------
+   * These only discourage casual copying (browser code is always inspectable).
+   */
+  function antiCopy() {
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    document.addEventListener('keydown', function (e) {
+      var k = (e.key || '').toLowerCase();
+      if (e.key === 'F12' ||
+          ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) ||
+          ((e.ctrlKey || e.metaKey) && k === 'u') ||
+          ((e.ctrlKey || e.metaKey) && k === 's')) {
+        e.preventDefault(); return false;
+      }
+    });
+    try {
+      console.log('%cCareersTiger Jobs — © 2026. Proprietary & confidential.',
+        'background:#f97316;color:#241704;font-weight:700;padding:6px 12px;border-radius:6px');
+      console.log('%cThis code is protected. Copying or redistribution is prohibited.',
+        'color:#c0453a;font-weight:600');
+    } catch (e) {}
+  }
+
+  /* ---------------- boot ---------------- */
+  document.addEventListener('DOMContentLoaded', function () {
+    antiCopy();
+    initLogin();
   });
 
 })();
