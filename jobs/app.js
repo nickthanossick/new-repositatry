@@ -20,7 +20,7 @@
   var STATE = {
     jobs: [],                 // accumulating, India-filtered, normalized jobs
     diagnostics: [],
-    filters: { experience: 'fresher', sector: 'all', role: 'all', city: 'all', q: '' },
+    filters: { experience: 'fresher', sector: 'all', role: 'all', city: 'all', posted: 'week', q: '' },
     loading: false,
     lastAdded: 0,
     autoTimer: null
@@ -267,6 +267,13 @@
       if (f.role !== 'all' && j.roleTags.indexOf(f.role) === -1) return false;
       if (sectorRoleIds && !j.roleTags.some(function (id) { return sectorRoleIds.indexOf(id) !== -1; })) return false;
       if (f.city !== 'all' && lc(j.city) !== lc(f.city)) return false;
+      if (f.posted !== 'any') {
+        var win = POSTED_WINDOWS[f.posted];
+        var ds = daysSince(j.postedAt);
+        // Keep jobs within the window. Jobs added this refresh (isNew) and jobs with an
+        // unknown posting date are kept too, so recent listings are never lost.
+        if (ds !== null && ds > win && !j.isNew) return false;
+      }
       if (q) {
         var hay = lc(j.title + ' ' + j.company + ' ' + j.location + ' ' + j.department);
         if (hay.indexOf(q) === -1) return false;
@@ -279,6 +286,14 @@
     for (var i = 0; i < window.ROLES.length; i++) if (window.ROLES[i].id === id) return window.ROLES[i].label;
     return id;
   }
+  /* Days since a posting date, or null if unknown/unparseable. */
+  function daysSince(iso) {
+    if (!iso) return null;
+    var d = new Date(iso); if (isNaN(d.getTime())) return null;
+    return Math.floor((Date.now() - d.getTime()) / 86400000);
+  }
+  var POSTED_WINDOWS = { today: 1, week: 7, month: 30 };
+
   function fmtDate(iso) {
     if (!iso) return '';
     var d = new Date(iso); if (isNaN(d.getTime())) return '';
@@ -296,14 +311,18 @@
     el('resultCount').textContent = list.length;
 
     if (!list.length) {
-      grid.innerHTML = '<div class="empty">No matching jobs yet. Try <b>All levels</b>, clear the role/city filter, ' +
-        'or hit <b>Fetch new jobs</b> — the board keeps growing as more companies are scanned.</div>';
+      grid.innerHTML = '<div class="empty">No matching jobs in this view. Try widening the date to ' +
+        '<b>Any time</b>, switch to <b>All levels</b>, clear the role/city filter, or hit ' +
+        '<b>Fetch new jobs</b> — the board keeps growing as more companies are scanned.</div>';
       return;
     }
 
-    // New first, then freshers, then most recent.
+    // New first, then this-week, then freshers, then most recent.
     list.sort(function (a, b) {
       var an = a.isNew ? 0 : 1, bn = b.isNew ? 0 : 1; if (an !== bn) return an - bn;
+      var aw = (function (x) { var d = daysSince(x.postedAt); return (d !== null && d <= 7) ? 0 : 1; })(a);
+      var bw = (function (x) { var d = daysSince(x.postedAt); return (d !== null && d <= 7) ? 0 : 1; })(b);
+      if (aw !== bw) return aw - bw;
       var af = a.experience === 'fresher' ? 0 : 1, bf = b.experience === 'fresher' ? 0 : 1; if (af !== bf) return af - bf;
       return (new Date(b.postedAt || 0)) - (new Date(a.postedAt || 0));
     });
@@ -313,12 +332,15 @@
         : (j.experience === 'experienced' ? '<span class="badge exp">Experienced</span>' : '<span class="badge fresher">Open to freshers</span>');
       var tags = j.roleTags.slice(0, 2).map(function (id) { return '<span class="tag">' + esc(roleLabel(id)) + '</span>'; }).join('');
       var posted = fmtDate(j.postedAt);
+      var ds = daysSince(j.postedAt);
+      var weekTag = (ds !== null && ds <= 7) ? '<span class="wk">🗓 This week</span>' : '';
       return '<article class="card' + (j.isNew ? ' is-new' : '') + '">' +
         (j.isNew ? '<span class="new-flag">NEW</span>' : '') +
         '<div class="card-top"><h3 class="job-title">' + esc(j.title) + '</h3>' + badge + '</div>' +
         '<div class="company">' + esc(j.company) + '</div>' +
         '<div class="meta"><span class="loc">📍 ' + esc(j.city || j.location) + '</span>' +
-          (posted ? '<span class="dot">·</span><span class="posted">' + esc(posted) + '</span>' : '') + '</div>' +
+          (posted ? '<span class="dot">·</span><span class="posted">' + esc(posted) + '</span>' : '') +
+          weekTag + '</div>' +
         '<div class="tags">' + tags + '</div>' +
         '<div class="card-foot">' +
           '<span class="src">✓ Direct company listing</span>' +
@@ -402,6 +424,7 @@
     el('experienceFilter').addEventListener('change', function (e) { STATE.filters.experience = e.target.value; render(); });
     el('roleFilter').addEventListener('change', function (e) { STATE.filters.role = e.target.value; render(); });
     el('cityFilter').addEventListener('change', function (e) { STATE.filters.city = e.target.value; render(); });
+    el('postedFilter').addEventListener('change', function (e) { STATE.filters.posted = e.target.value; render(); });
     el('search').addEventListener('input', function (e) { STATE.filters.q = e.target.value; render(); });
 
     var chips = document.querySelectorAll('.chip');
