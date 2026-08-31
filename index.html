@@ -506,9 +506,25 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--placed)!
 .btn{transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}
 .btn:hover{transform:translateY(-1px)}
 .btn.pri:hover{box-shadow:0 8px 18px rgba(14,158,139,.35)}
+/* extra dynamic polish */
+.topbar .tt h2{background:linear-gradient(100deg,#0C1826 20%,#0E9E8B 50%,#0B7CC4 70%,#0C1826 90%);background-size:220% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:titleShine 6s linear infinite}
+@keyframes titleShine{to{background-position:220% center}}
+.kpi .big{background:linear-gradient(120deg,var(--ink),#0E9E8B);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.kpi:hover .big{filter:drop-shadow(0 2px 8px rgba(14,158,139,.35))}
+.kpi::after{content:"";position:absolute;inset:0;border-radius:13px;pointer-events:none;background:radial-gradient(120px 60px at var(--mx,50%) 0%,rgba(14,158,139,.08),transparent 70%);opacity:0;transition:opacity .2s}
+.kpi:hover::after{opacity:1}
+.panel.on>.grid>*,.panel.on>.card,.panel.on>.grid{animation:cardRise .45s cubic-bezier(.2,.8,.2,1) both}
+.panel.on>.grid>*{animation-delay:calc(var(--i,0)*45ms)}
+@keyframes cardRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.seclabel{position:relative}
+.seclabel>span{background:linear-gradient(90deg,#0E9E8B,#0B7CC4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:700}
+tbody tr{transition:background .12s,box-shadow .12s}
+tbody tr:hover{background:linear-gradient(90deg,rgba(14,158,139,.09),transparent)!important;box-shadow:inset 3px 0 0 var(--placed)}
+.nav a.on{background:linear-gradient(100deg,#0E9E8B,#0B7CC4);background-size:180% 180%;animation:railShine 5s ease infinite}
 @media(prefers-reduced-motion:reduce){
   .card,.kpi,.bkcard,.nav a,.btn{transition:none!important;transform:none!important}
-  .kpi .rail,.brand .logo,.livepill i,.panel.on{animation:none!important}
+  .kpi .rail,.brand .logo,.livepill i,.panel.on,.panel.on>.grid>*,.topbar .tt h2,.nav a.on{animation:none!important}
+  .topbar .tt h2,.kpi .big,.seclabel>span{-webkit-text-fill-color:initial;color:var(--ink)}
 }
 </style>
 </head>
@@ -734,8 +750,22 @@ const LS='pcc_edits_v2';
 function loadEdits(){ try{ const e=JSON.parse(localStorage.getItem(LS)||'{}');
   Object.entries(e).forEach(([reg,d])=>{ if(byReg[reg]) Object.assign(byReg[reg],d); }); }catch(e){} }
 function saveEdit(reg,d){ Object.assign(byReg[reg],d);
-  try{ const e=JSON.parse(localStorage.getItem(LS)||'{}'); e[reg]={...(e[reg]||{}),...d}; localStorage.setItem(LS,JSON.stringify(e)); }catch(e){} }
+  try{ const e=JSON.parse(localStorage.getItem(LS)||'{}'); e[reg]={...(e[reg]||{}),...d}; localStorage.setItem(LS,JSON.stringify(e)); }catch(e){} persistRoster(); }
 loadEdits();
+
+/* ============ DURABLE PERSISTENCE (IndexedDB) ============
+   Saves the WHOLE student roster so adds / deletes / batch replaces survive a refresh.
+   localStorage is too small for ~18k students, so we use IndexedDB (large quota). */
+function idbOpen(){ return new Promise((res,rej)=>{ try{ const rq=indexedDB.open('pcc_db',1);
+  rq.onupgradeneeded=()=>{ const db=rq.result; if(!db.objectStoreNames.contains('roster'))db.createObjectStore('roster'); };
+  rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }catch(e){ rej(e); } }); }
+function idbGet(key){ return idbOpen().then(db=>new Promise((res,rej)=>{ const t=db.transaction('roster','readonly').objectStore('roster').get(key); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error); })).catch(()=>null); }
+function idbSet(key,val){ return idbOpen().then(db=>new Promise((res,rej)=>{ const t=db.transaction('roster','readwrite').objectStore('roster').put(val,key); t.onsuccess=()=>res(true); t.onerror=()=>rej(t.error); })).catch(()=>false); }
+function idbClear(){ return idbOpen().then(db=>new Promise((res)=>{ const t=db.transaction('roster','readwrite').objectStore('roster').clear(); t.onsuccess=()=>res(true); t.onerror=()=>res(false); })).catch(()=>false); }
+let BOOTED=false, _persistT=null;
+function persistRoster(){ if(!BOOTED)return; clearTimeout(_persistT); _persistT=setTimeout(()=>{
+  try{ idbSet('main',{stud:STUD,appliedOffset:(typeof APPLIED_OFFSET!=='undefined'?APPLIED_OFFSET:null),v:1}); }catch(e){}
+},700); }
 
 /* ============ HELPERS ============ */
 const $=(s,r=document)=>r.querySelector(s);
@@ -1014,6 +1044,7 @@ P.batches=()=>{
         <button class="btn" id="bulkUpAll" style="border-color:#0E9E8B;color:#0c8b7a">⬆ Bulk upload all students</button>
         <button class="btn" id="bulkDelAll" style="border-color:#C0453A;color:#C0453A">🗑 Bulk delete all students</button>
         <button class="btn" id="reloadB9" style="border-color:#0B7CC4;color:#0B7CC4">♻ Reload built-in Batch 9</button>
+        <button class="btn" id="factoryReset" style="border-color:#7A5CC4;color:#7A5CC4">↺ Reset to original data</button>
       </div></div>
     <div class="note" style="margin:0 22px 4px">Bulk upload / Replace batch aapki uploader CSV ke <b>apne headers</b> se chalte hain — <b>enrollment_id, student_name, batch, session, program_name, program_version, mobile, email, admission_date</b>. Isi CSV ko jab chaho delete karke dobara upload kar sakte ho.</div>
     <input type="file" id="admFile" accept=".csv" hidden>
@@ -1054,6 +1085,11 @@ function bindBatches(){
       $('#admMsg').innerHTML=`<span style="color:#0c8b7a">✓ Full replace complete — ${nf(n)} students loaded across their batches. Every tab updated.</span>`;
       kstrip(); setTimeout(()=>go('batches'),800); };
     r.readAsText(f);
+  });
+  // Factory reset — clear all saved data, back to the original baked roster
+  $('#factoryReset')&&$('#factoryReset').addEventListener('click',()=>{
+    if(!confirm('Reset EVERYTHING back to the original data? All your uploaded/deleted student changes will be wiped and the page will reload. (Applications, outreach, leads, calendar are kept.)'))return;
+    factoryReset();
   });
   // Delete just the selected batch (no CSV needed) — dashboard totals update live
   $('#delBatchBtn')&&$('#delBatchBtn').addEventListener('click',()=>{
@@ -1189,6 +1225,7 @@ function recomputeAll(){
   if(B.train){B.train.trainedAll=trAll;B.train.placedTrained=trPl;B.train.avgPlacedHours=placed?trHrsPlaced/placed:0;}
   recomputeBatches();
   if(document.getElementById('kstrip'))kstrip();
+  persistRoster();
 }
 
 P.buckets=()=>{
@@ -2559,6 +2596,7 @@ function go(t){
   // onion bar grow
   c.querySelectorAll('.obar[data-ow]').forEach(el=>{const w=Math.max(9,+el.dataset.ow);el.style.width='9%';requestAnimationFrame(()=>requestAnimationFrame(()=>el.style.width=w+'%'));});
   tiltIn(c);
+  c.querySelectorAll('.panel.on>.grid').forEach(g=>{[...g.children].forEach((el,i)=>el.style.setProperty('--i',i));});
   window.scrollTo({top:0});
 }
 // Pointer-driven 3D tilt on cards/KPIs (capped, disabled under reduced-motion). Tables/numbers stay flat.
@@ -2843,12 +2881,27 @@ document.querySelectorAll('#nav a').forEach(a=>a.addEventListener('click',()=>{ 
 try{ if(window.emailjs&&EMAILCFG.pub)emailjs.init({publicKey:EMAILCFG.pub}); }catch(e){}
 /* Load the correct Batch 9 (from the attached uploader CSV) in place of the one baked in the HTML.
    Version-gated so a new build re-applies and overwrites any stale Batch 9 already in the browser. */
-const BATCH9_VER='3';
 function loadBuiltinBatch9(){ const el=document.getElementById('BATCH9_SLOT'); if(!el)return 0; let b9; try{b9=JSON.parse(el.textContent);}catch(e){return 0;} if(!b9||!b9.length)return 0; return replaceBatchWithRecords('Batch 9',b9); }
-try{ if(localStorage.getItem('pcc_batch9_ver')!==BATCH9_VER){ loadBuiltinBatch9(); localStorage.setItem('pcc_batch9_ver',BATCH9_VER); } }catch(e){}
-markApplicantsTrained();
-recomputeAll();
-kstrip(); go('overview');
+// Wipe all saved data and return to the original baked roster
+function factoryReset(){ try{localStorage.removeItem(LS);}catch(e){} try{localStorage.removeItem('pcc_batch9_ver');}catch(e){}
+  idbClear().then(()=>location.reload()).catch(()=>location.reload()); }
+// Async boot: restore the saved roster (adds/deletes/replaces survive refresh); else seed the built-in Batch 9.
+(async function boot(){
+  let snap=null; try{ snap=await idbGet('main'); }catch(e){ snap=null; }
+  if(snap && snap.stud && snap.stud.length){
+    STUD.length=0; snap.stud.forEach(s=>STUD.push(s));
+    Object.keys(byReg).forEach(k=>delete byReg[k]); STUD.forEach(s=>byReg[s.reg]=s);
+    if(snap.appliedOffset!=null)APPLIED_OFFSET=snap.appliedOffset;
+    loadEdits();
+  } else {
+    loadBuiltinBatch9(); loadEdits();
+  }
+  markApplicantsTrained();
+  BOOTED=true;
+  recomputeAll();
+  kstrip(); go('overview');
+  if(!(snap && snap.stud && snap.stud.length)){ try{ idbSet('main',{stud:STUD,appliedOffset:APPLIED_OFFSET,v:1}); }catch(e){} }
+})();
 </script>
 </body>
 </html>
