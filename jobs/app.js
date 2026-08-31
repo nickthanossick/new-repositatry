@@ -187,8 +187,27 @@
         }), count: list.length };
       });
   }
+  function adaptWorkable(co) {
+    // Public job-board widget API (used by embeddable careers widgets → CORS-friendly).
+    var url = 'https://apply.workable.com/api/v3/accounts/' + encodeURIComponent(co.slug) + '/jobs';
+    return timeoutFetch(url).then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+      .then(function (data) {
+        var list = (data && (data.results || data.jobs)) || [];
+        return { jobs: list.map(function (j) {
+          var loc = j.location || {};
+          var locStr = typeof loc === 'string' ? loc
+            : [loc.city, loc.region, loc.country].filter(Boolean).join(', ');
+          var code = j.shortcode || j.id;
+          return { id: co.provider + ':' + co.slug + ':' + code, title: j.title || '', company: co.name,
+            location: locStr, department: j.department || '',
+            applyUrl: j.url || j.application_url || ('https://apply.workable.com/' + co.slug + '/j/' + code + '/'),
+            postedAt: j.published_on || j.created_at || null,
+            rawText: stripHtml(j.description || '') };
+        }), count: list.length };
+      });
+  }
   var ADAPTERS = { greenhouse: adaptGreenhouse, lever: adaptLever, ashby: adaptAshby,
-    smartrecruiters: adaptSmartRecruiters, recruitee: adaptRecruitee };
+    smartrecruiters: adaptSmartRecruiters, recruitee: adaptRecruitee, workable: adaptWorkable };
 
   /* ---------------- fetch + accumulate ---------------- */
   function fetchFresh() {
@@ -209,7 +228,9 @@
         var matched = 0;
         r.jobs.forEach(function (j) {
           if (!j.applyUrl) return;
-          if (!isIndiaLocation(j.location) && !isIndiaLocation((j.rawText || '').slice(0, 400))) return;
+          // India-ONLY: the location field itself must be India. No description fallback
+          // (that used to let a few foreign jobs slip in via an Indian city in the body).
+          if (!isIndiaLocation(j.location)) return;
           var roleTags = matchRoles(j.title + ' ' + j.department);
           if (!roleTags.length) return;
           fresh.push({

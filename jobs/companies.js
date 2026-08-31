@@ -151,5 +151,46 @@ window.COMPANIES = [
   { name: 'Scalefusion',      provider: 'recruitee', slug: 'scalefusion',   sectors: ['saas'] },
   { name: 'Mindbowser',       provider: 'recruitee', slug: 'mindbowser',    sectors: ['it-services'] },
   { name: 'Peppermint',       provider: 'recruitee', slug: 'peppermint',    sectors: ['saas'] },
-  { name: 'InVideo',          provider: 'recruitee', slug: 'invideo',       sectors: ['saas'] }
+  { name: 'InVideo',          provider: 'recruitee', slug: 'invideo',       sectors: ['saas'] },
+
+  /* ================= SMALL / MID INDIAN — edtech · KPO · fintech · consumer ================= */
+  /* Workable (many Indian startups use it) */
+  { name: 'Testbook',         provider: 'workable', slug: 'testbook',       sectors: ['edtech'] },
+  { name: 'Classplus',        provider: 'workable', slug: 'classplus',      sectors: ['edtech'] },
+  { name: 'Teachmint',        provider: 'workable', slug: 'teachmint',      sectors: ['edtech'] },
+  { name: 'PhysicsWallah',    provider: 'workable', slug: 'physicswallah',  sectors: ['edtech'] },
+  { name: 'Newton School',    provider: 'workable', slug: 'newtonschool',   sectors: ['edtech'] },
+  { name: 'AdmitKard',        provider: 'workable', slug: 'admitkard',      sectors: ['edtech'] },
+  { name: 'Leverage Edu',     provider: 'workable', slug: 'leverageedu',    sectors: ['edtech'] },
+  { name: 'Jar',              provider: 'workable', slug: 'jar',            sectors: ['fintech'] },
+  { name: 'FamPay',           provider: 'workable', slug: 'fampay',         sectors: ['fintech'] },
+  { name: 'Refyne',           provider: 'workable', slug: 'refyne',         sectors: ['fintech'] },
+  { name: 'Progcap',          provider: 'workable', slug: 'progcap',        sectors: ['fintech'] },
+  { name: 'Khatabook',        provider: 'workable', slug: 'khatabook',      sectors: ['fintech'] },
+  { name: 'Bijnis',           provider: 'workable', slug: 'bijnis',         sectors: ['ecommerce'] },
+  { name: 'ShopKirana',       provider: 'workable', slug: 'shopkirana',     sectors: ['ecommerce'] },
+  { name: 'Pepper Content',   provider: 'workable', slug: 'peppercontent',  sectors: ['content'] },
+  { name: 'BharatAgri',       provider: 'workable', slug: 'bharatagri',     sectors: ['agri'] },
+  { name: 'Vahan',            provider: 'workable', slug: 'vahan',          sectors: ['staffing'] },
+  { name: 'GrowthSchool',     provider: 'workable', slug: 'growthschool',   sectors: ['edtech'] },
+
+  /* Lever / Greenhouse / Ashby — Indian edtech, KPO/analytics, consumer */
+  { name: 'Vedantu',          provider: 'lever', slug: 'vedantu',          sectors: ['edtech'] },
+  { name: 'Great Learning',   provider: 'lever', slug: 'greatlearning',    sectors: ['edtech'] },
+  { name: 'Scaler',           provider: 'lever', slug: 'scaler',           sectors: ['edtech'] },
+  { name: 'Emeritus',         provider: 'lever', slug: 'emeritus',         sectors: ['edtech'] },
+  { name: 'Eruditus',         provider: 'lever', slug: 'eruditus',         sectors: ['edtech'] },
+  { name: 'Unacademy',        provider: 'lever', slug: 'unacademy',        sectors: ['edtech'] },
+  { name: 'Cuemath',          provider: 'lever', slug: 'cuemath',          sectors: ['edtech'] },
+  { name: 'Tiger Analytics',  provider: 'lever', slug: 'tigeranalytics',   sectors: ['kpo','analytics'] },
+  { name: 'Fractal',          provider: 'greenhouse', slug: 'fractalanalytics', sectors: ['kpo','analytics'] },
+  { name: 'Straive',          provider: 'smartrecruiters', slug: 'Straive', sectors: ['kpo'] },
+  { name: 'MergerWare',       provider: 'recruitee', slug: 'mergerware',   sectors: ['kpo','saas'] },
+  { name: 'Betterplace',      provider: 'lever', slug: 'betterplace',      sectors: ['staffing','bpo'] },
+  { name: 'Awign',            provider: 'lever', slug: 'awign',            sectors: ['staffing','bpo'] },
+  { name: 'MyOperator',       provider: 'workable', slug: 'myoperator',    sectors: ['saas','bpo'] },
+  { name: 'Squadstack',       provider: 'lever', slug: 'squadstack',       sectors: ['bpo','sales'] },
+  { name: 'Kapture CX',       provider: 'workable', slug: 'kapturecrm',    sectors: ['saas','bpo'] },
+  { name: 'Ozonetel',         provider: 'workable', slug: 'ozonetel',      sectors: ['saas','bpo'] },
+  { name: 'Verloop.io',       provider: 'workable', slug: 'verloop',       sectors: ['saas','bpo'] }
 ];

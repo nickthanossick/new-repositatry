@@ -89,7 +89,11 @@ window.NON_INDIA_HINTS = [
 window.FRESHER_HINTS = [
   'fresher', 'freshers', 'entry level', 'entry-level', 'graduate', 'trainee',
   'intern', 'apprentice', 'associate', 'junior', 'jr.', '0-1 year', '0-2 year',
-  '0 to 1', '0 to 2', 'no experience', 'college', 'campus'
+  '0 to 1', '0 to 2', 'no experience', 'college', 'campus',
+  // BBA/MBA / commerce management freshers
+  'bba', 'mba', 'b.com', 'bcom', 'm.com', 'mcom', 'bba/mba', 'mba fresher',
+  'management graduate', 'commerce graduate', 'any graduate', 'management trainee',
+  'graduate trainee', 'recent graduate', 'final year'
 ];
 
 window.EXPERIENCED_HINTS = [
