@@ -10,7 +10,7 @@
 (function () {
   'use strict';
 
-  var STORE_KEY = 'careerstiger_store_v1';
+  var STORE_KEY = 'careerstiger_store_v2';   // bumped: purge any old cache with foreign jobs
   var STORE_TTL_MS = 20 * 60 * 1000;   // how "fresh" a stored snapshot is before we auto-fetch
   var FETCH_TIMEOUT_MS = 12000;
   var CONCURRENCY = 8;
@@ -74,15 +74,17 @@
   /* ---------------- classification ---------------- */
   function isIndiaLocation(locText) {
     var t = lc(locText); if (!t) return false;
-    var i, hit = false;
-    for (i = 0; i < window.INDIA_LOCATIONS.length; i++) {
-      if (t.indexOf(window.INDIA_LOCATIONS[i]) !== -1) { hit = true; break; }
-    }
-    if (!hit) return false;
+    var i;
+    // STRICT: if the location names ANY foreign place, reject it outright — even if it also
+    // lists an Indian city (multi-country postings like "India / Singapore" are dropped).
     for (i = 0; i < window.NON_INDIA_HINTS.length; i++) {
-      if (t.indexOf(window.NON_INDIA_HINTS[i]) !== -1) return t.indexOf('india') !== -1;
+      if (t.indexOf(window.NON_INDIA_HINTS[i]) !== -1) return false;
     }
-    return true;
+    // Keep only if it clearly names India or an Indian city.
+    for (i = 0; i < window.INDIA_LOCATIONS.length; i++) {
+      if (t.indexOf(window.INDIA_LOCATIONS[i]) !== -1) return true;
+    }
+    return false;
   }
 
   function matchRoles(text) {
@@ -488,7 +490,9 @@
     // Show saved jobs instantly (dynamic feel), then fetch & accumulate more.
     var stored = loadStore();
     if (stored && stored.jobs && stored.jobs.length) {
-      STATE.jobs = stored.jobs;
+      // Re-validate saved jobs against the current India-only rule so any stale foreign
+      // listing collected by an older build is purged on load.
+      STATE.jobs = stored.jobs.filter(function (j) { return isIndiaLocation(j.location); });
       STATE.jobs.forEach(function (j) { j.isNew = false; });
       STATE.diagnostics = stored.diagnostics || [];
       buildCityOptions();

@@ -79,10 +79,18 @@ window.INDIA_LOCATIONS = [
 
 /* Explicit non-India signals — used to reject "Remote" jobs that clearly belong elsewhere. */
 window.NON_INDIA_HINTS = [
-  'united states', 'usa', 'u.s.', 'canada', 'united kingdom', 'u.k.', 'england',
-  'germany', 'france', 'spain', 'netherlands', 'ireland', 'poland', 'portugal',
-  'singapore', 'australia', 'philippines', 'indonesia', 'malaysia', 'vietnam',
-  'dubai', 'uae', 'saudi', 'qatar', 'brazil', 'mexico', 'japan', 'china', 'emea', 'latam'
+  'united states', 'usa', 'u.s.', ' us ', 'us-', 'canada', 'united kingdom', 'u.k.', ' uk', 'england', 'london',
+  'germany', 'berlin', 'munich', 'france', 'paris', 'spain', 'madrid', 'barcelona', 'netherlands', 'amsterdam',
+  'ireland', 'dublin', 'poland', 'warsaw', 'portugal', 'lisbon', 'italy', 'sweden', 'switzerland', 'zurich',
+  'austria', 'belgium', 'denmark', 'norway', 'finland', 'romania', 'bucharest', 'czech', 'prague', 'hungary',
+  'greece', 'israel', 'tel aviv',
+  'singapore', 'australia', 'sydney', 'melbourne', 'new zealand', 'philippines', 'manila', 'indonesia', 'jakarta',
+  'malaysia', 'kuala lumpur', 'vietnam', 'thailand', 'bangkok', 'hong kong', 'south korea', 'seoul', 'taiwan',
+  'sri lanka', 'bangladesh', 'nepal', 'pakistan',
+  'dubai', 'uae', 'u.a.e', 'abu dhabi', 'saudi', 'riyadh', 'qatar', 'doha', 'bahrain', 'kuwait', 'oman',
+  'brazil', 'mexico', 'colombia', 'argentina', 'chile', 'peru', 'japan', 'tokyo', 'china', 'shanghai', 'beijing',
+  'south africa', 'kenya', 'nigeria', 'egypt', 'turkey', 'istanbul',
+  'emea', 'apac', 'latam', 'anz', 'europe', 'north america', 'asia pacific'
 ];
 
 /* ----- Fresher vs experienced signals ----- */
