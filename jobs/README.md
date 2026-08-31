@@ -55,11 +55,16 @@ company's fetch status and how many India-matching jobs it returned. Prune any r
 
 - **Login:** password only, `Nik@123`. Checked client-side; a valid session is remembered
   via `sessionStorage` for that browser tab.
-- **Anti-copy:** the shipped single-file build ships the JS **base64-encoded** (company list
-  and engine are not in plain sight), disables right-click / view-source shortcuts, and prints
-  a proprietary notice to the console. These are **deterrents**, not hard security — any code
-  that runs in a browser can ultimately be inspected. For real protection, move the fetching to
-  a private server. The readable source lives in this `jobs/` folder for your own maintenance.
+- **Anti-copy (hardened build):** the shipped single-file `*-PROTECTED.html` runs the engine
+  through a full JavaScript obfuscator — encrypted string array (RC4), control-flow flattening,
+  dead-code injection, hexadecimal identifier names, self-defending code, and an **anti-debugger
+  trap** that freezes the page the moment DevTools is opened. Right-click / view-source shortcuts
+  are blocked and console output is disabled.
+- **Honest ceiling:** this is *practically* unreadable — it stops casual copying and frustrates
+  even skilled developers — but **no browser code is ever truly un-extractable**: the browser
+  must download and run it, so a determined expert can eventually recover the logic. The only way
+  to make code genuinely unviewable is to run it on a **private server** and ship the browser just
+  data. The readable source lives in this `jobs/` folder for your own maintenance.
 
 ## Live ecosystem — hourly backend scraper
 
