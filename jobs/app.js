@@ -372,6 +372,36 @@
     }).join('');
   }
 
+  /* ---------------- CSV export ---------------- */
+  function csvCell(v) {
+    var s = (v == null ? '' : String(v));
+    if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+  function exportCSV() {
+    // Export the current view (respects filters); if nothing is filtered it's everything.
+    var list = applyFilters();
+    if (!list.length) { alert('No jobs to export in the current view. Try widening the filters.'); return; }
+    var headers = ['Title', 'Company', 'City', 'Location', 'Roles', 'Experience', 'Posted Date', 'Apply Link'];
+    var rows = [headers.map(csvCell).join(',')];
+    list.forEach(function (j) {
+      var roles = (j.roleTags || []).map(roleLabel).join(' | ');
+      var posted = j.postedAt ? new Date(j.postedAt).toISOString().slice(0, 10) : '';
+      rows.push([
+        j.title, j.company, j.city || '', j.location || '', roles,
+        j.experience || '', posted, j.applyUrl
+      ].map(csvCell).join(','));
+    });
+    var csv = '﻿' + rows.join('\r\n');   // BOM so Excel opens UTF-8 correctly
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'careerstiger-jobs-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  }
+
   /* Diagnostics — company + health only (source/ATS names are not exposed). */
   function renderDiagnostics() {
     var box = el('diagBody');
@@ -471,6 +501,7 @@
     });
 
     el('refreshBtn').addEventListener('click', function () { refresh(false); });
+    el('exportBtn').addEventListener('click', exportCSV);
     el('autoRefresh').addEventListener('change', function (e) { if (e.target.checked) startAuto(); });
     el('diagToggle').addEventListener('click', function () {
       var p = el('diagPanel'); p.hidden = !p.hidden;
