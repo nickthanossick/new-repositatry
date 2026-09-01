@@ -83,6 +83,12 @@
   }
 
   /* ---------------- classification ---------------- */
+  // Set of company names currently in the registry — jobs from removed companies are purged.
+  var _validCo = null;
+  function validCompany(name) {
+    if (!_validCo) { _validCo = {}; (window.COMPANIES || []).forEach(function (c) { _validCo[c.name] = 1; }); }
+    return !!_validCo[name];
+  }
   // A usable apply link = real http(s) candidate-facing page (not an API/JSON endpoint).
   function goodApplyUrl(u) {
     return typeof u === 'string' && /^https?:\/\//.test(u) &&
@@ -309,7 +315,7 @@
   function ingestFeed(data) {
     if (!data || !data.jobs) return 0;
     STATE.feedAt = data.generatedAt || null;
-    var feedJobs = data.jobs.filter(function (j) { return j.applyUrl && isIndiaLocation(j.location); })
+    var feedJobs = data.jobs.filter(function (j) { return j.applyUrl && isIndiaLocation(j.location) && validCompany(j.company); })
       .map(function (j) {
         return { id: j.id, title: j.title, company: j.company, location: j.location,
           department: j.department, applyUrl: j.applyUrl, postedAt: j.postedAt,
@@ -527,7 +533,10 @@
       // apply links). Companies that failed this pass (CORS/network) keep their jobs untouched.
       var freshUrls = {}; fresh.forEach(function (j) { freshUrls[j.applyUrl] = 1; });
       var okCo = {}; STATE.diagnostics.forEach(function (d) { if (d.ok) okCo[d.company] = 1; });
-      STATE.jobs = STATE.jobs.filter(function (j) { return !okCo[j.company] || freshUrls[j.applyUrl]; });
+      STATE.jobs = STATE.jobs.filter(function (j) {
+        if (!validCompany(j.company)) return false;            // company removed from registry → purge
+        return !okCo[j.company] || freshUrls[j.applyUrl];
+      });
       mergeJobs(fresh);
       buildCityOptions();
       render(); renderDiagnostics();
@@ -590,7 +599,7 @@
     if (stored && stored.jobs && stored.jobs.length) {
       // Re-validate saved jobs against the current India-only rule so any stale foreign
       // listing collected by an older build is purged on load.
-      STATE.jobs = stored.jobs.filter(function (j) { return isIndiaLocation(j.location); });
+      STATE.jobs = stored.jobs.filter(function (j) { return isIndiaLocation(j.location) && validCompany(j.company); });
       STATE.jobs.forEach(function (j) { j.isNew = false; });
       STATE.diagnostics = stored.diagnostics || [];
       buildCityOptions();

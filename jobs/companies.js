@@ -64,7 +64,6 @@ window.COMPANIES = [
   { name: 'Zscaler',          provider: 'greenhouse', slug: 'zscaler',       sectors: ['security'] },
   { name: 'HackerRank',       provider: 'greenhouse', slug: 'hackerrank',    sectors: ['saas'] },
   { name: 'Coursera',         provider: 'greenhouse', slug: 'coursera',      sectors: ['edtech'] },
-  { name: 'Databricks',       provider: 'greenhouse', slug: 'databricks',    sectors: ['saas'] },
   { name: 'Airbnb',           provider: 'greenhouse', slug: 'airbnb',        sectors: ['travel'] },
   { name: 'Dropbox',          provider: 'greenhouse', slug: 'dropbox',       sectors: ['saas'] },
   { name: 'DoorDash',         provider: 'greenhouse', slug: 'doordash',      sectors: ['ops'] },

@@ -266,8 +266,11 @@ function main() {
     // A hard safety cutoff removes anything unseen for RETENTION_DAYS (dead board).
     const okCos = {};
     diags.forEach(d => { if (d.ok) okCos[d.company] = 1; });
+    const validCo = {};
+    COMPANIES.forEach(c => { validCo[c.name] = 1; });
     const hardCutoff = now - RETENTION_DAYS * 86400000;
     let jobs = Object.keys(byUrl).map(u => byUrl[u]).filter(j => {
+      if (!validCo[j.company]) return false;                        // company removed from registry → purge now
       if (okCos[j.company] && j.lastSeen !== nowIso) return false;   // closed listing
       const seen = Date.parse(j.lastSeen || j.firstSeen || nowIso);
       return isNaN(seen) ? true : seen >= hardCutoff;
