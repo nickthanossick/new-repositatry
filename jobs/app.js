@@ -83,6 +83,12 @@
   }
 
   /* ---------------- classification ---------------- */
+  // A usable apply link = real http(s) candidate-facing page (not an API/JSON endpoint).
+  function goodApplyUrl(u) {
+    return typeof u === 'string' && /^https?:\/\//.test(u) &&
+      u.indexOf('api.smartrecruiters.com') === -1 &&
+      u.indexOf('boards-api.greenhouse.io') === -1;
+  }
   function isIndiaLocation(locText) {
     var t = lc(locText); if (!t) return false;
     var i;
@@ -182,7 +188,8 @@
           var locStr = [loc.city, loc.region, loc.country].filter(Boolean).join(', ');
           return { id: co.provider + ':' + co.slug + ':' + j.id, title: j.name || '', company: co.name,
             location: locStr, department: (j.department && j.department.label) || (j.function && j.function.label) || '',
-            applyUrl: j.ref || ('https://jobs.smartrecruiters.com/' + co.slug + '/' + j.id),
+            // Public posting page (NOT j.ref — that is the API URL that opens raw JSON).
+            applyUrl: 'https://jobs.smartrecruiters.com/' + co.slug + '/' + j.id,
             postedAt: j.releasedDate || null, rawText: (j.name || '') };
         }), count: list.length };
       });
@@ -240,7 +247,7 @@
         if (!r) return;
         var matched = 0;
         r.jobs.forEach(function (j) {
-          if (!j.applyUrl) return;
+          if (!goodApplyUrl(j.applyUrl)) return;   // usable, candidate-facing link only
           // India-ONLY: the location field itself must be India. No description fallback
           // (that used to let a few foreign jobs slip in via an Indian city in the body).
           if (!isIndiaLocation(j.location)) return;
@@ -515,6 +522,12 @@
     if (!silent) el('status').innerHTML = '<span class="spin"></span> Scanning company career pages…';
 
     fetchFresh().then(function (fresh) {
+      // ONLY-OPEN reconcile: if a company was fetched OK this pass but one of its previously
+      // stored jobs is no longer listed, that listing has closed → drop it (kills dead/404
+      // apply links). Companies that failed this pass (CORS/network) keep their jobs untouched.
+      var freshUrls = {}; fresh.forEach(function (j) { freshUrls[j.applyUrl] = 1; });
+      var okCo = {}; STATE.diagnostics.forEach(function (d) { if (d.ok) okCo[d.company] = 1; });
+      STATE.jobs = STATE.jobs.filter(function (j) { return !okCo[j.company] || freshUrls[j.applyUrl]; });
       mergeJobs(fresh);
       buildCityOptions();
       render(); renderDiagnostics();

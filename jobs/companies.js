@@ -362,5 +362,53 @@ window.COMPANIES = [
   { name: 'Genpact',          provider: 'smartrecruiters', slug: 'Genpact',         sectors: ['bpo'] },
   { name: 'WNS',              provider: 'smartrecruiters', slug: 'WNS',             sectors: ['bpo'] },
   { name: 'Reliance Retail',  provider: 'smartrecruiters', slug: 'RelianceRetail',  sectors: ['retail','sales'] },
-  { name: 'Aditya Birla',     provider: 'smartrecruiters', slug: 'AdityaBirlaGroup',sectors: ['retail','sales'] }
+  { name: 'Aditya Birla',     provider: 'smartrecruiters', slug: 'AdityaBirlaGroup',sectors: ['retail','sales'] },
+
+  /* ================= BATCH 4 — supply chain / logistics / ops + more sales (public ATS) ================= */
+  /* ----- Greenhouse: logistics / supply-chain / ops with India teams ----- */
+  { name: 'Flexport',         provider: 'greenhouse', slug: 'flexport',        sectors: ['logistics','supplychain'] },
+  { name: 'FourKites',        provider: 'greenhouse', slug: 'fourkites',       sectors: ['logistics','supplychain','sales'] },
+  { name: 'project44',        provider: 'greenhouse', slug: 'project44',       sectors: ['logistics','supplychain'] },
+  { name: 'Locus.sh',         provider: 'greenhouse', slug: 'locusdotsh',      sectors: ['logistics','supplychain'] },
+  { name: 'Shipsy',           provider: 'greenhouse', slug: 'shipsy',          sectors: ['logistics','supplychain','sales'] },
+  { name: 'Instawork',        provider: 'greenhouse', slug: 'instawork',       sectors: ['staffing','ops'] },
+  { name: 'Loadsmart',        provider: 'greenhouse', slug: 'loadsmart',       sectors: ['logistics','supplychain'] },
+  { name: 'Bringg',           provider: 'greenhouse', slug: 'bringg',          sectors: ['logistics','ops'] },
+  { name: 'GoComet',          provider: 'greenhouse', slug: 'gocomet',         sectors: ['logistics','supplychain','sales'] },
+
+  /* ----- Lever: Indian logistics / supply-chain / commerce ops + sales ----- */
+  { name: 'Ninjacart',        provider: 'lever', slug: 'ninjacart',        sectors: ['supplychain','ops','sales'] },
+  { name: 'Udaan',            provider: 'lever', slug: 'udaan',            sectors: ['ecommerce','supplychain','sales'] },
+  { name: 'BlackBuck',        provider: 'lever', slug: 'blackbuck',        sectors: ['logistics','ops','sales'] },
+  { name: 'Ecom Express',     provider: 'lever', slug: 'ecomexpress',      sectors: ['logistics','ops'] },
+  { name: 'Shadowfax',        provider: 'lever', slug: 'shadowfax',        sectors: ['logistics','ops'] },
+  { name: 'LoadShare',        provider: 'lever', slug: 'loadshare',        sectors: ['logistics','ops'] },
+  { name: 'Xpressbees',       provider: 'lever', slug: 'xpressbees',       sectors: ['logistics','ops'] },
+  { name: 'ElasticRun',       provider: 'lever', slug: 'elastic-run',      sectors: ['supplychain','ops','sales'] },
+  { name: 'Zippee',           provider: 'lever', slug: 'zippee',           sectors: ['logistics','ops'] },
+  { name: 'Fleetx',           provider: 'lever', slug: 'fleetx',           sectors: ['logistics','supplychain','sales'] },
+  { name: 'MoveInSync',       provider: 'lever', slug: 'moveinsync',       sectors: ['logistics','ops'] },
+  { name: 'Locofast',         provider: 'lever', slug: 'locofast',         sectors: ['supplychain','sales'] },
+  { name: 'Fashinza',         provider: 'lever', slug: 'fashinza',         sectors: ['supplychain','sales'] },
+  { name: 'Jumbotail',        provider: 'lever', slug: 'jumbotail',        sectors: ['supplychain','sales'] },
+  { name: 'Captain Fresh',    provider: 'lever', slug: 'captainfresh',     sectors: ['supplychain','sales'] },
+  { name: 'DeHaat',           provider: 'lever', slug: 'dehaat',           sectors: ['agri','supplychain','sales'] },
+  { name: 'Elastic Run 2',    provider: 'greenhouse', slug: 'elasticrun',  sectors: ['supplychain','ops'] },
+
+  /* ----- Ashby / Recruitee / Workable: smaller ops & sales-heavy startups ----- */
+  { name: 'Increff',          provider: 'ashby', slug: 'increff',         sectors: ['supplychain','saas'] },
+  { name: 'Shiprocket',       provider: 'workable', slug: 'shiprocket',    sectors: ['logistics','ops','sales'] },
+  { name: 'Clickpost',        provider: 'workable', slug: 'clickpost',     sectors: ['logistics','saas','sales'] },
+  { name: 'Eshopbox',         provider: 'workable', slug: 'eshopbox',      sectors: ['logistics','ops'] },
+  { name: 'Vinculum',         provider: 'workable', slug: 'vinculumgroup', sectors: ['supplychain','saas','sales'] },
+  { name: 'Unicommerce',      provider: 'workable', slug: 'unicommerce',   sectors: ['supplychain','saas','sales'] },
+  { name: 'EasyEcom',         provider: 'workable', slug: 'easyecom',      sectors: ['supplychain','saas','sales'] },
+  { name: 'Bizongo',          provider: 'lever', slug: 'bizongo',          sectors: ['supplychain','sales'] },
+  { name: 'Infra.Market',     provider: 'lever', slug: 'inframarket',      sectors: ['supplychain','sales'] },
+
+  /* ----- SmartRecruiters: large logistics / retail / BFSI (public jobs) ----- */
+  { name: 'Maersk',           provider: 'smartrecruiters', slug: 'Maersk',           sectors: ['logistics','supplychain'] },
+  { name: 'Kuehne+Nagel',     provider: 'smartrecruiters', slug: 'KuehneNagel',      sectors: ['logistics','supplychain'] },
+  { name: 'DP World',         provider: 'smartrecruiters', slug: 'DPWorld',          sectors: ['logistics','supplychain'] },
+  { name: 'FedEx',            provider: 'smartrecruiters', slug: 'FedEx',            sectors: ['logistics','ops'] }
 ];

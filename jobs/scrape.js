@@ -32,6 +32,13 @@ const RETENTION_DAYS = 21;      // drop jobs not seen for this long
 /* ---------------- shared pure logic (mirrors app.js) ---------------- */
 function lc(s) { return (s == null ? '' : String(s)).toLowerCase(); }
 
+// A usable apply link = real http(s) to a candidate-facing page (not an API/JSON endpoint).
+function goodApplyUrl(u) {
+  return typeof u === 'string' && /^https?:\/\//.test(u) &&
+    u.indexOf('api.smartrecruiters.com') === -1 &&
+    u.indexOf('boards-api.greenhouse.io') === -1;
+}
+
 function stripHtml(html) {
   if (!html) return '';
   return String(html)
@@ -155,7 +162,8 @@ function adaptSmartRecruiters(co) {
         const locStr = [loc.city, loc.region, loc.country].filter(Boolean).join(', ');
         return { id: co.provider + ':' + co.slug + ':' + j.id, title: j.name || '', company: co.name,
           location: locStr, department: (j.department && j.department.label) || (j.function && j.function.label) || '',
-          applyUrl: j.ref || ('https://jobs.smartrecruiters.com/' + co.slug + '/' + j.id),
+          // Public posting page (NOT j.ref — that is the API URL, which opens raw JSON).
+          applyUrl: 'https://jobs.smartrecruiters.com/' + co.slug + '/' + j.id,
           postedAt: j.releasedDate || null, rawText: (j.name || '') };
       }), count: list.length };
     });
@@ -205,7 +213,7 @@ function fetchAll() {
       if (!r) return;
       let matched = 0;
       r.jobs.forEach(j => {
-        if (!j.applyUrl) return;
+        if (!goodApplyUrl(j.applyUrl)) return;                    // usable, candidate-facing link only
         if (!isIndiaLocation(j.location)) return;                 // India-only
         const roleTags = matchRoles(j.title + ' ' + j.department);
         if (!roleTags.length) return;                             // must match a target role
@@ -252,11 +260,17 @@ function main() {
       }
     });
 
-    // retention: drop anything not seen within RETENTION_DAYS
-    const cutoff = now - RETENTION_DAYS * 86400000;
+    // ONLY-OPEN policy: if a job's company was scraped successfully THIS run but the job
+    // was not in the results, the listing has closed → drop it (so no dead/404 apply links).
+    // Jobs whose company failed this run (transient network/CORS) are kept until it succeeds.
+    // A hard safety cutoff removes anything unseen for RETENTION_DAYS (dead board).
+    const okCos = {};
+    diags.forEach(d => { if (d.ok) okCos[d.company] = 1; });
+    const hardCutoff = now - RETENTION_DAYS * 86400000;
     let jobs = Object.keys(byUrl).map(u => byUrl[u]).filter(j => {
+      if (okCos[j.company] && j.lastSeen !== nowIso) return false;   // closed listing
       const seen = Date.parse(j.lastSeen || j.firstSeen || nowIso);
-      return isNaN(seen) ? true : seen >= cutoff;
+      return isNaN(seen) ? true : seen >= hardCutoff;
     });
 
     // newest first, cap
