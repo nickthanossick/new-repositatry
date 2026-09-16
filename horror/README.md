@@ -71,3 +71,9 @@ Console me `window.ANDHERA` available hai — `tp(x,z,yaw)`, `setFloor(n)`,
 
 Roof ka actual level, lift shaft, saved progress, mobile touch controls,
 aur ending cinematic.
+
+## Single-file version
+
+`andhera-standalone.html` (9 MB) — three.js, 3D scan aur terrain map sab inline.
+Koi server nahi chahiye, browser me seedha double-click karo. Offline chalta hai.
+Ise `tools/build-single.js` banata hai (`node tools/build-single.js`).
