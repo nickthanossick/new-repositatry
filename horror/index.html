@@ -689,8 +689,18 @@ function initMaterials(){
   MAT.sign =new THREE.MeshBasicMaterial({color:0x2fbf6a,toneMapped:false});
   MAT.signR=new THREE.MeshBasicMaterial({color:0xd03b2a,toneMapped:false});
   MAT.bulb =new THREE.MeshBasicMaterial({color:0xfff0cf,toneMapped:false});
-  MAT.ghost=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95,metalness:0,
-              emissive:0x05070a,emissiveIntensity:1});
+  MAT.ghost=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.97,metalness:0,
+              emissive:0x070707,emissiveIntensity:0.35});
+  /* the baked-red eye vertices glow on their own, so she is never fully dark */
+  MAT.ghost.onBeforeCompile=sh=>{
+    sh.uniforms.uGlow={value:0};
+    sh.fragmentShader='uniform float uGlow;\n'+sh.fragmentShader.replace(
+      '#include <emissivemap_fragment>',
+      '#include <emissivemap_fragment>\n'+
+      'float redn = clamp(vColor.r - max(vColor.g, vColor.b) * 1.8, 0.0, 1.0);\n'+
+      'totalEmissiveRadiance += vec3(1.0, 0.07, 0.04) * redn * uGlow;');
+    MAT.ghost.userData.shader=sh;
+  };
   MAT.silh =new THREE.MeshBasicMaterial({color:0x04050a,toneMapped:false,fog:true});
   if(floorTex) floorTex.repeat.set(1,1);
 }
@@ -1511,7 +1521,7 @@ const Ghost={
     const g=new THREE.Group();
     const m=new THREE.Mesh(geo,MAT.ghost);
     m.castShadow=true; m.receiveShadow=false; g.add(m); this.mesh=m;
-    const eyes=new THREE.PointLight(0xff2a20,0,3.2,2); eyes.position.set(0,1.62,-0.16);
+    const eyes=new THREE.PointLight(0xff2a20,0,0.95,2.6); eyes.position.set(0,1.67,-0.32);
     g.add(eyes); this.eyeLight=eyes;
     g.visible=false; Int.group.add(g); this.obj=g;
     this.silh=[];
@@ -1538,7 +1548,7 @@ const Ghost={
   monstrous(on){
     this.obj.scale.set(on?1.18:1,on?1.24:1,on?1.18:1);
     this.mesh.material=on?MAT.ghost:MAT.ghost;
-    this.eyeLight.intensity=on?2.6:0;
+    this.eyeLight.intensity=on?0.95:0;
   },
   buildField(F){
     const {grid,nx,nz,CW}=F.nav;
@@ -1588,7 +1598,12 @@ const Ghost={
     const dx=this.x-P.x, dz=this.z-P.z, d=Math.hypot(dx,dz)||1;
     return (dx*fwd.x+dz*fwd.z)/d;
   },
+  setGlow(v){
+    const sh=MAT.ghost.userData.shader;
+    if(sh&&sh.uniforms.uGlow) sh.uniforms.uGlow.value=v;
+  },
   update(dt){
+    this.setGlow(this.obj&&this.obj.visible?clamp(2.2+this.eyeLight.intensity*3.4,0,7):0);
     if(this.mode==='off'||!P.inside) return;
     const F=Int.floors[this.floor];
     if(!F) return;
@@ -1603,7 +1618,7 @@ const Ghost={
 
     if(this.mode==='still'){
       this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z));
-      this.eyeLight.intensity=lerp(this.eyeLight.intensity,this.dist<14?2.2:0.4,0.05);
+      this.eyeLight.intensity=lerp(this.eyeLight.intensity,this.dist<14?0.8:0.16,0.05);
       if(this.timer>0){ this.timer-=dt; if(this.timer<=0&&this.onTimer) this.onTimer(); }
       return;
     }
@@ -1619,16 +1634,16 @@ const Ghost={
       this.seenT=(facing>0.86&&this.dist<16&&Torch.lit())?this.seenT+dt:Math.max(0,this.seenT-dt*0.6);
       const alert=P.run||this.seenT>1.4||this.dist<7;
       this.stepToward(F,dt,alert?this.speed*1.25:this.speed*0.65);
-      this.eyeLight.intensity=lerp(this.eyeLight.intensity,alert?2.4:0.5,0.06);
+      this.eyeLight.intensity=lerp(this.eyeLight.intensity,alert?0.85:0.18,0.06);
     } else if(this.mode==='chase'){
       this.stepToward(F,dt,this.speed);
-      this.eyeLight.intensity=2.8;
+      this.eyeLight.intensity=0.95;
       if(this.timer>0){ this.timer-=dt; if(this.timer<=0){ this.hide(); if(this.onTimer) this.onTimer(); return; } }
     } else if(this.mode==='dark'){
       /* she only moves while the torch is out */
       const dark=!Torch.lit();
       if(dark){ this.stepToward(F,dt,this.speed); if(Math.random()<dt*3) A.step(true,true); }
-      this.eyeLight.intensity=lerp(this.eyeLight.intensity,dark?0.2:2.6,0.15);
+      this.eyeLight.intensity=lerp(this.eyeLight.intensity,dark?0.07:0.9,0.15);
     } else if(this.mode==='ritual'){
       const c=this.anchor||{x:0,z:0};
       this.ringT+=dt*0.55;
@@ -1637,7 +1652,7 @@ const Ghost={
       this.x=lerp(this.x,tx,1-Math.exp(-2.4*dt));
       this.z=lerp(this.z,tz,1-Math.exp(-2.4*dt));
       this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z));
-      this.eyeLight.intensity=2.6;
+      this.eyeLight.intensity=0.95;
       this.lunge-=dt;
       if(this.lunge<=0){ this.lunge=rnd(4.5,8);
         A.scream(); Effects.shake(0.6); Effects.pulse(0.5); }
@@ -1978,7 +1993,7 @@ MISSIONS[1]=()=>{
       Cine.play([
         {fn(){ P.frozen=1; A.whisper(); },dur:1.2},
         {say:['','Woh dheere se sar uthaati hai.'],dur:2.4},
-        {fn(){ Ghost.eyeLight.intensity=3.2; A.sting(); Effects.shake(1); Effects.pulse(0.7); },dur:1.0},
+        {fn(){ Ghost.eyeLight.intensity=1.1; A.sting(); Effects.shake(1); Effects.pulse(0.7); },dur:1.0},
         {fn(){ powerOn=false; Torch.forceOff=1.4; A.slam(); },dur:1.4},
         {say:['DEV','Bhaag. BHAAG!'],dur:1.6}
       ],()=>{ powerOn=true; });

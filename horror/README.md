@@ -61,16 +61,22 @@ Uske baad post-credits stinger.
 | `assets/igmc.glb` | IGMC Shimla ka 3D scan — 272k tris, vertex colours bake kiye hue |
 | `assets/terrain.png` | 512² map: R+G = ground height, B = collision |
 | `assets/props.glb` | tumhare 35 OBJ props (bed, wheelchair, cradle, diya, ghanti, generator…) |
-| `assets/chudail.glb` | Nirmala — chudail pack ke baked OBJ geometry se |
+| `assets/chudail.glb` | Nirmala — tumhara chudail OBJ, colours bake kiye hue |
 | `assets/floor_tile.png` | brown granite tile floor texture |
 
-**Chudail pack ke baare me:** us zip me sirf `fal.media` ke URL the (model.glb, rigged_character.glb,
-walking/running animations) aur ek integrated HTML. Ye environment fal CDN tak nahi pahunch sakta,
-lekin us HTML ke andar chudail ka **baked mesh** (exact source OBJ geometry + MTL colours) mila —
-wahi extract karke `chudail.glb` banaya. Jo cheez nahi mili wo hai **rigged skeleton + walking/running
-animations**. Agar tum `chudail_full_asset_pack_with_animations/scripts/download_assets.sh` chala ke
-`rigged_character.glb` + `walking.glb` le aao, to unhe support karne ke liye skinned-mesh loader
-add karna padega — abhi game static mesh ko procedurally hilata hai (bob, sway, turn).
+**Chudail:** `assets/chudail.glb` tumhare bheje hue OBJ se bana hai (49,300 tris, 1.80 m tall).
+Us OBJ ke saath texture PNG file nahi aayi thi, is liye colours geometry se bake kiye gaye hain:
+kaale baal (sar + peeth pe lambi lat + kandhon pe strands), safed/cream saree, pale skin
+(haath, pair, chehra), aur **laal aankhein** — do patli slits, gehre socket ke andar. Saath me
+per-vertex ambient occlusion aur saree ke neeche mail. Aankhein shader me emissive hain, is liye
+poore andhere me bhi chamakti hain (`uGlow` uniform, `MAT.ghost.onBeforeCompile`).
+
+Agar tum `texture_20250901.png` file ke roop me bhej do, to model ke UVs already hain — texture
+map seedha laga dunga aur bake ki zarurat nahi rahegi.
+
+Purane chudail pack (jo zip me tha) me sirf `fal.media` ke URL the aur ye environment us CDN tak
+nahi pahunch sakta. Rigged skeleton + walking/running animations abhi bhi nahi hain — game static
+mesh ko procedurally hilata hai (bob, sway, turn).
 
 Himachali pack (Pandit hands, doctor, nurse, guard) bhi sirf fal URLs the — isliye nurse/doctor
 silhouettes chudail mesh ko flat black material me render karke banaye gaye hain.
