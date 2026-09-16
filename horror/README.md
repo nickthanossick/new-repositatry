@@ -1,79 +1,97 @@
-# ANDHERA — IGMC Shimla
+# IGMC: NIGHT WATCH
 
-First-person horror game. Tu building ke bahar torch leke khada hai; andar dus manzilein hain.
-Chhat tak pahunchna hai.
+Paanch-mission first-person horror, IGMC Shimla ke andar. Tu Dev Pandit hai — ek chudail
+(Nirmala Thakur) apni maut ke aakhri dus minute baar baar jee rahi hai, aur usse maarna nahi,
+**sach dena** hai.
 
-Sab kuch browser me chalta hai — koi build step nahi, koi CDN nahi.
+Sab kuch browser me chalta hai. Koi build step nahi, koi CDN nahi.
 
 ## Khelna kaise hai
-
-Ye `file://` se nahi chalega (assets fetch block ho jaate hain). Ek chhota server chahiye:
 
 ```bash
 cd horror
 python3 -m http.server 8000
-# phir kholo: http://localhost:8000/
+# kholo: http://localhost:8000/
 ```
 
-GitHub Pages pe repo publish ho to seedha `<pages-url>/horror/` khul jaayega.
+Ya `andhera-standalone.html` download karke seedha double-click karo — sab kuch us ek file ke
+andar hai (server ki zarurat nahi).
 
 ## Controls
 
 | key | kaam |
 |---|---|
 | `W A S D` | chalna |
-| `SHIFT` | daudna (awaaz hoti hai) |
+| `SHIFT` | daudna (awaaz hoti hai — wo sun leti hai) |
 | mouse | dekhna |
 | `F` | torch on / off |
-| `E` / click | darwaza kholo, cheez uthao, note padho |
+| `E` / click | darwaza, cheez uthao, kaagaz padho, interact |
 | `R` | torch ka cell badlo |
+| `TAB` | objective dobara dekho |
 | `ESC` | pause |
 
-## Kya bana hua hai
+Menu me **Mission chuno** se kisi bhi mission se shuru kar sakte ho.
 
-**Bahar** — asli IGMC Shimla ka 3D scan (`assets/igmc.glb`). Model me koi texture nahi
-thi, is liye uske colours bake kiye gaye hain: cream/beige plaster, dark glass windows,
-grey concrete roof, hillside ka green, plus voxel ambient-occlusion. Seedhiyan, porch ka
-darwaza, signboard, lamp posts aur barish mere add kiye hue hain.
+## Missions
 
-**Andar** — poora procedural. Har floor ek hospital block hai: perimeter wards ka band,
-uske andar corridor ring, beech me core (stairwell, lift lobby, wards) aur ek cross
-corridor. 31 kamre, beds/gurneys/cabinets, flickering tube lights, EXIT signs.
+1. **THE CRYING FLOOR** — Ground → Floor 2. Rone ki aawaz peecha karta hai par har baar jagah
+   badal deti hai. Wheelchair khud hilti hai, lift khaali andhere me khulti hai, chaadar ke
+   neeche koi hota hai — aur nahi hota. Maternity register milta hai. Floor 2 pe Nirmala pehli
+   baar dikhti hai, batti jaati hai, pehla chase. Ward me chaandi ki paayal.
+2. **THE HOSPITAL REMEMBERS** — Floors 3–5. Teen yaadein: nurse ka ID (F3, silhouettes),
+   khoon lagi surgical cloth (F4, ab wo patrol karti hai), aur death certificate (F5 — do fuse
+   dhoondh ke bijli wapas lao, battiyan ek ek karke jalti hain, aakhri ke neeche wo khadi hai).
+3. **DON'T TAKE THE ELEVATOR** — Floor 5 → Basement → Floor 7. Basement me diesel, starter fuse
+   aur generator key. Yahan wo **sirf tab chalti hai jab torch bujhi ho**. Generator chalu karne
+   ke baad lift chalti hai — par lift 5, 6, 10, B, 2 dikhata hua delivery room pe rukti hai.
+4. **THE TENTH MINUTE** — Floors 7–10. Radio pe police, phir teen clue (photograph, medical
+   report, complaint letter), Floor 9 pe doctor ka cassette confession, aur Floor 10 — laal
+   batti, khaali cradle, poora chase. Prayer room me bachche ka ID band.
+5. **MOTHER** — Floor 10 se Floor 2 tak paidal. Har floor pe kuch alag hota hai. Maternity ward
+   me cradle ke chaaro taraf paanchon cheezein rakho, phir teen stage ka ritual: diye jalao,
+   gayab cheezein wapas laao, teen nishaan pe ghanti bajao. Uske baad jawab dena padta hai.
 
-**Progression** — 10 floors. Floor 3, 6 aur 8 pe stairwell locked hai; us floor pe hi
-chaabi (K3 / K6 / K8) padi hai. Notes lore dete hain, spare cells torch chalaate hain.
-Floor 10 ke stairwell me chhat ka darwaza = ending.
+Phir **false ending** — bahar nikalna, officer, aur jo cheez tumhare paas nahi honi chahiye thi.
+Uske baad post-credits stinger.
 
-**Jo peecha karta hai** — floor 4 se aata hai. 1 m grid pe BFS flow-field se raasta
-dhoondhta hai, is liye deewaron pe nahi atakta. Torch uske upar maaro to ruk jaata hai,
-par battery teen guna tezi se khatam hoti hai.
+## Assets
 
-**Awaaz** — saari WebAudio se synth ki hui hai (koi audio file nahi): drone, hawa,
-kadmon ki awaaz, dhadkan, darwaze ki chuun, whispers, bijli ki kadak, jumpscare sting.
+| cheez | kahan se |
+|---|---|
+| `assets/igmc.glb` | IGMC Shimla ka 3D scan — 272k tris, vertex colours bake kiye hue |
+| `assets/terrain.png` | 512² map: R+G = ground height, B = collision |
+| `assets/props.glb` | tumhare 35 OBJ props (bed, wheelchair, cradle, diya, ghanti, generator…) |
+| `assets/chudail.glb` | Nirmala — chudail pack ke baked OBJ geometry se |
+| `assets/floor_tile.png` | brown granite tile floor texture |
+
+**Chudail pack ke baare me:** us zip me sirf `fal.media` ke URL the (model.glb, rigged_character.glb,
+walking/running animations) aur ek integrated HTML. Ye environment fal CDN tak nahi pahunch sakta,
+lekin us HTML ke andar chudail ka **baked mesh** (exact source OBJ geometry + MTL colours) mila —
+wahi extract karke `chudail.glb` banaya. Jo cheez nahi mili wo hai **rigged skeleton + walking/running
+animations**. Agar tum `chudail_full_asset_pack_with_animations/scripts/download_assets.sh` chala ke
+`rigged_character.glb` + `walking.glb` le aao, to unhe support karne ke liye skinned-mesh loader
+add karna padega — abhi game static mesh ko procedurally hilata hai (bob, sway, turn).
+
+Himachali pack (Pandit hands, doctor, nurse, guard) bhi sirf fal URLs the — isliye nurse/doctor
+silhouettes chudail mesh ko flat black material me render karke banaye gaye hain.
 
 ## Files
 
 ```
 horror/
-  index.html              poora game (three.js module)
-  lib/three.module.min.js three.js r180, npm se vendor kiya (MIT)
-  lib/three.core.min.js
-  assets/igmc.glb         272k tris, vertex colours — scan se banaya
-  assets/terrain.png      512² map: R+G = ground height, B = collision
+  index.html               poora game (~2900 lines, three.js module)
+  andhera-standalone.html  single-file build — sab inline, offline chalta hai
+  lib/                     three.js r180, npm se vendor kiya (MIT)
+  assets/                  glb + png
+  tools/build-single.js    standalone file dobara banane ke liye
 ```
 
 ## Debugging
 
-Console me `window.ANDHERA` available hai — `tp(x,z,yaw)`, `setFloor(n)`,
-`enterBuilding()`, `Torch.power`, `It`, `Int.floors` waghera.
+Console me `window.IGMC`: `tp(x,z,yaw)`, `setFloor(n)`, `startRun(m)`, `skip()` (agla beat),
+`give(id)`, `Ghost`, `Story.beats`, `Int.floors[f].special`.
 
-## Aage kya
+## Aage kya ho sakta hai
 
-Roof ka actual level, lift shaft, saved progress, mobile touch controls,
-aur ending cinematic.
-
-## Single-file version
-
-`andhera-standalone.html` (9 MB) — three.js, 3D scan aur terrain map sab inline.
-Koi server nahi chahiye, browser me seedha double-click karo. Offline chalta hai.
-Ise `tools/build-single.js` banata hai (`node tools/build-single.js`).
+Rigged chudail + real walk/run animations, saved progress, mobile touch controls,
+aur voice-over ke liye asli audio clips (abhi sab WebAudio se synth hai).
