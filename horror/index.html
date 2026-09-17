@@ -686,25 +686,27 @@ function noiseFill(g,s,base,amt,scale){
   g.putImageData(img,0,0);
 }
 const TEX={
+  /* hospital white. The grime is neutral grey so the walls never go sepia —
+     any warmth you see is the torch, and the torch is now cooler too. */
   get paint(){ return canvasTex('paint',256,(g,s)=>{
-    noiseFill(g,s,[226,229,223],0.07,1.1);
-    for(let i=0;i<30;i++){ g.fillStyle='rgba(150,152,138,'+(0.06+Math.random()*0.16).toFixed(2)+')';
+    noiseFill(g,s,[248,249,250],0.045,1.1);
+    for(let i=0;i<26;i++){ g.fillStyle='rgba(176,180,186,'+(0.04+Math.random()*0.10).toFixed(2)+')';
       g.beginPath(); const cx=Math.random()*s, cy=Math.random()*s, r=8+Math.random()*30;
       for(let a=0;a<9;a++){const an=a/9*6.283, rr=r*(0.55+Math.random()*0.6);
         (a?g.lineTo:g.moveTo).call(g,cx+Math.cos(an)*rr,cy+Math.sin(an)*rr);}
       g.closePath(); g.fill(); }
-    for(let i=0;i<22;i++){ const x=Math.random()*s, gr=g.createLinearGradient(x,0,x,s);
-      gr.addColorStop(0,'rgba(104,106,92,.20)'); gr.addColorStop(1,'rgba(104,106,92,0)');
-      g.fillStyle=gr; g.fillRect(x,0,2+Math.random()*7,s); }
-    /* pale green hospital dado along the lower third */
-    const d=g.createLinearGradient(0,s*0.62,0,s);
-    d.addColorStop(0,'rgba(150,178,160,0)'); d.addColorStop(0.12,'rgba(150,178,160,.34)');
-    d.addColorStop(1,'rgba(136,166,150,.40)');
-    g.fillStyle=d; g.fillRect(0,s*0.62,s,s*0.38);
+    for(let i=0;i<18;i++){ const x=Math.random()*s, gr=g.createLinearGradient(x,0,x,s);
+      gr.addColorStop(0,'rgba(150,156,164,.14)'); gr.addColorStop(1,'rgba(150,156,164,0)');
+      g.fillStyle=gr; g.fillRect(x,0,2+Math.random()*6,s); }
+    /* a cold grey skirting band instead of the old green dado */
+    const d=g.createLinearGradient(0,s*0.74,0,s);
+    d.addColorStop(0,'rgba(196,201,208,0)'); d.addColorStop(0.18,'rgba(196,201,208,.22)');
+    d.addColorStop(1,'rgba(184,190,198,.30)');
+    g.fillStyle=d; g.fillRect(0,s*0.74,s,s*0.26);
   }); },
   get ceil(){ return canvasTex('ceil',256,(g,s)=>{
-    noiseFill(g,s,[232,234,230],0.06,1.6);
-    for(let i=0;i<14;i++){ g.fillStyle='rgba(150,140,110,'+(0.05+Math.random()*0.18).toFixed(2)+')';
+    noiseFill(g,s,[246,248,250],0.05,1.6);
+    for(let i=0;i<14;i++){ g.fillStyle='rgba(158,164,172,'+(0.04+Math.random()*0.12).toFixed(2)+')';
       g.beginPath(); g.arc(Math.random()*s,Math.random()*s,6+Math.random()*26,0,7); g.fill(); }
     g.strokeStyle='rgba(120,122,118,.55)'; g.lineWidth=3;
     for(let i=0;i<=2;i++){const p=i*s/2;g.beginPath();g.moveTo(p,0);g.lineTo(p,s);g.moveTo(0,p);g.lineTo(s,p);g.stroke();}
@@ -716,7 +718,7 @@ const TEX={
       g.beginPath();g.arc(Math.random()*s,Math.random()*s,2+Math.random()*10,0,7);g.fill();}
   }); }
 };
-let floorTex=null, signTex=null;
+let floorTex=null, signTex=null, hindiTex=null;
 async function loadImageTex(url,repeat){
   const img=new Image(); img.src=url; await img.decode();
   const t=new THREE.Texture(img);
@@ -1006,9 +1008,51 @@ function initMaterials(){
        was built — the fear is that she is suddenly THERE, not that she sways. */
     sh.uniforms.uSelf={value:0.05};   // she lights herself — never a black blob
     sh.uniforms.uRim ={value:0.10};   // cold rim so she reads against the dark
-    sh.fragmentShader='uniform float uGlow;\n'+sh.fragmentShader.replace(
+    /* The texture is a fragmented atlas with no skin/cloth separation, so the
+       body is identified from object-space position instead: brown skin on the
+       face and the arms, blood running down from both, grime in the hem. */
+    sh.vertexShader=sh.vertexShader.replace('#include <common>',
+      '#include <common>\nvarying vec3 vBody;')
+      .replace('#include <begin_vertex>','#include <begin_vertex>\nvBody = transformed;');
+    sh.fragmentShader='uniform float uGlow;\nvarying vec3 vBody;\n'+
+      'float gSkinMask;\n'+
+      'float gnoise(vec3 p){ return fract(sin(dot(p,vec3(12.9898,78.233,37.719)))*43758.5453); }\n'+
+      'float gfbm(vec3 p){ return gnoise(p)*0.6 + gnoise(p*2.7)*0.3 + gnoise(p*6.1)*0.1; }\n'+
+      sh.fragmentShader.replace(
       '#include <emissivemap_fragment>',
       '#include <emissivemap_fragment>\n'+
+      'float bh   = clamp(vBody.y/1.80, 0.0, 1.0);\n'+
+      'float ax   = abs(vBody.x);\n'+
+      'float lum  = dot(diffuseColor.rgb, vec3(0.299,0.587,0.114));\n'+
+      /* --- face and neck: high, central, on the front of the head --- */
+      'float face = smoothstep(0.775,0.845,bh)\n'+
+      '           * (1.0 - smoothstep(0.14,0.26,ax)) * (1.0 - smoothstep(0.02,0.14,vBody.z));\n'+
+      /* --- arms and hands: out to the sides, below the shoulder --- */
+      'float arm  = smoothstep(0.30,0.40,bh) * (1.0 - smoothstep(0.68,0.80,bh))\n'+
+      '           * smoothstep(0.17,0.29,ax);\n'+
+      'float skin = clamp(face + arm, 0.0, 1.0);\n'+
+      'gSkinMask = skin;\n'+
+      /* skin keeps the texture's own shading, only the hue becomes hers */
+      'vec3 brown = vec3(0.128,0.058,0.034) + vec3(0.56,0.288,0.172) * lum;\n'+
+      'diffuseColor.rgb = mix(diffuseColor.rgb, brown, skin * 0.97);\n'+
+      /* --- blood: streaks that run downward from the face and the hands --- */
+      'float drip = gfbm(vec3(vBody.x*34.0, vBody.y*5.5, vBody.z*34.0));\n'+
+      'float bleedFace = smoothstep(0.62,0.90,bh) * (1.0 - smoothstep(0.90,0.99,bh))\n'+
+      '                * (1.0 - smoothstep(0.05,0.19,ax)) * (1.0 - smoothstep(0.0,0.12,vBody.z));\n'+
+      'float bleedHand = smoothstep(0.30,0.46,bh) * (1.0 - smoothstep(0.52,0.66,bh))\n'+
+      '                * smoothstep(0.22,0.35,ax);\n'+
+      'float bleedBody = smoothstep(0.30,0.62,bh) * (1.0 - smoothstep(0.62,0.80,bh))\n'+
+      '                * (1.0 - smoothstep(0.02,0.16,ax)) * (1.0 - smoothstep(0.0,0.10,vBody.z));\n'+
+      'float blood = clamp((bleedFace*1.15 + bleedHand*0.95 + bleedBody*0.85), 0.0, 1.0)\n'+
+      '            * smoothstep(0.52,0.80,drip);\n'+
+      'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.26,0.021,0.014), blood*0.90);\n'+
+      /* --- the saree is cloth, not plastic: warm it and dirty the hem --- */
+      'float cloth = (1.0 - skin) * (1.0 - blood);\n'+
+      'float hem   = 1.0 - smoothstep(0.03,0.36,bh);\n'+
+      'vec3 dirty  = diffuseColor.rgb * mix(vec3(1.0), vec3(0.52,0.47,0.42), hem*0.70);\n'+
+      'dirty *= mix(1.0, 0.80+gfbm(vBody*9.0)*0.35, 0.55);\n'+
+      'diffuseColor.rgb = mix(diffuseColor.rgb, dirty*vec3(1.02,0.995,0.955), cloth);\n'+
+      /* --- and the eyes stay burning --- */
       'float redn = clamp(vColor.r - max(vColor.g, vColor.b) * 1.15, 0.0, 1.0);\n'+
       'redn = pow(redn, 0.72);\n'+
       'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62,0.012,0.006), redn);\n'+
@@ -1023,13 +1067,17 @@ function initMaterials(){
     const hasView=sh.fragmentShader.includes('vViewPosition');
     sh.fragmentShader='uniform float uSelf;\nuniform float uRim;\n'+
       sh.fragmentShader.replace(anchor,
-      'totalEmissiveRadiance += diffuseColor.rgb * uSelf;\n'+
+      'totalEmissiveRadiance += diffuseColor.rgb * uSelf * mix(1.0, 0.22, gSkinMask);\n'+
       (hasView
         ?'float grim = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)),0.0,1.0), 2.2);\n'+
-         'totalEmissiveRadiance += vec3(0.72,0.73,0.78) * grim * uRim;\n'
+         'totalEmissiveRadiance += vec3(0.72,0.73,0.78) * grim * uRim * mix(1.0, 0.45, gSkinMask);\n'
         :'')+anchor);
     MAT.ghost.userData.shader=sh;
   };
+  /* the 30 Hindi boards share one atlas, so a whole floor of signage costs
+     one extra draw call */
+  MAT.hsign=new THREE.MeshStandardMaterial({map:hindiTex,roughness:.88,metalness:0,
+              emissive:0xffffff,emissiveMap:hindiTex,emissiveIntensity:0.07});
   MAT.silh =new THREE.MeshBasicMaterial({color:0x04050a,toneMapped:false,fog:true});
   if(floorTex) floorTex.repeat.set(1,1);
 }
@@ -1039,7 +1087,7 @@ const Torch={
   on:true, battery:1, cells:2, flicker:1, power:44, fillPower:1.5, forceOff:0, storm:0,
   spot:null, fill:null, body:null, lens:null,
   init(){
-    this.spot=new THREE.SpotLight(0xfff1d8,this.power,62,0.62,0.72,0.95);
+    this.spot=new THREE.SpotLight(0xfdfaf4,this.power,62,0.62,0.72,0.95);
     this.spot.castShadow=true;
     this.spot.shadow.mapSize.set(1024,1024);
     this.spot.shadow.camera.near=0.5; this.spot.shadow.camera.far=38;
@@ -1047,7 +1095,7 @@ const Torch={
     this.spot.position.set(0.26,-0.24,-0.78);
     this.spot.target.position.set(0.26,-0.52,-1.78);
     camera.add(this.spot); camera.add(this.spot.target);
-    this.fill=new THREE.PointLight(0xffe7c2,this.fillPower,13,1.15);
+    this.fill=new THREE.PointLight(0xf6f2ea,this.fillPower,13,1.15);
     this.fill.position.set(0.20,-0.30,-1.05); camera.add(this.fill);
     /* a tiny lamp that only reaches the hand, so the view model never goes flat black */
     this.vm=new THREE.PointLight(0xffdcae,1.1,1.1,1.1);
@@ -1263,6 +1311,23 @@ function segments(from,to,ops){
   if(cur<to-0.05) res.push([cur,to]);
   return res;
 }
+/* the pack's 30 boards, in atlas order (5 columns x 6 rows) */
+const SIGN_N=['01_shanti','02_swagat','03_tambakoo','04_hiv','05_beti','06_no_smoking',
+  '07_swachh','08_handwash','09_mask','10_blood_donation','11_emergency','12_opd',
+  '13_xray','14_mri','15_ctscan','16_pathology','17_bloodbank','18_pharmacy','19_toilet',
+  '20_female_ward','21_male_ward','22_icu','23_ot','24_queue','25_medicine','26_no_litter',
+  '27_dustbin','28_visiting','29_firestairs','30_authorized'];
+const SIGN_I={}; SIGN_N.forEach((n,i)=>SIGN_I[n]=i);
+const SIGN_COLS=5, SIGN_ROWS=6;
+/* which board belongs outside which kind of room */
+const ROOM_SIGN={maternity:'20_female_ward', ot:'23_ot', records:'30_authorized',
+  office:'28_visiting', duty:'28_visiting', prayer:'01_shanti', storeA:'25_medicine',
+  storeB:'18_pharmacy', wardA:'21_male_ward', wardB:'20_female_ward', icu:'22_icu',
+  lab:'16_pathology', xray:'13_xray'};
+/* the general notices that line the corridors */
+const SIGN_WALL=['01_shanti','03_tambakoo','04_hiv','05_beti','06_no_smoking','07_swachh',
+  '08_handwash','09_mask','10_blood_donation','24_queue','25_medicine','26_no_litter',
+  '27_dustbin','28_visiting','29_firestairs'];
 const FLOOR_NAME=f=> f===0?'BASEMENT':(f===1?'GROUND FLOOR':'FLOOR '+f);
 
 function buildFloor(fi){
@@ -1273,7 +1338,7 @@ function buildFloor(fi){
   const F={index:fi,y,rects:[],group:new THREE.Group(),doors:[],items:[],lights:[],rooms:[],
            openings:[],nav:null,special:{},props:[],dyn:{}};
   const W=new Builder(), FL=new Builder(), CE=new Builder(), PR=new Builder(), MT=new Builder();
-  const wallCol = base?0x8f8e88:0xf2f4ef;
+  const wallCol = base?0x9a9ea3:0xfdfdfe;
   const push=(x0,z0,x1,z1,d)=>F.rects.push({x0:Math.min(x0,x1),z0:Math.min(z0,z1),
       x1:Math.max(x0,x1),z1:Math.max(z0,z1),door:d||null});
   const wallX=(zf,from,to,ops,col)=>{
@@ -1304,7 +1369,7 @@ function buildFloor(fi){
   else CE.slab(-HX,-HZ,HX,HZ,y+CH,0.3,0xe6e7e3,0.3);
 
   /* perimeter */
-  const perimCol=base?0x87867f:0xe9ebe6;
+  const perimCol=base?0x92969b:0xf7f8fa;
   wallZ(-HX+WALL_T/2,-HZ,HZ,[],perimCol);
   wallZ( HX-WALL_T/2,-HZ,HZ,[],perimCol);
   wallX(-HZ+WALL_T/2,-HX,HX,[],perimCol);
@@ -1495,6 +1560,30 @@ function buildFloor(fi){
   };
   F.addDeco=addDeco;
 
+  /* --- the Hindi signboards: flat quads into one atlas-textured mesh --- */
+  const SG={p:[],n:[],u:[],i:[],v:0};
+  /* nx,nz is the wall normal the board faces along */
+  const addSign=(name,x,yy,z,nx,nz,w,h)=>{
+    const k=SIGN_I[name]; if(k===undefined) return;
+    const cx=k%SIGN_COLS, cy=(k/SIGN_COLS)|0;
+    const u0=cx/SIGN_COLS, u1=(cx+1)/SIGN_COLS;
+    /* atlas rows run top-down, texture V runs bottom-up */
+    const v1=1-cy/SIGN_ROWS, v0=1-(cy+1)/SIGN_ROWS;
+    const hw=w/2, hh=h/2;
+    const tx=nz, tz=-nx;                      // along-wall axis, left to right
+    const ox=nx*0.035, oz=nz*0.035;           // stand off the plaster
+    const base=SG.v;
+    const put=(sx,sy,uu,vv)=>{
+      SG.p.push(x+ox+tx*sx, yy+sy, z+oz+tz*sx);
+      SG.n.push(nx,0,nz); SG.u.push(uu,vv);
+    };
+    put(-hw,-hh,u0,v0); put(hw,-hh,u1,v0); put(hw,hh,u1,v1); put(-hw,hh,u0,v1);
+    /* counter-clockwise seen from the normal side, or the board is culled */
+    SG.i.push(base,base+1,base+2, base,base+2,base+3);
+    SG.v+=4;
+  };
+  F.addSign=addSign;
+
   /* purpose-built special rooms, kept clear so mission items are never buried */
   const sceneryProp=(name,x,z,ry,opts)=>addDeco(name,x,z,ry,
     Object.assign({},opts,{solid:opts&&opts.solid===false?false:true}));
@@ -1679,8 +1768,48 @@ function buildFloor(fi){
     }
   });
 
+  /* a department board beside every tagged room's door, on the corridor side */
+  allRooms.forEach(r=>{
+    if(!r.tagged) return;
+    const nm=ROOM_SIGN[r.kind]; if(!nm) return;
+    const d=r.door;
+    if(d.axis==='x'){
+      const nz=r.dir>0?-1:1;                 // face away from the room
+      addSign(nm, d.x+1.35, y+2.12, d.z+nz*0.02, 0, nz, 1.50, 0.75);
+    } else {
+      const nx=r.dir>0?-1:1;
+      addSign(nm, d.x+nx*0.02, y+2.12, d.z+1.35, nx, 0, 1.50, 0.75);
+    }
+  });
+  /* public notices spaced along the four perimeter walls */
+  (()=>{
+    const pick=i=>SIGN_WALL[(i*7+fi*5)%SIGN_WALL.length];
+    let n=0;
+    const IN=WALL_T+0.02;
+    for(let x=-HX+7; x<=HX-7; x+=9.5){
+      addSign(pick(n++), x, y+2.10, -HZ+IN, 0, 1, 1.15, 0.575);
+      addSign(pick(n++), x, y+2.10,  HZ-IN, 0,-1, 1.15, 0.575);
+    }
+    for(let z=-HZ+8; z<=HZ-8; z+=9.5){
+      addSign(pick(n++), -HX+IN, y+2.10, z, 1, 0, 1.15, 0.575);
+      addSign(pick(n++),  HX-IN, y+2.10, z,-1, 0, 1.15, 0.575);
+    }
+    /* the welcome board faces you as you come in on the ground floor */
+    if(fi===1) addSign('02_swagat', 0, y+2.30, -HZ+IN, 0, 1, 2.10, 1.05);
+    if(fi===0) addSign('30_authorized', 0, y+2.10, -HZ+IN, 0, 1, 1.50, 0.75);
+  })();
+
   const add=(b,m)=>{ if(!b.empty()) F.group.add(b.mesh(m)); };
   add(W,MAT.wall); add(FL,MAT.floor); add(CE,MAT.ceil); add(PR,MAT.prop); add(MT,MAT.metal);
+  if(SG.v&&MAT.hsign){
+    const sg=new THREE.BufferGeometry();
+    sg.setAttribute('position',new THREE.Float32BufferAttribute(SG.p,3));
+    sg.setAttribute('normal',new THREE.Float32BufferAttribute(SG.n,3));
+    sg.setAttribute('uv',new THREE.Float32BufferAttribute(SG.u,2));
+    sg.setIndex(SG.i); sg.computeBoundingSphere();
+    const sm=new THREE.Mesh(sg,MAT.hsign); sm.receiveShadow=true;
+    F.group.add(sm);
+  }
   if(DECO.v){
     const dg=new THREE.BufferGeometry();
     dg.setAttribute('position',new THREE.Float32BufferAttribute(DECO.p,3));
@@ -2530,6 +2659,7 @@ const Effects={
 };
 /* she arrives: torch stutters, tubes strobe, the floor shakes */
 function hauntSurge(strength){
+  Walls.amt=Math.max(Walls.amt, 0.65*strength);
   Torch.storm=Math.max(Torch.storm, 2.2*strength);
   Effects.shake(1.1*strength);
   A.sting(); A.growl(1);
@@ -4116,6 +4246,197 @@ const Dread={
     this.blood=0; $('bloodfx').style.opacity='0'; $('facefx').style.opacity='0'; }
 };
 
+/* ═════════════ JOLT — something violent, every fifteen seconds ═════════
+   A tiny pool of real meshes that get hurled around the corridor. They are
+   the only moving props in the game, so the pool is four objects total and
+   they are recycled; nothing is allocated once the game is running.        */
+const Jolt={
+  pool:[], t:12, lastKind:-1, ready:false,
+  NAMES:['02_wheelchair','27_broken_wheelchair','03_stretcher_trolley','30_medical_tray_tools',
+         '34_fire_extinguisher','06_oxygen_cylinder','07_medicine_bottle','32_file_record_stack'],
+  build(){
+    if(this.ready||!PROPS||!PROPS['02_wheelchair']) return;
+    for(let i=0;i<4;i++){
+      const m=new THREE.Mesh(PROPS['02_wheelchair'],MAT.propS);
+      m.visible=false; m.castShadow=true;
+      Int.group.add(m);
+      this.pool.push({m,live:0,vx:0,vy:0,vz:0,spin:0,hit:0,onHit:null});
+    }
+    this.ready=true;
+  },
+  take(name,scale){
+    const e=this.pool.find(q=>!q.live)||this.pool[0];
+    const g=PROPS[name]||PROPS['02_wheelchair'];
+    if(e.m.geometry!==g) e.m.geometry=g;
+    e.m.scale.setScalar(scale||1);
+    e.m.visible=true;
+    return e;
+  },
+  /* a bang with weight behind it */
+  bang(hard){
+    A.slam(); A.noise(0.30,{f:150,q:0.7,g:0.55});
+    if(hard) A.noise(0.22,{f:2100,q:2,g:0.22});
+    Effects.shake(hard?1.5:0.9); Effects.pulse(hard?0.6:0.3);
+    Torch.storm=Math.max(Torch.storm,hard?1.9:1.1);
+    P.pulse=Math.min(180,P.pulse+(hard?26:16));
+  },
+
+  /* --- 1. a wheelchair comes out of the dark and hits a wall --- */
+  wheelchair(){
+    const F=Int.floors[P.floor]; if(!F) return false;
+    /* a corridor is narrow, so hunt for somewhere it can actually start:
+       behind and to the side of the player, whatever the geometry allows */
+    const cy=Math.cos(P.yaw), sy=Math.sin(P.yaw);
+    const fx=-sy, fz=-cy, rx=cy, rz=-sy;
+    let sx=0,sz=0,side=1,found=false;
+    outer:
+    for(const back of [2.0,3.2,4.6,6.0]){
+      for(const lat of [3.0,2.0,4.2,1.2,5.5]){
+        for(const sg of (Math.random()<0.5?[1,-1]:[-1,1])){
+          const x=P.x-fx*back+rx*sg*lat, z=P.z-fz*back+rz*sg*lat;
+          if(navFree(F,x,z)){ sx=x; sz=z; side=sg; found=true; break outer; }
+        }
+      }
+    }
+    if(!found) return false;
+    const e=this.take(Math.random()<0.5?'02_wheelchair':'27_broken_wheelchair',1);
+    e.m.position.set(sx,F.y,sz);
+    e.m.rotation.set(0,P.yaw+side*1.2,0);
+    /* straight past the player's shoulder and into whatever is beyond */
+    const tx=P.x+fx*1.6-rx*side*1.0, tz=P.z+fz*1.6-rz*side*1.0;
+    const d=Math.hypot(tx-sx,tz-sz)||1, sp=7.5;
+    e.vx=(tx-sx)/d*sp; e.vz=(tz-sz)/d*sp; e.vy=0;
+    e.spin=side*5.2; e.live=1.25; e.hit=Math.min(0.55,d/sp); e.grav=0;
+    e.onHit=()=>{ this.bang(true); say('','Wheelchair apne aap daud padi.',2.4); };
+    A.noise(0.5,{f:320,q:6,g:0.20});           // castors shrieking
+    return true;
+  },
+
+  /* --- 2. something is thrown at you out of the dark --- */
+  flyby(){
+    const F=Int.floors[P.floor]; if(!F) return false;
+    const cy=Math.cos(P.yaw), sy=Math.sin(P.yaw);
+    const fx=-sy, fz=-cy;
+    const ax=P.x+fx*9, az=P.z+fz*9;            // from down the corridor ahead
+    if(!navFree(F,ax,az)) return false;
+    const nm=this.NAMES[4+((Math.random()*4)|0)];
+    const e=this.take(nm,1);
+    e.m.position.set(ax,F.y+1.35,az);
+    e.m.rotation.set(rnd(0,3),rnd(0,3),rnd(0,3));
+    /* aimed just past your head, so it screams by rather than hits you */
+    const px=P.x+rnd(-0.5,0.5)*1.4, pz=P.z+rnd(-0.5,0.5)*1.4;
+    const d=Math.hypot(px-ax,pz-az)||1, sp=15;
+    e.vx=(px-ax)/d*sp; e.vz=(pz-az)/d*sp; e.vy=1.0;
+    e.spin=rnd(-14,14); e.live=1.5; e.hit=0.60; e.grav=7.5;
+    e.onHit=()=>{ this.bang(true); };
+    A.noise(0.35,{f:1700,q:5,g:0.16});         // the whoosh coming in
+    return true;
+  },
+
+  /* --- 3. something drops out of the ceiling right in front of you --- */
+  drop(){
+    const F=Int.floors[P.floor]; if(!F) return false;
+    const cy=Math.cos(P.yaw), sy=Math.sin(P.yaw);
+    const dx=P.x-sy*2.6, dz=P.z-cy*2.6;
+    if(!navFree(F,dx,dz)) return false;
+    const e=this.take(this.NAMES[3+((Math.random()*3)|0)],1);
+    e.m.position.set(dx,F.y+2.75,dz);
+    e.m.rotation.set(rnd(0,3),rnd(0,3),rnd(0,3));
+    e.vx=rnd(-0.4,0.4); e.vz=rnd(-0.4,0.4); e.vy=-1.5;
+    e.spin=rnd(-9,9); e.live=1.6; e.hit=0.95; e.grav=16;
+    e.onHit=()=>{ this.bang(false); A.noise(0.5,{f:2600,q:3,g:0.18}); };
+    return true;
+  },
+
+  /* --- 4. a door nearby is thrown open --- */
+  door(){
+    const F=Int.floors[P.floor]; if(!F||!F.doors.length) return false;
+    let best=null,bd=1e9;
+    for(const D of F.doors){
+      if(D.sealed||D.locked||D.jammed) continue;
+      const d=dist2(D.x,D.z,P.x,P.z);
+      if(d<14&&d>2.2&&d<bd){ bd=d; best=D; }
+    }
+    if(!best) return false;
+    best.open=!best.open; best.target=best.open?1:0;
+    this.bang(true);
+    return true;
+  },
+
+  fire(){
+    this.build();
+    if(!this.ready) return;
+    const order=[0,1,2,3];
+    /* never the same one twice running */
+    for(let tries=0;tries<6;tries++){
+      const k=order[(Math.random()*order.length)|0];
+      if(k===this.lastKind) continue;
+      const ok=(k===0?this.wheelchair():k===1?this.flyby():k===2?this.drop():this.door());
+      if(ok){ this.lastKind=k; return; }
+    }
+    this.door();
+  },
+
+  update(dt){
+    if(!P.inside||!State.playing||State.over||Cine.active||Tape.active||P.noteOpen) return;
+    /* the drumbeat: roughly every fifteen seconds, never during a cutscene */
+    this.t-=dt;
+    if(this.t<=0){ this.t=rnd(13,18); this.fire(); }
+    /* fly whatever is in the air */
+    for(const e of this.pool){
+      if(e.live<=0) continue;
+      e.live-=dt;
+      e.vy-=(e.grav||0)*dt;
+      e.m.position.x+=e.vx*dt; e.m.position.y+=e.vy*dt; e.m.position.z+=e.vz*dt;
+      e.m.rotation.y+=e.spin*dt; e.m.rotation.x+=e.spin*0.4*dt;
+      const F=Int.floors[P.floor];
+      if(F&&e.m.position.y<F.y+0.05){ e.m.position.y=F.y+0.05; e.vy=0; e.vx*=0.4; e.vz*=0.4; }
+      if(e.hit>0){ e.hit-=dt;
+        if(e.hit<=0&&e.onHit){ const f=e.onHit; e.onHit=null; f(); } }
+      if(e.live<=0){ e.m.visible=false; e.live=0; }
+    }
+  },
+  reset(){ this.t=rnd(11,15); this.lastKind=-1;
+    for(const e of this.pool){ e.live=0; e.onHit=null; e.m.visible=false; } }
+};
+
+/* ═════════════ WALLS — white until she is close ═════════════
+   Every wall, ceiling and door shares one material each, so draining the
+   colour out of the building is three assignments a frame, not a rebuild. */
+const Walls={
+  amt:0, flick:0, flickT:0,
+  WHITE:0xffffff, GREY:0x6e737a,          // what the paint lerps between
+  _c:null,
+  init(){ this._c=new THREE.Color(); },
+  update(dt){
+    if(!MAT.wall) return;
+    /* how much of the building has gone grey: her proximity, plus the
+       extra kick hauntSurge gives while the torch is stuttering */
+    const want=clamp(P.danger*1.15 + (Ghost.mode!=='off'&&Ghost.floor===P.floor?0.18:0), 0, 1);
+    this.amt=lerp(this.amt, want, 1-Math.exp(-2.2*dt));
+
+    /* the colour itself flickers while she is arriving, so the walls look
+       like they are being drained rather than simply tinted */
+    this.flickT-=dt;
+    if(this.flickT<=0){
+      this.flickT=this.amt>0.12?rnd(0.04,0.16):0.4;
+      this.flick=this.amt>0.12?rnd(-0.22,0.30)*this.amt:0;
+    }
+    const a=clamp(this.amt+this.flick,0,1);
+    this._c.setHex(this.WHITE).lerp(new THREE.Color(this.GREY), a*0.88);
+    MAT.wall.color.copy(this._c);
+    MAT.ceil.color.copy(this._c);
+    if(MAT.prop) MAT.prop.color.copy(this._c).lerp(new THREE.Color(0xffffff),0.45);
+    /* the floor keeps a little more of itself so the corridor stays readable */
+    if(MAT.floor) MAT.floor.color.setHex(this.WHITE),
+                  MAT.floor.color.lerp(new THREE.Color(this.GREY), a*0.55);
+  },
+  reset(){ this.amt=0; this.flick=0; this.flickT=0;
+    if(MAT.wall){ MAT.wall.color.setHex(0xffffff); MAT.ceil.color.setHex(0xffffff);
+      if(MAT.prop) MAT.prop.color.setHex(0xffffff);
+      if(MAT.floor) MAT.floor.color.setHex(0xffffff); } }
+};
+
 /* ═════════════ QUALITY ═════════════
    Ultra is the default everywhere, phones included — it is what the game is
    meant to look like. If a device chokes, the setting drops in the pause
@@ -4388,6 +4709,7 @@ function frame(now){
       Torch.update(dt,P.danger);
       scanFocus(); Story.update(dt); Ending.update(dt); Guide.update(dt);
       Effects.update(dt); updateScare(dt); Dread.update(dt); Quality.watch(dt);
+      Walls.update(dt); Jolt.update(dt);
       if(!P.inside) updateExterior(dt,P.x,P.camY,P.z);
     }
     updateHUD(dt);
@@ -4407,6 +4729,7 @@ async function boot(){
     floorTex=await loadImageTex('./assets/floor_tile.png',true);
     set(0.06,'SIGNBOARD');
     signTex=await loadImageTex('./assets/igmc_sign.png',false);
+    hindiTex=await loadImageTex('./assets/hindi_signs.jpg',false);
     initMaterials();
     set(0.08,'IGMC HOSPITAL');
     const model=await loadBuilding('./assets/hospital.glb',p=>set(0.08+p*0.18,'IGMC HOSPITAL — '+Math.round(p*100)+'%'));
@@ -4433,6 +4756,7 @@ async function boot(){
     set(1,'READY');
     await new Promise(r=>setTimeout(r,260));
     Touch.init();                        // phone controls, if this is a phone
+    Walls.init();
     Quality.load();                      // ultra unless the player dropped it
     Save.refresh();                      // show Continue only if there is a save
     Intro.build();                       // decode the storyboard while the menu is up
@@ -4499,7 +4823,8 @@ function startRun(m,quiet){
   A.init(); A.ambience(); A.boot(); Music.start();
   P.startT=performance.now();
   fadeTo(0,400);
-  Guide.reset(); Guide.on=true; Dread.reset(); P.grace=0; P.fallen=null;
+  Guide.reset(); Guide.on=true; Dread.reset(); Walls.reset(); Jolt.reset();
+  P.grace=0; P.fallen=null;
   if(quiet) startMission(m,true);
   else if(m===1){ startMission(1); card(1); }
   else startMission(m);
@@ -4543,7 +4868,7 @@ $('chapbtn').onclick=()=>{
 };
 
 window.IGMC={P,State,Story,Ghost,Torch,Int,Ext,A,Music,ITEMS,MISSIONS,MAT,camera,renderer,scene,key,head,
-  Intro,Guide,Dread,Touch,Quality,INTRO_FRAMES,INTRO_PIC,Sketch,
+  Intro,Guide,Dread,Touch,Quality,Walls,Jolt,INTRO_FRAMES,INTRO_PIC,Sketch,
   startRun,startMission,teleport,setFloor,roomC,FLOOR_H,HX,HZ,SWR,RUN,ELEV,Cine,Tape,Ending,
   give:(id)=>{ if(!ITEMS[id]) ITEMS[id]={label:id}; giveItem(id); },
   tp(x,z,yaw){ P.x=x; P.z=z; if(yaw!==undefined) P.yaw=yaw;

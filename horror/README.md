@@ -83,6 +83,46 @@ kyunki phone browsers me wahi bharosemand hai.
 
 Menu me **Mission chuno** se kisi bhi mission se shuru kar sakte ho.
 
+## Deewarein — white, aur uske aate hi grey
+
+Interior ab **saaf hospital white** hai. Pehle jo brown/sepia lagta tha wo do cheezon se
+aa raha tha: paint texture ka green dado + peela grime, aur torch ki cream roshni. Dono
+theek kiye — paint ab neutral grey grime ke saath white hai, skirting band thanda grey,
+aur torch ki roshni lagbhag safed.
+
+Par **jaise hi wo paas aati hai**, `Walls` poori building ka rang kheench leta hai:
+white se **grey**. Ye flicker karta hai (har 40–160 ms halka jhatka) taaki lage rang
+nichoda ja raha hai, sirf tint nahi. Saari deewarein, ceiling aur props ek-ek material
+share karte hain, is liye ye poore floor par teen assignment ka kaam hai — ek bhi
+draw call nahi badhta. `hauntSurge` turant push deta hai, phir `P.danger` sambhal leta hai.
+
+## Har 15 second — `Jolt`
+
+Chaar cheezon me se ek, har **13–18 second**, aur kabhi do baar ek jaisi nahi:
+
+* **Wheelchair** andhere se nikal ke tumhare kandhe ke paas se guzarti hai aur **dhadam**
+  se takrati hai — castors ki cheekh ke saath. Spawn corridor me bhi mil jaata hai
+  (peeche/bagal me free jagah dhoondhta hai, 6/6 positions par test kiya).
+* **Ud ke aata object** — extinguisher, cylinder, tray, file stack — corridor ke aage se
+  seedha tumhare sar ke paas se 15 m/s par nikalta hai aur deewar se takrata hai.
+* **Chhat se girta saaman** tumhare theek saamne, khanakta hua.
+* **Paas ka darwaza** achanak khul/band ho jaata hai.
+
+Sab me: slam + low thud, camera shake, torch stutter aur pulse chadhta hai. Poore game me
+sirf **chaar** meshes ka pool hai jo recycle hote hain — game chalte waqt kuch allocate
+nahi hota.
+
+## Hindi signage — 30 boards
+
+Tumhare pack ke saare 30 Hindi signboards lage hue hain: department boards (आपातकालीन
+विभाग, ऑपरेशन थिएटर, आईसीयू, महिला/पुरुष वार्ड, रक्त बैंक…) har tagged room ke darwaze
+ke paas, aur public notices (कृपया शांति बनाए रखें, धूम्रपान निषेध, बेटी बचाओ…) corridor
+ki deewaron par. Ground floor ke gate par **आईजीएमसी में आपका स्वागत है**.
+
+Teeso PNG ek **atlas** me pack ki hui hain (`assets/hindi_signs.jpg`, 2560×1536, 612 KB)
+aur har floor ke saare board ek hi merged mesh hain — poore floor ki signage **ek draw
+call**.
+
 ## Graphics
 
 Default **ULTRA** hai — phone par bhi. Pause menu (**ESC** / **II**) me *Graphics* button
@@ -197,6 +237,16 @@ Uske baad post-credits stinger.
 **Chudail:** tumhara bheja hua GLB seedha use hota hai — 59,729 tris, apni asli texture ke
 saath (2048 se 1024 par re-encode, 3.3 MB se 308 KB). Model 1.80 m par scale kiya aur -Z ki
 taraf ghumaya, kyunki game ki convention wahi hai.
+
+**Brown skin aur khoon:** texture ek fragmented atlas hai jisme skin aur kapda alag nahi
+kiye ja sakte, is liye body ko **object-space position se** pehchana jaata hai — chehra
+(upar, beech me, aage ki taraf) aur baahein/haath (kandhe ke neeche, bagal me). Wahan
+diffuse ko brown kiya jaata hai (texture ki apni shading rakhte hue), aur chehre, haath
+aur seene se **khoon ke dhaare** neeche bahte hain (position-based noise). Saree ko halki
+warmth aur hem par gandagi di gayi.
+
+Sabse bada farq: self-light ab **skin par 22%** hai. Pehle poora body barabar chamakta
+tha — wahi use "robotic" bana raha tha.
 
 **Laal aankhein:** texture me pehle se laal texels the — unhe UV se dhoondh ke ek per-vertex
 mask banaya (co-located vertices link karke, kyunki mesh unwelded soup hai). Shader us mask
