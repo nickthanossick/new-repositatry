@@ -37,15 +37,17 @@ Menu me **Mission chuno** se kisi bhi mission se shuru kar sakte ho.
 
 ## Intro story
 
-**Enter IGMC** dabate hi pehle 10-frame ki charcoal storyboard intro chalti hai —
-title card (*NIKJYAR STUDIOS PRESENTS · SHIMLA HORROR: IGMC · EPISODE I*), phir Nirmala ki
-raat: ambulance, delivery, "bachcha nahi raha", flatline, aur aakhir me Pandit ko bulaya
-jaana. Har frame par Ken-Burns pan hai, aakhri do par red wash + microshake, aur uske saath
-sting/whisper/cry audio. Upar-daayein **SKIP >>** se kabhi bhi chhod sakte ho.
-Menu ke **Mission chuno** se shuru karo to intro skip ho jaati hai.
+**Enter IGMC** dabate hi tumhari **asli 10 storyboard sketches** chalti hain —
+title card (*NIKJYAR STUDIOS PRESENTS · SHIMLA HORROR: IGMC · EPISODE I*) pehli sketch ke
+upar, phir Nirmala ki raat: ambulance, delivery, "bachcha nahi raha", flatline, khaali
+corridor, aur aakhir me Pandit torch leke darwaze par. Har frame par halka Ken-Burns pan,
+aakhri do par red wash + microshake, aur saath me sting/whisper/cry audio. Upar-daayein
+**SKIP >>**. Menu ke **Mission chuno** se shuru karo to intro skip ho jaati hai.
 
-Frames canvas par code se draw hote hain (`Sketch` + `INTRO_FRAMES`) — koi image file nahi,
-is liye standalone build ka size nahi badhta.
+Sketches **jaisi hain waisi hi** dikhti hain — koi colour grade nahi, `object-fit:contain`
+se poora frame (drawn paper border ke saath) screen par aata hai. Captions HTML overlay hain
+taaki spelling exact rahe. Fallback ke taur par code se draw hone wale frames ab bhi maujood
+hain, wo tabhi chalte hain jab koi image load na ho.
 
 ## Hints — "samajh nahi aa raha kya karna hai" ka ilaaj
 
@@ -100,6 +102,7 @@ Uske baad post-credits stinger.
 | `assets/chudail_tex.jpg` | uski asli base-colour texture, 2048 se 1024 par re-encode ki hui |
 | `assets/floor_tile.png` | hospital floor — tumhare granite tile ko pale grey-white terrazzo me convert kiya |
 | `assets/igmc_sign.png` | asli IGMC signboard ki photo, deskew karke banner crop kiya |
+| `assets/intro0.jpg` … `intro9.jpg` | tumhari 10 intro storyboard sketches, 1376×768, PNG se JPEG (20.8 MB → 2.9 MB) |
 
 **Chudail:** tumhara bheja hua GLB seedha use hota hai — 59,729 tris, apni asli texture ke
 saath (2048 se 1024 par re-encode, 3.3 MB se 308 KB). Model 1.80 m par scale kiya aur -Z ki
