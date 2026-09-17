@@ -29,9 +29,41 @@ andar hai (server ki zarurat nahi).
 | `J` | **test** — chudail bulao / wapas bhejo |
 | `R` | torch ka cell badlo |
 | `TAB` | objective dobara dekho |
+| `H` | **hint** — abhi karna kya hai, poora bata dega |
+| `G` | guide arrow on / off (agar bina madad ke khelna ho) |
 | `ESC` | pause |
 
 Menu me **Mission chuno** se kisi bhi mission se shuru kar sakte ho.
+
+## Intro story
+
+**Enter IGMC** dabate hi pehle 10-frame ki charcoal storyboard intro chalti hai —
+title card (*NIKJYAR STUDIOS PRESENTS · SHIMLA HORROR: IGMC · EPISODE I*), phir Nirmala ki
+raat: ambulance, delivery, "bachcha nahi raha", flatline, aur aakhir me Pandit ko bulaya
+jaana. Har frame par Ken-Burns pan hai, aakhri do par red wash + microshake, aur uske saath
+sting/whisper/cry audio. Upar-daayein **SKIP >>** se kabhi bhi chhod sakte ho.
+Menu ke **Mission chuno** se shuru karo to intro skip ho jaati hai.
+
+Frames canvas par code se draw hote hain (`Sketch` + `INTRO_FRAMES`) — koi image file nahi,
+is liye standalone build ka size nahi badhta.
+
+## Hints — "samajh nahi aa raha kya karna hai" ka ilaaj
+
+Teen cheezein saath chalti hain:
+
+* **Teer (arrow)** — crosshair ke chaaro taraf ek ring par ghoomta hai aur hamesha agle kaam
+  ki taraf point karta hai. Target doosre floor par ho to teer pehle **seedhi** dikhata hai,
+  aur stairwell ke andar pahunchte hi flight ki taraf mud jaata hai.
+* **Distance line** — teer ke neeche: cheez ka naam aur kitne meter door hai
+  (`RONE KI AAWAZ (1/3) · 32 m`). Paas aane par `YAHI HAI`.
+* **Hint box** — har naye beat par apne aap 6 second dikhta hai, **H** par kabhi bhi,
+  aur agar 38 second tak beat aage na badhe to khud aa jaata hai. Har mission beat ka apna
+  Hinglish hint likha hua hai.
+
+Target apne aap nikalta hai: jo item/hotspot abhi live hai usme se sabse paas wala. Jin beats
+me koi pickup nahi hai (bhaago, chhupo, corridor ke sire tak jao) unpe beat ka apna
+`guide()` lagaya hua hai. Torch cells tabhi target bante hain jab aur kuch bacha na ho.
+Cutscene, tape, note aur choice ke waqt guide chhup jaata hai. **G** se poora band.
 
 ## Missions
 
@@ -79,14 +111,26 @@ par diffuse ko laal karta hai aur emissive add karta hai (`uGlow`), is liye **po
 sirf uski aankhein dikhti hain**. Normals byte me aur UVs short me quantize kiye — file 4.5 MB
 se 3.16 MB.
 
-Rigged skeleton + walk/run/attack animations ab bhi nahi hain (wo pack sirf fal.media URLs ka
-tha aur wo CDN yahan block hai). Abhi game static mesh ko procedurally hilata hai.
+**Movements:** motions pack sirf fal.media URLs ka tha aur wo CDN yahan block hai, is liye
+saare movements **vertex shader me** banaye gaye hain — CPU par cost zero, GPU par bhi
+kuch nahi. Chaar motions ek saath blend hote hain:
+
+| motion | kaisa dikhta hai | kab |
+|---|---|---|
+| creepy walk | dheere se roll, hem peeche ghisatta hua, sar ulti taraf luddhakta hua | patrol, ritual |
+| mummy stagger | stepped, jhatke wala lurch, ek kandha gira hua, aage jhuka hua | chase, dark |
+| attack lunge | poora upper body aage phenka, dono haath pakadne ke liye bahar | jab 3.4 m ke andar aaye |
+| crawl | aadhi height, aage ghisatti hui | reserve |
+
+Har mode ka target pose `Ghost.poseFor()` deta hai, `Ghost.motion()` usme lerp karke shader
+uniforms (`uPh/uWalk/uStag/uAtk/uCrawl`) set karta hai, aur usi phase se body ka bob, roll
+aur yaw-snap bhi aata hai — is liye kadam aur jhatka sync me rehte hain.
 
 ## Files
 
 ```
 horror/
-  index.html               poora game (~2900 lines, three.js module)
+  index.html               poora game (~3800 lines, three.js module)
   andhera-standalone.html  single-file build — sab inline, offline chalta hai
   lib/                     three.js r180, npm se vendor kiya (MIT)
   assets/                  glb + png
@@ -96,7 +140,9 @@ horror/
 ## Debugging
 
 Console me `window.IGMC`: `tp(x,z,yaw)`, `setFloor(n)`, `startRun(m)`, `skip()` (agla beat),
-`give(id)`, `Ghost`, `Story.beats`, `Int.floors[f].special`.
+`give(id)`, `Ghost`, `Guide`, `Intro`, `Story.beats`, `Int.floors[f].special`.
+
+Chudail ke pose test karne ke liye: `IGMC.MAT.ghost.userData.shader.uniforms.uAtk.value=1`.
 
 ## Interior aur roshni
 
@@ -127,5 +173,5 @@ hospital model 8k tris ka hai (purana scan 272k tha), to exterior ab bahut halka
 
 ## Aage kya ho sakta hai
 
-Rigged chudail + real walk/run animations, saved progress, mobile touch controls,
+Rigged chudail skeleton (abhi shader-deform hai), saved progress, mobile touch controls,
 aur voice-over ke liye asli audio clips (abhi sab WebAudio se synth hai).
