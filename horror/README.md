@@ -64,26 +64,23 @@ Uske baad post-credits stinger.
 | `assets/props_small.glb` | tumhare 30 small horror objects (khoon, baby cheezein, ritual saamaan) |
 | `assets/music.mp3` | Corridor Of Whispers — loop me background score |
 | `assets/props.glb` | tumhare 35 OBJ props (bed, wheelchair, cradle, diya, ghanti, generator…) |
-| `assets/chudail.glb` | Nirmala — tumhara chudail OBJ, colours bake kiye hue |
+| `assets/chudail.glb` | Nirmala — tumhara naya chudail GLB (59.7k tris), UVs ke saath |
+| `assets/chudail_tex.jpg` | uski asli base-colour texture, 2048 se 1024 par re-encode ki hui |
 | `assets/floor_tile.png` | hospital floor — tumhare granite tile ko pale grey-white terrazzo me convert kiya |
 | `assets/igmc_sign.png` | asli IGMC signboard ki photo, deskew karke banner crop kiya |
 
-**Chudail:** `assets/chudail.glb` tumhare bheje hue OBJ se bana hai (49,300 tris, 1.80 m tall).
-Us OBJ ke saath texture PNG file nahi aayi thi, is liye colours geometry se bake kiye gaye hain:
-kaale baal (sar + peeth pe lambi lat + kandhon pe strands), safed/cream saree, pale skin
-(haath, pair, chehra), aur **laal aankhein** — do patli slits, gehre socket ke andar. Saath me
-per-vertex ambient occlusion aur saree ke neeche mail. Aankhein shader me emissive hain, is liye
-poore andhere me bhi chamakti hain (`uGlow` uniform, `MAT.ghost.onBeforeCompile`).
+**Chudail:** tumhara bheja hua GLB seedha use hota hai — 59,729 tris, apni asli texture ke
+saath (2048 se 1024 par re-encode, 3.3 MB se 308 KB). Model 1.80 m par scale kiya aur -Z ki
+taraf ghumaya, kyunki game ki convention wahi hai.
 
-Agar tum `texture_20250901.png` file ke roop me bhej do, to model ke UVs already hain — texture
-map seedha laga dunga aur bake ki zarurat nahi rahegi.
+**Laal aankhein:** texture me pehle se laal texels the — unhe UV se dhoondh ke ek per-vertex
+mask banaya (co-located vertices link karke, kyunki mesh unwelded soup hai). Shader us mask
+par diffuse ko laal karta hai aur emissive add karta hai (`uGlow`), is liye **poore andhere me
+sirf uski aankhein dikhti hain**. Normals byte me aur UVs short me quantize kiye — file 4.5 MB
+se 3.16 MB.
 
-Purane chudail pack (jo zip me tha) me sirf `fal.media` ke URL the aur ye environment us CDN tak
-nahi pahunch sakta. Rigged skeleton + walking/running animations abhi bhi nahi hain — game static
-mesh ko procedurally hilata hai (bob, sway, turn).
-
-Himachali pack (Pandit hands, doctor, nurse, guard) bhi sirf fal URLs the — isliye nurse/doctor
-silhouettes chudail mesh ko flat black material me render karke banaye gaye hain.
+Rigged skeleton + walk/run/attack animations ab bhi nahi hain (wo pack sirf fal.media URLs ka
+tha aur wo CDN yahan block hai). Abhi game static mesh ko procedurally hilata hai.
 
 ## Files
 

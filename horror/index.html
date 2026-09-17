@@ -361,19 +361,19 @@ function parseGLB(buf){
 const SRGB=new Float32Array(256);
 for(let i=0;i<256;i++){const c=i/255; SRGB[i]= c<0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4);}
 function accessorGeom(json,bin,prim){
+  const TYPE={5120:Int8Array,5121:Uint8Array,5122:Int16Array,5123:Uint16Array,
+              5125:Uint32Array,5126:Float32Array};
   const take=(ai)=>{ const a=json.accessors[ai], v=json.bufferViews[a.bufferView];
     const o=bin.byteOffset+(v.byteOffset||0), n=v.byteLength;
-    if(a.componentType===5126) return new Float32Array(bin.buffer.slice(o,o+n));
-    if(a.componentType===5123) return new Uint16Array(bin.buffer.slice(o,o+n));
-    if(a.componentType===5125) return new Uint32Array(bin.buffer.slice(o,o+n));
-    return new Uint8Array(bin.buffer.slice(o,o+n));
+    return new (TYPE[a.componentType]||Uint8Array)(bin.buffer.slice(o,o+n));
   };
+  const attr=(ai,size)=>new THREE.BufferAttribute(take(ai),size,!!json.accessors[ai].normalized);
   const g=new THREE.BufferGeometry();
   const idx=take(prim.indices);
   g.setIndex(new THREE.BufferAttribute(idx,1));
-  g.setAttribute('position', new THREE.BufferAttribute(take(prim.attributes.POSITION),3));
-  if(prim.attributes.NORMAL!==undefined)
-    g.setAttribute('normal', new THREE.BufferAttribute(take(prim.attributes.NORMAL),3));
+  g.setAttribute('position', attr(prim.attributes.POSITION,3));
+  if(prim.attributes.NORMAL!==undefined) g.setAttribute('normal', attr(prim.attributes.NORMAL,3));
+  if(prim.attributes.TEXCOORD_0!==undefined) g.setAttribute('uv', attr(prim.attributes.TEXCOORD_0,2));
   if(prim.attributes.COLOR_0!==undefined){
     const raw=take(prim.attributes.COLOR_0);
     const n=json.accessors[prim.attributes.COLOR_0].count;
@@ -800,16 +800,17 @@ function initMaterials(){
   MAT.sign =new THREE.MeshBasicMaterial({color:0x2fbf6a,toneMapped:false});
   MAT.signR=new THREE.MeshBasicMaterial({color:0xd03b2a,toneMapped:false});
   MAT.bulb =new THREE.MeshBasicMaterial({color:0xfff0cf,toneMapped:false});
-  MAT.ghost=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.97,metalness:0,
-              emissive:0x070707,emissiveIntensity:0.35});
+  MAT.ghost=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0,
+              emissive:0x070707,emissiveIntensity:0.35,side:THREE.DoubleSide});
   /* the baked-red eye vertices glow on their own, so she is never fully dark */
   MAT.ghost.onBeforeCompile=sh=>{
     sh.uniforms.uGlow={value:0};
     sh.fragmentShader='uniform float uGlow;\n'+sh.fragmentShader.replace(
       '#include <emissivemap_fragment>',
       '#include <emissivemap_fragment>\n'+
-      'float redn = clamp(vColor.r - max(vColor.g, vColor.b) * 1.8, 0.0, 1.0);\n'+
-      'totalEmissiveRadiance += vec3(1.0, 0.07, 0.04) * redn * uGlow;');
+      'float redn = clamp(vColor.r - max(vColor.g, vColor.b) * 1.4, 0.0, 1.0);\n'+
+      'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.75,0.02,0.01), redn);\n'+
+      'totalEmissiveRadiance += vec3(1.0, 0.06, 0.03) * redn * uGlow;');
     MAT.ghost.userData.shader=sh;
   };
   MAT.silh =new THREE.MeshBasicMaterial({color:0x04050a,toneMapped:false,fog:true});
@@ -3221,8 +3222,11 @@ async function boot(){
     PROPS=await loadLibrary('./assets/props.glb',p=>set(0.28+p*0.16,'PROPS — '+Math.round(p*100)+'%'));
     set(0.45,'SMALL OBJECTS');
     Object.assign(PROPS, await loadLibrary('./assets/props_small.glb',p=>set(0.45+p*0.12,'SMALL OBJECTS — '+Math.round(p*100)+'%')));
-    set(0.58,'NIRMALA');
-    const ch=await loadSingle('./assets/chudail.glb');
+    set(0.56,'NIRMALA');
+    const chTex=await loadImageTex('./assets/chudail_tex.jpg',false);
+    chTex.flipY=false;
+    const ch=await loadSingle('./assets/chudail.glb',p=>set(0.56+p*0.06,'NIRMALA — '+Math.round(p*100)+'%'));
+    MAT.ghost.map=chTex; MAT.ghost.needsUpdate=true;
     set(0.62,'SOUND');
     Music.load('./assets/music.mp3');
     Torch.init();
