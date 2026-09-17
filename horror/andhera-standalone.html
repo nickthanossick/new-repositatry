@@ -241,8 +241,20 @@
   #hintbox b{color:var(--green);font-weight:400}
 
   /* ---------- touch controls (only on a touch device) ---------- */
-  #tlayer{position:absolute;inset:0;z-index:6;display:none;touch-action:none}
-  body.touch #tlayer{display:block}
+  /* #hud is pointer-events:none, so this layer has to opt back in or the
+     stick never receives a finger at all */
+  #tlayer{position:absolute;inset:0;z-index:6;display:none;touch-action:none;
+    pointer-events:none;-webkit-user-select:none;user-select:none}
+  body.touch #tlayer{display:block;pointer-events:auto}
+  /* a resting ring so you can see where the stick lives before you touch it */
+  #thome{position:absolute;left:96px;bottom:86px;width:112px;height:112px;margin:-56px 0 0 -56px;
+    border-radius:50%;border:1px dashed rgba(217,164,65,.22);display:none;pointer-events:none;
+    opacity:.55;transition:opacity .25s}
+  body.touch #thome{display:block}
+  #thome.hide{opacity:0}
+  #thome:after{content:"CHALNE KE LIYE";position:absolute;left:50%;top:118%;
+    transform:translateX(-50%);white-space:nowrap;font:8px/1 var(--mono);
+    letter-spacing:.18em;color:rgba(217,164,65,.5)}
   #tpad{position:absolute;z-index:7;width:118px;height:118px;margin:-59px 0 0 -59px;
     border-radius:50%;border:1px solid rgba(217,164,65,.28);background:rgba(8,10,12,.30);
     opacity:0;transition:opacity .16s;pointer-events:none;display:none}
@@ -272,6 +284,9 @@
       line-height:1.6}
     #hintbox.on{transform:translateY(0) scale(1)}
     #hintbtn{font-size:9px;padding:6px 11px}
+    /* the panel sits over the objective on a narrow screen, so step it back */
+    #hud.hinting #topleft{opacity:.18}
+    #topleft{transition:opacity .2s}
     #tbtns{right:12px;bottom:12px;gap:9px}
     #prompt{font-size:10px}
     #gdist{margin-top:96px;font-size:9px;letter-spacing:.16em}
@@ -336,6 +351,7 @@
     <div id="hintbtn"><i>?</i><span>HINT</span></div>
   </div>
   <div id="tlayer"></div>
+  <div id="thome"></div>
   <div id="tpad"><div id="tknob"></div></div>
   <div id="tbtns">
     <div class="tbtn big" id="tbE">E</div>
@@ -419,6 +435,7 @@
   <div class="row">
     <button class="btn" id="resumebtn">Resume</button>
     <button class="btn" id="savebtn">Save</button>
+    <button class="btn" id="gfxbtn">Graphics: ULTRA</button>
     <button class="btn" id="quitbtn" style="border-color:rgba(140,27,27,.5);color:#c26a6a">Menu</button>
   </div>
 </div>
@@ -1966,7 +1983,11 @@ const Intro={
   }
 };
 $('iskip').onclick=()=>Intro.finish();
-$('hintbtn').addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); Guide.toggle(); });
+(function(){ const el=$('hintbtn');
+  const go=e=>{ e.preventDefault(); e.stopPropagation(); Guide.toggle(); };
+  if('ontouchstart' in window) el.addEventListener('touchstart',go,{passive:false});
+  el.addEventListener('pointerdown',go);
+})();
 
 /* ═════════════ player ═════════════ */
 const P={ x:SPAWN.x,z:SPAWN.z,footY:YARD_Y,camY:YARD_Y+EYE,
@@ -2049,14 +2070,18 @@ function movePlayer(dt){
     if(key['KeyD']||key['ArrowRight'])ix+=1;
     if(Touch.on&&(Touch.mx||Touch.my)){ ix+=Touch.mx; iz+=Touch.my; }
   }
-  const raw=Math.hypot(ix,iz);
+  let raw=Math.hypot(ix,iz);
+  if(Touch.on){
+    if(raw<0.16) raw=0;                                // deadzone: no thumb drift
+    else raw=Math.min(1,(raw-0.16)/0.72);              // rescale so the edge is full tilt
+    mag=Math.pow(raw,0.72);                            // mid-stick is not sluggish
+  }
   P.run=(!!(key['ShiftLeft']||key['ShiftRight'])||(Touch.on&&Touch.run))&&raw>0.05;
-  if(raw>1) mag=1; else mag=raw;                       // stick gives analog speed
-  const l=raw||1; ix/=l; iz/=l;
-  const sp=(P.run?5.0:3.05)*(Touch.on?Math.max(mag,raw>0.05?0.35:0):1);
+  const l=Math.hypot(ix,iz)||1; ix/=l; iz/=l;
+  const sp=(P.run?5.3:3.25)*(Touch.on?mag:1);
   const sy=Math.sin(P.yaw), cy=Math.cos(P.yaw);
   const wx=(ix*cy+iz*sy)*sp, wz=(iz*cy-ix*sy)*sp;
-  const k=1-Math.exp(-13*dt);
+  const k=1-Math.exp(-(Touch.on?17:13)*dt);   // phones want a snappier response
   P.vx=lerp(P.vx,wx,k); P.vz=lerp(P.vz,wz,k);
   const dx=P.vx*dt, dz=P.vz*dt;
   if(!P.inside){
@@ -3998,7 +4023,8 @@ function updateScare(dt){
   /* she breathes down your neck */
   if(P.danger>0.45&&Math.random()<dt*2.2) A.noise(rnd(0.5,1.1),{f:rnd(260,520),q:3,g:0.05});
   if(P.danger>0.55&&Math.random()<dt*1.2) A.growl(P.danger);
-  renderer.toneMappingExposure=lerp(renderer.toneMappingExposure,1.15-P.danger*0.22+flashAmt*0.9,0.12);
+  const qe=Quality.cfg[Quality.level].exposure;
+  renderer.toneMappingExposure=lerp(renderer.toneMappingExposure,qe-P.danger*0.22+flashAmt*0.9,0.12);
   flashAmt=lerp(flashAmt,0,0.08);
   if(Ext.sky) Ext.sky.material.uniforms.flash.value=flashAmt;
   camera.fov=lerp(camera.fov,72+P.danger*7+(P.run?4:0),0.06);
@@ -4091,6 +4117,69 @@ const Dread={
     this.blood=0; $('bloodfx').style.opacity='0'; $('facefx').style.opacity='0'; }
 };
 
+/* ═════════════ QUALITY ═════════════
+   Ultra is the default everywhere, phones included — it is what the game is
+   meant to look like. If a device chokes, the setting drops in the pause
+   menu and is remembered.                                                  */
+const QKEY='igmc.nightwatch.quality';
+const Quality={
+  level:'ultra',
+  cfg:{
+    ultra   :{dpr:2.00, shadows:true,  shadowMap:2048, soft:true,  aniso:16, exposure:1.15},
+    high    :{dpr:1.50, shadows:true,  shadowMap:1024, soft:true,  aniso:8,  exposure:1.15},
+    balanced:{dpr:1.00, shadows:false, shadowMap:512,  soft:false, aniso:4,  exposure:1.18}
+  },
+  load(){
+    let l=null; try{ l=localStorage.getItem(QKEY); }catch(_){}
+    this.apply(this.cfg[l]?l:'ultra');
+  },
+  save(){ try{ localStorage.setItem(QKEY,this.level); }catch(_){} },
+  cycle(){
+    const order=['ultra','high','balanced'];
+    this.apply(order[(order.indexOf(this.level)+1)%order.length]);
+    this.save(); this.label();
+    toast('GRAPHICS: '+this.level.toUpperCase());
+  },
+  label(){ const b=$('gfxbtn'); if(b) b.textContent='Graphics: '+this.level.toUpperCase(); },
+  /* Ultra is what was asked for, so it is never changed automatically — but
+     if the device is clearly drowning, say so once. */
+  fps:60, slow:0, warned:false,
+  watch(dt){
+    if(!State.playing||this.level!=='ultra'||this.warned) return;
+    this.fps=lerp(this.fps,1/Math.max(dt,1e-4),0.05);
+    this.slow=this.fps<24?this.slow+dt:0;
+    if(this.slow>6){
+      this.warned=true;
+      toast('ULTRA bhaari lag raha hai — ESC → Graphics se HIGH kar lo');
+    }
+  },
+  apply(l){
+    const c=this.cfg[l]||this.cfg.ultra;
+    this.level=l; this.slow=0; this.fps=60;
+    if(l!=='ultra') this.warned=true;          // they already chose, stop nagging
+    renderer.setPixelRatio(Math.min(devicePixelRatio||1, c.dpr));
+    renderer.shadowMap.enabled=c.shadows;
+    renderer.shadowMap.type=c.soft?THREE.PCFSoftShadowMap:THREE.PCFShadowMap;
+    renderer.toneMappingExposure=c.exposure;
+    if(Torch.spot&&Torch.spot.shadow){
+      Torch.spot.shadow.mapSize.set(c.shadowMap,c.shadowMap);
+      if(Torch.spot.shadow.map){ Torch.spot.shadow.map.dispose(); Torch.spot.shadow.map=null; }
+    }
+    /* sharp floors at grazing angles is most of what "ultra" buys you */
+    const max=renderer.capabilities.getMaxAnisotropy();
+    const a=Math.min(c.aniso,max);
+    scene.traverse(o=>{ const m=o.material; if(!m) return;
+      (Array.isArray(m)?m:[m]).forEach(mm=>{
+        ['map','normalMap','roughnessMap','emissiveMap'].forEach(k=>{
+          if(mm[k]&&mm[k].anisotropy!==a){ mm[k].anisotropy=a; mm[k].needsUpdate=true; }
+        });
+      });
+    });
+    renderer.shadowMap.needsUpdate=true;
+    this.label();
+  }
+};
+
 /* ═════════════ TOUCH — phone and tablet controls ═════════════
    Left thumb drives a virtual stick, the right half of the screen looks
    around, and the actions sit as thumb-sized buttons down the right edge.
@@ -4106,57 +4195,72 @@ const Touch={
     if(!this.detect()) return;
     this.on=true;
     document.body.classList.add('touch');
-    const pad=$('tpad'), knob=$('tknob');
-    /* one handler for every finger, sorted by which half it started in */
-    const area=$('tlayer');
-    const pos=e=>({x:e.clientX,y:e.clientY});
-    area.addEventListener('pointerdown',e=>{
+    const pad=$('tpad'), knob=$('tknob'), area=$('tlayer');
+
+    /* --- a finger goes down: left of centre drives, right of centre looks --- */
+    const down=(id,x,y)=>{
       if(!State.playing||State.paused) return;
-      const p=pos(e);
-      if(p.x<innerWidth*0.46&&this.stickId===null){
-        this.stickId=e.pointerId; this.sx=p.x; this.sy=p.y;
-        pad.style.left=p.x+'px'; pad.style.top=p.y+'px'; pad.classList.add('on');
+      if(x<innerWidth*0.46&&this.stickId===null){
+        this.stickId=id; this.sx=x; this.sy=y;
+        pad.style.left=x+'px'; pad.style.top=y+'px'; pad.classList.add('on');
+        $('thome').classList.add('hide');
         knob.style.transform='translate(-50%,-50%)';
       } else if(this.lookId===null){
-        this.lookId=e.pointerId; this.lx=p.x; this.ly=p.y;
+        this.lookId=id; this.lx=x; this.ly=y;
       }
-      try{ area.setPointerCapture(e.pointerId); }catch(_){}
-    },{passive:false});
-    area.addEventListener('pointermove',e=>{
-      const p=pos(e);
-      if(e.pointerId===this.stickId){
-        let dx=p.x-this.sx, dy=p.y-this.sy;
+    };
+    const move=(id,x,y)=>{
+      if(id===this.stickId){
+        let dx=x-this.sx, dy=y-this.sy;
         const d=Math.hypot(dx,dy), R=this.R;
         if(d>R){ dx*=R/d; dy*=R/d; }
         knob.style.transform='translate(calc(-50% + '+dx.toFixed(0)+'px),calc(-50% + '+dy.toFixed(0)+'px))';
-        this.mx=dx/R; this.my=dy/R;                  // +y on screen = backwards
-        this.run=Math.hypot(this.mx,this.my)>0.82;
-      } else if(e.pointerId===this.lookId){
+        this.mx=dx/R; this.my=dy/R;                     // +y on screen = backwards
+        this.run=Math.hypot(this.mx,this.my)>0.86;
+      } else if(id===this.lookId){
         if(P.frozen) return;
-        P.yaw-=(p.x-this.lx)*0.0052;
-        P.pitch=clamp(P.pitch-(p.y-this.ly)*0.0044,-1.35,1.35);
-        this.lx=p.x; this.ly=p.y;
+        P.yaw-=(x-this.lx)*0.0052;
+        P.pitch=clamp(P.pitch-(y-this.ly)*0.0044,-1.35,1.35);
+        this.lx=x; this.ly=y;
       }
-    },{passive:false});
-    const up=e=>{
-      if(e.pointerId===this.stickId){ this.stickId=null; this.mx=this.my=0; this.run=false;
-        pad.classList.remove('on'); }
-      else if(e.pointerId===this.lookId) this.lookId=null;
     };
-    area.addEventListener('pointerup',up);
-    area.addEventListener('pointercancel',up);
+    const up=(id)=>{
+      if(id===this.stickId){ this.stickId=null; this.mx=this.my=0; this.run=false;
+        pad.classList.remove('on'); }
+      else if(id===this.lookId) this.lookId=null;
+    };
+    this._down=down; this._move=move; this._up=up;
 
-    /* action buttons */
-    const tap=(id,fn)=>$(id).addEventListener('pointerdown',e=>{
-      e.preventDefault(); e.stopPropagation(); fn(); });
+    /* Touch events are the reliable path on a phone — pointer events are only
+       used where the browser has no touch model at all. */
+    if('ontouchstart' in window){
+      const each=(e,fn)=>{ for(const t of e.changedTouches) fn(t.identifier,t.clientX,t.clientY); };
+      area.addEventListener('touchstart',e=>{ e.preventDefault(); each(e,down); },{passive:false});
+      area.addEventListener('touchmove', e=>{ e.preventDefault(); each(e,move); },{passive:false});
+      area.addEventListener('touchend',  e=>{ e.preventDefault(); each(e,(i)=>up(i)); },{passive:false});
+      area.addEventListener('touchcancel',e=>{ each(e,(i)=>up(i)); },{passive:false});
+    } else {
+      area.addEventListener('pointerdown',e=>{ down(e.pointerId,e.clientX,e.clientY);
+        try{ area.setPointerCapture(e.pointerId); }catch(_){} },{passive:false});
+      area.addEventListener('pointermove',e=>move(e.pointerId,e.clientX,e.clientY),{passive:false});
+      area.addEventListener('pointerup',  e=>up(e.pointerId));
+      area.addEventListener('pointercancel',e=>up(e.pointerId));
+    }
+
+    /* action buttons — touchstart so they fire on contact, not on release */
+    const tap=(id,fn)=>{
+      const el=$(id); if(!el) return;
+      const go=e=>{ e.preventDefault(); e.stopPropagation(); fn(); };
+      if('ontouchstart' in window) el.addEventListener('touchstart',go,{passive:false});
+      else el.addEventListener('pointerdown',go);
+    };
     tap('tbE',()=>{ if(P.noteOpen) closeDoc(); else if(!P.frozen) interact(); });
     tap('tbF',()=>{ if(!P.frozen) Torch.toggle(); });
     tap('tbR',()=>{ if(!P.frozen) Torch.swap(); });
     tap('tbP',()=>pauseGame());
-    /* phones do not want a 2x framebuffer of a dark corridor */
-    renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));
   }
 };
+
 
 /* ═════════════ GUIDE — arrow, distance and hints ═════════════
    The player should never have to guess what the next action is.  The arrow
@@ -4217,8 +4321,10 @@ const Guide={
   },
   open:false,
   show(ms){ ui.hintbox.innerHTML=this.text(); ui.hintbox.classList.add('on');
-    ui.hintbtn.classList.remove('pulse'); this.open=true; this.hintT=(ms||10000)/1000; },
-  close(){ ui.hintbox.classList.remove('on'); this.open=false; this.hintT=0; },
+    ui.hintbtn.classList.remove('pulse'); ui.hud.classList.add('hinting');
+    this.open=true; this.hintT=(ms||10000)/1000; },
+  close(){ ui.hintbox.classList.remove('on'); ui.hud.classList.remove('hinting');
+    this.open=false; this.hintT=0; },
   toggle(){ this.idle=0; if(this.open) this.close(); else this.show(12000); },
   /* a new beat only nudges the chip — it never covers the screen */
   nudge(){ ui.hintbtn.classList.add('pulse');
@@ -4226,7 +4332,7 @@ const Guide={
 
   reset(){ this.tgt=null; this.rescan=0; this.hintT=0; this.idle=0; this.open=false;
     this.lastBeat=-1; this.lastMission=0; ui.hintbox.classList.remove('on');
-    ui.hintbtn.classList.remove('pulse');
+    ui.hintbtn.classList.remove('pulse'); ui.hud.classList.remove('hinting');
     ui.garrow.classList.remove('on'); ui.gdist.classList.remove('on'); },
 
   update(dt){
@@ -4282,7 +4388,7 @@ function frame(now){
       Ghost.update(dt); Silh.update(dt);
       Torch.update(dt,P.danger);
       scanFocus(); Story.update(dt); Ending.update(dt); Guide.update(dt);
-      Effects.update(dt); updateScare(dt); Dread.update(dt);
+      Effects.update(dt); updateScare(dt); Dread.update(dt); Quality.watch(dt);
       if(!P.inside) updateExterior(dt,P.x,P.camY,P.z);
     }
     updateHUD(dt);
@@ -4328,6 +4434,7 @@ async function boot(){
     set(1,'READY');
     await new Promise(r=>setTimeout(r,260));
     Touch.init();                        // phone controls, if this is a phone
+    Quality.load();                      // ultra unless the player dropped it
     Save.refresh();                      // show Continue only if there is a save
     Intro.build();                       // decode the storyboard while the menu is up
     $('loader').classList.add('hide'); $('menu').classList.remove('hide');
@@ -4422,6 +4529,7 @@ $('startbtn').onclick=()=>{ $('menu').classList.add('hide'); Intro.play(()=>star
 $('retrybtn').onclick=retry;
 $('contbtn').onclick=()=>{ if(!Save.load()) toast('KOI SAVE NAHI MILA'); };
 $('savebtn').onclick=()=>{ toast(Save.write()?'SAVE HO GAYA':'SAVE NAHI HO PAYA'); };
+$('gfxbtn').onclick=()=>Quality.cycle();
 $('againbtn').onclick=()=>startRun(1);   /* replay skips the intro */
 $('resumebtn').onclick=resumeGame;
 $('quitbtn').onclick=()=>{ $('pause').classList.add('hide'); State.paused=false; State.playing=false;
@@ -4436,7 +4544,7 @@ $('chapbtn').onclick=()=>{
 };
 
 window.IGMC={P,State,Story,Ghost,Torch,Int,Ext,A,Music,ITEMS,MISSIONS,MAT,camera,renderer,scene,key,head,
-  Intro,Guide,Dread,Touch,INTRO_FRAMES,INTRO_PIC,Sketch,
+  Intro,Guide,Dread,Touch,Quality,INTRO_FRAMES,INTRO_PIC,Sketch,
   startRun,startMission,teleport,setFloor,roomC,FLOOR_H,HX,HZ,SWR,RUN,ELEV,Cine,Tape,Ending,
   give:(id)=>{ if(!ITEMS[id]) ITEMS[id]={label:id}; giveItem(id); },
   tp(x,z,yaw){ P.x=x; P.z=z; if(yaw!==undefined) P.yaw=yaw;

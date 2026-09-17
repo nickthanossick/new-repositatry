@@ -68,16 +68,34 @@ andar hai (server ki zarurat nahi).
 
 Phone ya tablet apne aap pehchaan liya jaata hai — koi setting nahi.
 
-* **baaya angutha** — jahan bhi rakho wahin joystick ban jaata hai; poora dabao to **daud**
-* **daayi taraf ungli ghumao** — idhar udhar dekhne ke liye
+* **baaya angutha** — screen ke baayen aadhe hisse me jahan bhi rakho, wahin joystick
+  ban jaata hai. **Aage, peeche, daayen, baayen** — chaaron taraf. Jitna door tak
+  kheenchoge utni tez chal, aur kinare tak le jao to **daud**. Shuru me ek halka sa
+  ring dikhta hai taaki pata chale kahan rakhna hai.
+* **daayi taraf ungli ghumao** — idhar udhar dekhne ke liye. Dono angutha ek saath
+  chalte hain — chalte chalte ghum sakte ho.
 * **daayin taraf ke buttons** — bada green **E** (darwaza / cheez / interact), **torch**,
   **cell badlo**, aur **II** pause
 * **HINT** chip upar beech me — tap karo, padho, phir se tap karo to band
 
-Landscape me pakdo. Pixel ratio 1.25 par cap hai aur HUD chhota ho jaata hai, taaki phone
-par bhi seedha chale.
+Landscape me pakdo. Input asli **touch events** par chalta hai (pointer events par nahi),
+kyunki phone browsers me wahi bharosemand hai.
 
 Menu me **Mission chuno** se kisi bhi mission se shuru kar sakte ho.
+
+## Graphics
+
+Default **ULTRA** hai — phone par bhi. Pause menu (**ESC** / **II**) me *Graphics* button
+se teen level ghoomte hain aur choice yaad rakhi jaati hai:
+
+| level | pixel ratio | shadows | anisotropy |
+|---|---|---|---|
+| **ULTRA** | 2.0 tak | PCF soft, 2048 map | 16x |
+| **HIGH** | 1.5 tak | PCF soft, 1024 map | 8x |
+| **BALANCED** | 1.0 | band | 4x |
+
+Ultra apne aap kabhi nahi badalta. Haan, agar device 6 second tak 24 fps se neeche
+rahe to ek baar bata deta hai ki HIGH kar lo — badalta khud nahi.
 
 ## Save aur maut
 
