@@ -765,9 +765,36 @@ const A={
   indoor(on){ if(this.wind) this.wind.gain.setTargetAtTime(on?0.018:0.055,this.ctx.currentTime,1.2); },
   dread(v){ if(this.drone) this.drone.gain.setTargetAtTime(0.16+v*0.22,this.ctx.currentTime,0.6); },
 
+  /* a boot landing: a body-weight thud, the slap of the sole, and indoors a
+     short bright tail so tile sounds like tile. Alternates foot to foot. */
+  _foot:0,
   step(run,indoor){
-    this.noise(run?0.10:0.15,{f:indoor?(240+Math.random()*90):(160+Math.random()*70),q:1.1,g:run?0.13:0.075});
-    if(indoor) this.noise(0.05,{f:2600+Math.random()*900,q:2,g:0.03});
+    const L=(this._foot^=1)?1:-1;                       // small L/R variation
+    const heel=indoor?(200+Math.random()*70):(120+Math.random()*55);
+    this.noise(run?0.11:0.16,{f:heel+L*12,q:1.0,g:run?0.30:0.19});
+    this.tone(indoor?78:62, indoor?46:38, run?0.10:0.14,{g:run?0.15:0.10,type:'sine'});
+    if(indoor){
+      this.noise(0.055,{f:2500+Math.random()*1100,q:2.2,g:run?0.10:0.065});
+      setTimeout(()=>this.noise(0.10,{f:1500,q:1.4,g:0.022}),34);   // room tail
+    } else {
+      this.noise(0.09,{f:900+Math.random()*500,q:1.6,g:run?0.09:0.055}); // wet grit
+    }
+  },
+  /* ghungroo. Far away it is a thin chime you are not sure you heard; up
+     close it is right behind your ear. v is 0..1 by distance. */
+  payal(v){
+    const g=clamp(v,0,1);
+    const n=2+((Math.random()*2)|0);
+    for(let i=0;i<n;i++){
+      const t=i*(0.022+Math.random()*0.030);
+      setTimeout(()=>{
+        const f=2350+Math.random()*1500;
+        this.noise(0.055+Math.random()*0.05,{f,q:16,g:0.030*g});
+        this.tone(f*0.5,f*0.42,0.085,{g:0.020*g,type:'triangle'});
+      }, t*1000);
+    }
+    /* the low clink of the metal itself, only once she is properly near */
+    if(g>0.45) this.tone(620,430,0.10,{g:0.022*g,type:'sine'});
   },
   heart(v){ this.tone(64,34,0.20,{g:0.05+0.15*v}); setTimeout(()=>this.tone(56,30,0.17,{g:0.04+0.11*v}),165); },
   creak(){ this.tone(rnd(90,180),rnd(320,520),rnd(0.7,1.5),{g:0.05,type:'sawtooth'}); this.noise(1.1,{f:1400,q:6,g:0.02}); },
@@ -2049,7 +2076,7 @@ function movePlayer(dt){
   }
   const speed=Math.hypot(P.vx,P.vz);
   if(speed>0.4){
-    P.stepPhase+=speed*dt*(P.run?1.55:1.25);
+    P.stepPhase+=speed*dt*(P.run?0.56:0.62);
     if(P.stepPhase>1){ P.stepPhase-=1; A.step(P.run,P.inside); }
     P.bob=lerp(P.bob,Math.sin(P.stepPhase*6.283)*(P.run?0.055:0.032),0.25);
   } else P.bob=lerp(P.bob,0,0.1);
@@ -2217,7 +2244,8 @@ const Ghost={
     this.silh=[];
   },
   hide(){ this.mode='off'; this.obj.visible=false; this.field=null;
-    this.mo.dash=0; this.mo.dashT=rnd(3,6); this.mo.blinkT=rnd(8,14); },
+    this.mo.dash=0; this.mo.dashT=rnd(3,6); this.mo.blinkT=rnd(8,14);
+    this.grow=0; this.payalT=0.2; },
   place(floor,x,z,face){
     this.floor=floor; this.x=x; this.z=z;
     const F=Int.floors[floor]; this.y=F?F.y:0;
@@ -2240,8 +2268,7 @@ const Ghost={
     }
   },
   monstrous(on){
-    this.obj.scale.set(on?1.18:1,on?1.24:1,on?1.18:1);
-    this.mesh.material=on?MAT.ghost:MAT.ghost;
+    this.big=!!on;                       // the scale itself is set in motion()
     this.eyeLight.intensity=on?0.95:0;
   },
   buildField(F){
@@ -2314,8 +2341,8 @@ const Ghost={
     if(sh&&sh.uniforms.uGlow) sh.uniforms.uGlow.value=v;
   },
   /* ---- she does not animate. She is the model, standing still. ---- */
-  mo:{dashT:5, blinkT:9, dash:0},
-  motion(){
+  mo:{dashT:5, blinkT:9, dash:0}, payalT:0, grow:0,
+  motion(dt){
     /* the only thing that changes on her is how much of her own light she
        carries — enough to read in the dark, more the nearer she is */
     const near=clamp((16-this.dist)/13,0,1);
@@ -2324,6 +2351,28 @@ const Ghost={
       sh.uniforms.uSelf.value=0.050+near*0.070;
       sh.uniforms.uRim.value =0.100+near*0.115;
     }
+
+    /* ---- payal: you hear her long before you see her ----
+       PAYAL_FAR is the edge of hearing, PAYAL_NEAR is right behind you. */
+    const PAYAL_FAR=26, PAYAL_NEAR=1.8;
+    const t=clamp((PAYAL_FAR-this.dist)/(PAYAL_FAR-PAYAL_NEAR),0,1);
+    const vol=t*t;                                   // stays faint for a long while
+    if(vol>0.012){
+      /* quicker steps the closer she is, quicker still while she is sprinting */
+      const rate=(this.moving?1.45:0.55)*(0.75+t*1.35)*(this.mo.dash>0?1.9:1);
+      this.payalT-=dt*rate;
+      if(this.payalT<=0){
+        this.payalT=rnd(0.42,0.60);
+        A.payal(vol);
+      }
+    } else this.payalT=0.2;
+
+    /* ---- and she is taller the nearer she gets ---- */
+    const want=1-clamp(this.dist/13,0,1);             // 0 far .. 1 on top of you
+    this.grow=lerp(this.grow,want,1-Math.exp(-3.2*dt));
+    const g=this.grow, m=this.big?1.16:1;
+    /* height runs away faster than width, so she reads as wrong, not fat */
+    this.obj.scale.set(m*(1+g*0.15), m*(1+g*0.40), m*(1+g*0.15));
   },
   /* ═══ the jumpscare: she is not there, and then she is, in your face ═══ */
   appear(dist,opts){
@@ -2360,7 +2409,7 @@ const Ghost={
     this.dist=dist2(this.x,this.z,P.x,P.z);
     const facing=this.looksAt();
     this.obj.visible=true;
-    this.motion();
+    this.motion(dt);
     this.obj.position.y=this.y;
     this.mesh.rotation.z=0;
     this.moving=false;

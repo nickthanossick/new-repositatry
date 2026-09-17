@@ -22,7 +22,7 @@ andar hai (server ki zarurat nahi).
 | key | kaam |
 |---|---|
 | `W A S D` | chalna |
-| `SHIFT` | daudna (awaaz hoti hai — wo sun leti hai) |
+| `SHIFT` | daudna (kadam zor se padte hain — wo sun leti hai) |
 | mouse | dekhna |
 | `F` | torch on / off |
 | `E` / click | darwaza, cheez uthao, kaagaz padho, interact |
@@ -164,6 +164,15 @@ khadi rehti hai, aur chalti hai to bas glide karti hai. Darr uske hilne se nahi,
 | **Jumpscare — saamne aa jaana** | tum jis taraf dekh rahe ho theek wahan, 2.4–3.4 m par, 11–19 sec me ek baar — sirf tab jab wo abhi nazar me na ho. Sting + scream + camera shake + **torch bujh jaati hai** + laal flash, sab ek hi frame par. |
 | **Dash** | 3.6–7.2 sec me ek baar achanak do guna tez, scream ke saath |
 | **Chhupi hui glimpse** | kabhi kabhi wo saamne aati hai, maarti nahi — torch sambhalne tak gayab |
+
+**Payal.** Uske paas aane se bahut pehle uski payal sunai deti hai. 26 m par bilkul
+chhupi hui, 18 m par sirf ek halki chan, 12 m par saaf, 3 m par kaan ke bilkul paas.
+Awaaz ki **raftaar bhi** badhti hai — door ho to dheere dheere, paas aaye to tez, aur
+dash ke waqt dugni. Wo ruki ho to bas kabhi kabhi khanakti hai.
+
+**Aur wo lambi hoti jaati hai.** 13 m se paas aate hi height chadhni shuru hoti hai —
+point blank par **1.4 guna**, aur chaudai sirf 1.15 guna, is liye wo mota nahi balki
+**galat** lagti hai. Sar chhat ke paas aa jaata hai.
 
 ## Wo dikhti kaisi hai
 
