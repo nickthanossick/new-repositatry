@@ -262,6 +262,7 @@
     <b>E</b><span>interact &middot; darwaza &middot; uthao</span>
     <b>R</b><span>torch cell badlo</span>
     <b>TAB</b><span>objective yaad karo</span>
+    <b>J</b><span>test &mdash; chudail bulao / hatao</span>
     <b>ESC</b><span>pause</span>
   </div>
   <div class="stat">Headphones lagao.</div>
@@ -446,19 +447,26 @@ function noiseFill(g,s,base,amt,scale){
 }
 const TEX={
   get paint(){ return canvasTex('paint',256,(g,s)=>{
-    noiseFill(g,s,[166,170,154],0.13,1.1);
-    for(let i=0;i<44;i++){ g.fillStyle='rgba(118,106,90,'+(0.1+Math.random()*0.26).toFixed(2)+')';
+    noiseFill(g,s,[226,229,223],0.07,1.1);
+    for(let i=0;i<30;i++){ g.fillStyle='rgba(150,152,138,'+(0.06+Math.random()*0.16).toFixed(2)+')';
       g.beginPath(); const cx=Math.random()*s, cy=Math.random()*s, r=8+Math.random()*30;
       for(let a=0;a<9;a++){const an=a/9*6.283, rr=r*(0.55+Math.random()*0.6);
         (a?g.lineTo:g.moveTo).call(g,cx+Math.cos(an)*rr,cy+Math.sin(an)*rr);}
       g.closePath(); g.fill(); }
-    for(let i=0;i<26;i++){ const x=Math.random()*s, gr=g.createLinearGradient(x,0,x,s);
-      gr.addColorStop(0,'rgba(58,54,42,.24)'); gr.addColorStop(1,'rgba(58,54,42,0)');
-      g.fillStyle=gr; g.fillRect(x,0,2+Math.random()*8,s); }
+    for(let i=0;i<22;i++){ const x=Math.random()*s, gr=g.createLinearGradient(x,0,x,s);
+      gr.addColorStop(0,'rgba(104,106,92,.20)'); gr.addColorStop(1,'rgba(104,106,92,0)');
+      g.fillStyle=gr; g.fillRect(x,0,2+Math.random()*7,s); }
+    /* pale green hospital dado along the lower third */
+    const d=g.createLinearGradient(0,s*0.62,0,s);
+    d.addColorStop(0,'rgba(150,178,160,0)'); d.addColorStop(0.12,'rgba(150,178,160,.34)');
+    d.addColorStop(1,'rgba(136,166,150,.40)');
+    g.fillStyle=d; g.fillRect(0,s*0.62,s,s*0.38);
   }); },
   get ceil(){ return canvasTex('ceil',256,(g,s)=>{
-    noiseFill(g,s,[126,124,116],0.1,1.6);
-    g.strokeStyle='rgba(50,50,46,.5)'; g.lineWidth=3;
+    noiseFill(g,s,[232,234,230],0.06,1.6);
+    for(let i=0;i<14;i++){ g.fillStyle='rgba(150,140,110,'+(0.05+Math.random()*0.18).toFixed(2)+')';
+      g.beginPath(); g.arc(Math.random()*s,Math.random()*s,6+Math.random()*26,0,7); g.fill(); }
+    g.strokeStyle='rgba(120,122,118,.55)'; g.lineWidth=3;
     for(let i=0;i<=2;i++){const p=i*s/2;g.beginPath();g.moveTo(p,0);g.lineTo(p,s);g.moveTo(0,p);g.lineTo(s,p);g.stroke();}
   }); },
   get concrete(){ return canvasTex('conc',256,(g,s)=>{ noiseFill(g,s,[102,101,97],0.2,2.2); }); },
@@ -468,12 +476,14 @@ const TEX={
       g.beginPath();g.arc(Math.random()*s,Math.random()*s,2+Math.random()*10,0,7);g.fill();}
   }); }
 };
-let floorTex=null;
-async function loadFloorTex(url){
+let floorTex=null, signTex=null;
+async function loadImageTex(url,repeat){
   const img=new Image(); img.src=url; await img.decode();
   const t=new THREE.Texture(img);
-  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace;
-  t.anisotropy=8; t.needsUpdate=true; floorTex=t;
+  if(repeat) t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  else { t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping; }
+  t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; t.needsUpdate=true;
+  return t;
 }
 
 /* ═════════════ procedural audio ═════════════ */
@@ -606,8 +616,8 @@ class Builder{
     const F=[
       {n:[ 1,0,0],v:[[hx,-hy,-hz],[hx,-hy,hz],[hx,hy,hz],[hx,hy,-hz]],w:sz,h:sy},
       {n:[-1,0,0],v:[[-hx,-hy,hz],[-hx,-hy,-hz],[-hx,hy,-hz],[-hx,hy,hz]],w:sz,h:sy},
-      {n:[0, 1,0],v:[[-hx,hy,-hz],[hx,hy,-hz],[hx,hy,hz],[-hx,hy,hz]],w:sx,h:sz},
-      {n:[0,-1,0],v:[[-hx,-hy,hz],[hx,-hy,hz],[hx,-hy,-hz],[-hx,-hy,-hz]],w:sx,h:sz},
+      {n:[0, 1,0],v:[[-hx,hy,-hz],[-hx,hy,hz],[hx,hy,hz],[hx,hy,-hz]],w:sz,h:sx},
+      {n:[0,-1,0],v:[[-hx,-hy,hz],[-hx,-hy,-hz],[hx,-hy,-hz],[hx,-hy,hz]],w:sz,h:sx},
       {n:[0,0, 1],v:[[-hx,-hy,hz],[hx,-hy,hz],[hx,hy,hz],[-hx,hy,hz]],w:sx,h:sy},
       {n:[0,0,-1],v:[[hx,-hy,-hz],[-hx,-hy,-hz],[-hx,hy,-hz],[hx,hy,-hz]],w:sx,h:sy}
     ];
@@ -635,7 +645,7 @@ class Builder{
       const p0=[Math.cos(a0)*r,Math.sin(a0)*r], p1=[Math.cos(a1)*r,Math.sin(a1)*r];
       const nx=Math.cos((a0+a1)/2), nz=Math.sin((a0+a1)/2);
       const k=1+(Math.random()-0.5)*0.08;
-      const quad=[[p0[0],-h/2,p0[1]],[p1[0],-h/2,p1[1]],[p1[0],h/2,p1[1]],[p0[0],h/2,p0[1]]];
+      const quad=[[p1[0],-h/2,p1[1]],[p0[0],-h/2,p0[1]],[p0[0],h/2,p0[1]],[p1[0],h/2,p1[1]]];
       for(let q=0;q<4;q++){
         this.p.push(cx+quad[q][0],cy+quad[q][1],cz+quad[q][2]);
         this.n.push(nx,0,nz);
@@ -670,7 +680,7 @@ renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 const scene=new THREE.Scene();
-scene.add(new THREE.AmbientLight(0x141a22,0.35));
+scene.add(new THREE.AmbientLight(0x141a22,0.16));
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.08,420);
 const head=new THREE.Object3D(); head.add(camera); scene.add(head);
 addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
@@ -679,7 +689,7 @@ addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.upd
 const MAT={};
 function initMaterials(){
   MAT.wall =new THREE.MeshStandardMaterial({map:TEX.paint,vertexColors:true,roughness:.96});
-  MAT.floor=new THREE.MeshStandardMaterial({map:floorTex,vertexColors:true,roughness:.62,metalness:.04});
+  MAT.floor=new THREE.MeshStandardMaterial({map:floorTex,vertexColors:true,roughness:.5,metalness:.03});
   MAT.ceil =new THREE.MeshStandardMaterial({map:TEX.ceil,vertexColors:true,roughness:.98});
   MAT.conc =new THREE.MeshStandardMaterial({map:TEX.concrete,vertexColors:true,roughness:.95});
   MAT.metal=new THREE.MeshStandardMaterial({map:TEX.metal,vertexColors:true,roughness:.55,metalness:.6});
@@ -707,30 +717,62 @@ function initMaterials(){
 
 /* ═════════════ torch ═════════════ */
 const Torch={
-  on:true, battery:1, cells:2, flicker:1, power:28, fillPower:0.85, forceOff:0,
+  on:true, battery:1, cells:2, flicker:1, power:44, fillPower:1.5, forceOff:0, storm:0,
   spot:null, fill:null, body:null, lens:null,
   init(){
-    this.spot=new THREE.SpotLight(0xffe4bc,this.power,46,0.56,0.78,1.15);
+    this.spot=new THREE.SpotLight(0xfff1d8,this.power,62,0.62,0.72,0.95);
     this.spot.castShadow=true;
     this.spot.shadow.mapSize.set(1024,1024);
     this.spot.shadow.camera.near=0.5; this.spot.shadow.camera.far=38;
     this.spot.shadow.bias=-0.0015; this.spot.shadow.normalBias=0.04;
-    this.spot.position.set(0.30,-0.26,-0.70);
-    this.spot.target.position.set(0.30,-0.26,-1.70);
+    this.spot.position.set(0.26,-0.24,-0.78);
+    this.spot.target.position.set(0.26,-0.52,-1.78);
     camera.add(this.spot); camera.add(this.spot.target);
-    this.fill=new THREE.PointLight(0xffd9a0,this.fillPower,7,1.6);
-    this.fill.position.set(0.25,-0.2,-0.3); camera.add(this.fill);
-    const b=new Builder();
-    b.box(0,0,0,0.055,0.055,0.20,0x23262b,3);
-    b.box(0,0,-0.12,0.075,0.075,0.05,0x4a4f55,3);
-    this.body=b.mesh(MAT.metal);
-    this.body.position.set(0.30,-0.26,-0.50);
-    this.body.rotation.set(0.05,0.09,0.03);
-    this.lens=new THREE.Mesh(new THREE.CircleGeometry(0.030,12),
+    this.fill=new THREE.PointLight(0xffe7c2,this.fillPower,13,1.15);
+    this.fill.position.set(0.20,-0.30,-1.05); camera.add(this.fill);
+    /* a tiny lamp that only reaches the hand, so the view model never goes flat black */
+    this.vm=new THREE.PointLight(0xffdcae,2.2,1.25,1.1);
+    this.vm.position.set(0.30,-0.06,-0.62); camera.add(this.vm);
+    /* first person view model — pandit's right arm gripping the torch.
+       Built with +Y pointing away from the camera, then rotated flat. */
+    const SKIN=0x9d7452, SKIN2=0x8a6244, CUFF=0xeae1d2, THREAD=0xc8802a, NAIL=0xbfa08a;
+    const rig=new Builder();
+    rig.cyl(0,-0.190,0.052, 0.053,0.26,10, SKIN, 2);            // forearm
+    rig.cyl(0,-0.300,0.058, 0.060,0.070,10, CUFF, 2);           // kurta cuff
+    rig.cyl(0,-0.252,0.055, 0.057,0.013,10, THREAD, 2);         // kalava
+    rig.box(0,-0.060,0.030, 0.088,0.085,0.100, SKIN, 3);        // wrist
+    rig.box(0, 0.015,0.020, 0.100,0.095,0.115, SKIN, 3);        // palm
+    rig.box(0.002, 0.030,-0.042, 0.106,0.118,0.040, SKIN, 3);   // fingers, gripping as one mass
+    for(let i=0;i<4;i++)                                        // knuckle ridges
+      rig.box(0.004, 0.076-i*0.028, -0.062, 0.100,0.020,0.020, i%2?SKIN2:NAIL, 3);
+    rig.box(0.052, 0.030,-0.018, 0.036,0.060,0.036, SKIN2, 3);  // thumb
+    const armMesh=rig.mesh(MAT.prop);
+
+    const tb=new Builder();
+    tb.cyl(0, 0.115,0, 0.030,0.20,12, 0x9098a0, 3);             // barrel
+    tb.cyl(0, 0.030,0, 0.034,0.03,12, 0x23262a, 3);             // grip ring
+    tb.cyl(0, 0.232,0, 0.044,0.060,12, 0xc2c8ce, 3);            // head
+    tb.cyl(0, 0.264,0, 0.047,0.014,12, 0xe8eef4, 3);            // bezel
+    tb.box(0.032,0.085,0, 0.016,0.050,0.024, 0xd04434, 3);      // switch
+    const torchMesh=tb.mesh(MAT.metal);
+
+    const rigGroup=new THREE.Group();
+    rigGroup.add(armMesh); rigGroup.add(torchMesh);
+    this.lens=new THREE.Mesh(new THREE.CircleGeometry(0.037,14),
       new THREE.MeshBasicMaterial({color:0xffedd0,toneMapped:false}));
-    this.lens.position.set(0,0,-0.148); this.body.add(this.lens);
-    this.body.traverse(o=>{o.castShadow=false;o.receiveShadow=false;o.renderOrder=2;});
-    camera.add(this.body);
+    this.lens.position.set(0,0.266,0); this.lens.rotation.x=-Math.PI/2;
+    rigGroup.add(this.lens);
+    rigGroup.rotation.x=-Math.PI/2;                             // +Y becomes forward (-Z)
+
+    this.view=new THREE.Group();
+    this.view.add(rigGroup);
+    this.view.position.set(0.300,-0.255,-0.50);
+    this.view.rotation.set(0.07,0.46,0.03);
+    this.view.scale.setScalar(0.94);
+    this.view.traverse(o=>{o.castShadow=false;o.receiveShadow=false;o.renderOrder=2;});
+    camera.add(this.view);
+    this.body=this.view;
+    this.viewBase=this.view.position.clone();
   },
   toggle(){ this.on=!this.on; A.click();
     if(this.on&&this.battery<=0){ this.on=false; toast('CELL KHATAM — R se badlo'); } },
@@ -744,18 +786,36 @@ const Torch={
       this.battery=Math.max(0,this.battery-dt*(0.0052+danger*0.010));
       if(this.battery<=0){ this.on=false; A.click(); toast('TORCH BUJH GAYI'); }
     }
+    if(this.storm>0) this.storm-=dt;
     const low=this.battery<0.22?(1-this.battery/0.22):0;
+    const st=this.storm>0?1:0;
     let f=0;
     if(this.on&&this.forceOff<=0){
-      f=1-low*0.45*(0.5+0.5*Math.sin(performance.now()*0.021));
-      if(Math.random()<0.005+low*0.09+danger*0.05) f*=rnd(0.05,0.35);
-      f*=0.93+0.07*Math.sin(performance.now()*0.0045);
+      f=1-low*0.40*(0.5+0.5*Math.sin(performance.now()*0.021));
+      /* she drags the light down with her */
+      if(Math.random()<0.004+low*0.08+danger*0.30+st*0.45) f*=rnd(0.04,0.35);
+      f*=0.95+0.05*Math.sin(performance.now()*0.0045);
+      if(st) f*=0.45+0.55*Math.abs(Math.sin(performance.now()*0.017));
     }
-    this.flicker=lerp(this.flicker,f,0.42);
-    const k=this.flicker*(0.40+0.60*this.battery);
+    this.flicker=lerp(this.flicker,f,st?0.72:0.42);
+    const k=this.flicker*(0.58+0.42*this.battery);
     this.spot.intensity=this.power*k;
     this.fill.intensity=this.fillPower*k;
+    this.vm.intensity=2.2*(0.25+0.75*k);
     this.lens.material.color.setScalar(clamp(k,0,1));
+    /* the hand sways with the walk and jitters when she is close */
+    if(this.view){
+      const t=performance.now()*0.001;
+      const sp=Math.hypot(P.vx,P.vz)/5;
+      const jit=(this.storm>0?0.020:0)+danger*0.010;
+      this.view.position.set(
+        this.viewBase.x+Math.sin(t*(P.run?9:6))*0.012*sp+rnd(-jit,jit),
+        this.viewBase.y+Math.abs(Math.cos(t*(P.run?9:6)))*0.016*sp-sp*0.012+rnd(-jit,jit),
+        this.viewBase.z+Math.sin(t*3.1)*0.004);
+      this.view.rotation.z=0.03+Math.sin(t*2.3)*0.02+P.vx*0.006;
+      this.view.rotation.x=0.07+Math.sin(t*1.7)*0.015;
+      this.view.rotation.y=0.46+Math.sin(t*1.3)*0.012;
+    }
   }
 };
 
@@ -826,7 +886,7 @@ function buildExterior(geo){
   const sg=sc.getContext('2d');
   sg.fillStyle='#16222b'; sg.fillRect(0,0,1024,128);
   sg.fillStyle='#b9c6cc'; sg.font='600 62px ui-monospace,monospace'; sg.textAlign='center';
-  sg.fillText('I G M C   ·   EMERGENCY',512,86);
+  sg.fillText('E M E R G E N C Y',512,86);
   sg.globalCompositeOperation='multiply';
   for(let i=0;i<40;i++){ sg.fillStyle='rgba(0,0,0,'+(0.05+Math.random()*0.25)+')';
     sg.fillRect(Math.random()*1024,Math.random()*128,Math.random()*90,Math.random()*30); }
@@ -834,6 +894,31 @@ function buildExterior(geo){
   const sp2=new THREE.Mesh(new THREE.PlaneGeometry(5.3,0.66),
     new THREE.MeshStandardMaterial({map:stex,roughness:.9,emissive:0x0a1014,emissiveIntensity:.6}));
   sp2.position.set(DOOR_X,PORCH_Y+DH+0.62,DOOR_Z+0.43); G.add(sp2);
+
+  /* ---- the big IGMC board across the facade ---- */
+  if(signTex){
+    const SW_=26, SH_=3.3, SY=16.4, SZ=14.2;
+    const fr=new Builder();
+    fr.box(DOOR_X,SY,SZ-0.20, SW_+0.7,SH_+0.7,0.34, 0x1b2b3a,0.5,0.05);      // backing panel
+    for(const bx of [-1,1])                                                   // mounting arms
+      fr.box(DOOR_X+bx*(SW_/2-1.6),SY-SH_/2-1.5,SZ-0.34, 0.26,3.0,0.26, 0x2a3138,2);
+    fr.box(DOOR_X,SY+SH_/2+0.55,SZ+0.30, SW_+0.7,0.22,0.9, 0x39434c,1.2);     // hood over the lamps
+    G.add(fr.mesh(MAT.metal));
+    const board=new THREE.Mesh(new THREE.PlaneGeometry(SW_,SH_),
+      new THREE.MeshStandardMaterial({map:signTex,roughness:.82,metalness:0,
+        emissive:0xffffff,emissiveMap:signTex,emissiveIntensity:0.22}));
+    board.position.set(DOOR_X,SY,SZ+0.02); G.add(board);
+    for(let i=-2;i<=2;i++){                                                   // lamps washing the board
+      const L=new THREE.SpotLight(0xfff0d0,55,26,0.55,0.8,1.1);
+      L.position.set(DOOR_X+i*6.0, SY+SH_/2+1.5, SZ+1.9);
+      L.target.position.set(DOOR_X+i*6.0, SY-0.3, SZ);
+      G.add(L); G.add(L.target);
+      const hood=new Builder(); hood.box(DOOR_X+i*6.0,SY+SH_/2+1.6,SZ+1.9, 0.5,0.2,0.5, 0x2a3138,2);
+      G.add(hood.mesh(MAT.metal));
+      if(i===0) Ext.signLights=[];
+      (Ext.signLights=Ext.signLights||[]).push(L);
+    }
+  }
 
   const rN=5200, rp=new Float32Array(rN*3), rv=new Float32Array(rN);
   for(let i=0;i<rN;i++){ rp[i*3]=rnd(-40,40); rp[i*3+1]=rnd(0,45); rp[i*3+2]=rnd(-40,40); rv[i]=rnd(22,34); }
@@ -902,7 +987,7 @@ function buildFloor(fi){
   const F={index:fi,y,rects:[],group:new THREE.Group(),doors:[],items:[],lights:[],rooms:[],
            openings:[],nav:null,special:{},props:[],dyn:{}};
   const W=new Builder(), FL=new Builder(), CE=new Builder(), PR=new Builder(), MT=new Builder();
-  const wallCol = base?0x7b7a74:0xb9b8ac;
+  const wallCol = base?0x8f8e88:0xf2f4ef;
   const push=(x0,z0,x1,z1,d)=>F.rects.push({x0:Math.min(x0,x1),z0:Math.min(z0,z1),
       x1:Math.max(x0,x1),z1:Math.max(z0,z1),door:d||null});
   const wallX=(zf,from,to,ops,col)=>{
@@ -928,15 +1013,16 @@ function buildFloor(fi){
     B.slab(-HX,hole[1],hole[0],hole[3],yy,t,col,uv);
     B.slab(hole[2],hole[1],HX,hole[3],yy,t,col,uv);
   };
-  cut(y-0.25,0.25,FL,base?0x8d8b84:0xb4b1a6,0.34);
-  if(fi<TOP) cut(y+CH,0.22,CE,base?0x6f6e69:0x8e8d85,0.3);
-  else CE.slab(-HX,-HZ,HX,HZ,y+CH,0.3,0x6d6c66,0.3);
+  cut(y-0.25,0.25,FL,base?0x9a9891:0xf4f5f2,0.34);
+  if(fi<TOP) cut(y+CH,0.22,CE,base?0x84837d:0xf0f1ee,0.3);
+  else CE.slab(-HX,-HZ,HX,HZ,y+CH,0.3,0xe6e7e3,0.3);
 
   /* perimeter */
-  wallZ(-HX+WALL_T/2,-HZ,HZ,[],0x9b9a90);
-  wallZ( HX-WALL_T/2,-HZ,HZ,[],0x9b9a90);
-  wallX(-HZ+WALL_T/2,-HX,HX,[],0x9b9a90);
-  wallX( HZ-WALL_T/2,-HX,HX,[],0x9b9a90);
+  const perimCol=base?0x87867f:0xe9ebe6;
+  wallZ(-HX+WALL_T/2,-HZ,HZ,[],perimCol);
+  wallZ( HX-WALL_T/2,-HZ,HZ,[],perimCol);
+  wallX(-HZ+WALL_T/2,-HX,HX,[],perimCol);
+  wallX( HZ-WALL_T/2,-HX,HX,[],perimCol);
 
   /* perimeter room band */
   const xb=HX-BAND, zb=HZ-BAND, bandRooms=[];
@@ -1035,7 +1121,7 @@ function buildFloor(fi){
     const w=1.45,h=2.3,t=0.07;
     const g=new THREE.Group(); g.position.set(x,y,z);
     const leaf=new Builder();
-    leaf.box(w/2,h/2,0,w,h,t,opts.metal?0x5c6166:0x9d8f76,1.3,0.07);
+    leaf.box(w/2,h/2,0,w,h,t,opts.metal?0x7d848a:0xe4e2d8,1.3,0.06);
     leaf.box(w-0.16,h/2-0.06,0.055,0.1,0.05,0.06,0x2b2d30,3);
     const m=leaf.mesh(opts.metal?MAT.metal:MAT.prop);
     if(axis!=='x') g.rotation.y=Math.PI/2;
@@ -1199,13 +1285,13 @@ function buildFloor(fi){
   spots.push([xb-CORR/2,0],[-(xb-CORR/2),0],[0,0],[-9,0],[9,0]);
   spots.forEach(p=>{
     MT.box(p[0],y+CH-0.12,p[1],1.25,0.09,0.24,0xd8d6cf,1.6);
-    if(rng()<0.5){
-      const L=new THREE.PointLight(0xcfe0e8,0,13,2);
+    if(rng()<0.38){
+      const L=new THREE.PointLight(0xcfe0e8,0,12,2);
       L.position.set(p[0],y+CH-0.3,p[1]); F.group.add(L);
       const tube=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.06,0.16),
         new THREE.MeshBasicMaterial({color:0xdfeaf0,toneMapped:false}));
       tube.position.copy(L.position); F.group.add(tube);
-      F.lights.push({L,tube,base:rnd(5,11),phase:rnd(0,9),broken:rng()<0.4,x:p[0],z:p[1],forced:null});
+      F.lights.push({L,tube,base:rnd(2.4,5.6),phase:rnd(0,9),broken:rng()<0.55,x:p[0],z:p[1],forced:null});
     }
   });
 
@@ -1286,6 +1372,7 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyR'&&!P.frozen) Torch.swap();
   if(e.code==='KeyE'){ if(P.noteOpen) closeDoc(); else if(!P.frozen) interact(); }
   if(e.code==='Tab'){ e.preventDefault(); toast(ui.objective.textContent); }
+  if(e.code==='KeyJ') testGhost();
   if(e.code==='Escape') pauseGame();
   if(['KeyW','KeyA','KeyS','KeyD','Space'].includes(e.code)) e.preventDefault();
 });
@@ -1428,6 +1515,20 @@ function giveItem(id){
 }
 function clearInventory(){ P.items.clear(); ui.invlist.innerHTML='&mdash;'; ui.invlist.className='none'; }
 
+/* J — summon her next to you, J again to send her away (for testing) */
+function testGhost(){
+  if(!P.inside){ toast('ANDAR JAAO PEHLE'); return; }
+  if(Ghost.mode!=='off'){ Ghost.hide(); Torch.storm=0.6; toast('TEST: CHUDAIL HATAYI'); return; }
+  const F=Int.floors[P.floor]; if(!F) return;
+  let x=P.x-Math.sin(P.yaw)*7.5, z=P.z-Math.cos(P.yaw)*7.5;
+  if(!navFree(F,x,z)){ const s=Ghost.farSpot(F); x=s[0]; z=s[1]; }
+  Ghost.place(P.floor,x,z);
+  Ghost.set('chase',{floor:P.floor,x,z,speed:2.3});
+  Ghost.deathLine='Test mode — usne tujhe pakad liya.';
+  Ghost.floor=P.floor;
+  toast('TEST: CHUDAIL AA GAYI  ·  J = wapas bhejo');
+}
+
 let focusTarget=null;
 const HOT=[];        // extra interaction hotspots {x,z,floor,y,label,kind,fn,cond}
 function hotspot(o){ HOT.push(o); return o; }
@@ -1543,7 +1644,10 @@ const Ghost={
     this.timer=opts.time||0;
     this.anchor=opts.anchor||null;
     if(mode!=='off') this.obj.visible=true; else this.obj.visible=false;
-    if(opts.sound!==false&&mode!=='off'){ A.growl(1); A.whisper(); }
+    if(opts.sound!==false&&mode!=='off'){
+      A.growl(1); A.whisper();
+      if(mode!=='glimpse') hauntSurge(mode==='chase'||mode==='ritual'?1:0.7);
+    }
   },
   monstrous(on){
     this.obj.scale.set(on?1.18:1,on?1.24:1,on?1.18:1);
@@ -1685,20 +1789,33 @@ const Silh={
 
 /* ═════════════ effects ═════════════ */
 const Effects={
-  shakeAmt:0, redAmt:0,
+  shakeAmt:0, redAmt:0, rumble:0,
   shake(v){ this.shakeAmt=Math.max(this.shakeAmt,v); },
   pulse(v){ ui.damage.style.opacity=String(v);
     setTimeout(()=>{ ui.damage.style.opacity=String(P.danger*0.5); },420); },
   red(v){ ui.redroom.style.opacity=String(v); },
   update(dt){
-    if(this.shakeAmt>0){
-      camera.position.x=rnd(-1,1)*this.shakeAmt*0.06;
-      camera.position.y=rnd(-1,1)*this.shakeAmt*0.06;
-      this.shakeAmt=Math.max(0,this.shakeAmt-dt*1.6);
-      if(this.shakeAmt<=0) camera.position.set(0,0,0);
-    }
+    this.rumble=lerp(this.rumble, P.danger*P.danger, 1-Math.exp(-3*dt));
+    const amp=this.shakeAmt*0.06+this.rumble*0.035;
+    if(amp>0.0005){
+      const t=performance.now()*0.001;
+      camera.position.x=rnd(-1,1)*amp+Math.sin(t*23)*this.rumble*0.006;
+      camera.position.y=rnd(-1,1)*amp+Math.sin(t*19)*this.rumble*0.006;
+      camera.rotation.z=Math.sin(t*14)*this.rumble*0.012;
+    } else { camera.position.set(0,0,0); camera.rotation.z=0; }
+    if(this.shakeAmt>0) this.shakeAmt=Math.max(0,this.shakeAmt-dt*1.6);
   }
 };
+/* she arrives: torch stutters, tubes strobe, the floor shakes */
+function hauntSurge(strength){
+  Torch.storm=Math.max(Torch.storm, 2.2*strength);
+  Effects.shake(1.1*strength);
+  A.sting(); A.growl(1);
+  const F=Int.floors[P.floor];
+  if(F) F.lights.forEach((l,i)=>{
+    l.surge=1.6*strength+i*0.04;
+  });
+}
 
 /* ═════════════ cinematic queue ═════════════ */
 const Cine={
@@ -1749,6 +1866,9 @@ function updateLights(dt){
       else { const t=State.t*(l.broken?3.2:0.6)+l.phase;
         v=l.broken?((Math.sin(t*9)>0.3&&Math.random()>0.12)?1:0.02):(0.82+0.18*Math.sin(t*2.1));
         if(Math.random()<0.004) v*=0.1; }
+      /* while she is near, every tube on the floor stutters */
+      if(l.surge>0){ l.surge-=dt; v*=(Math.random()<0.45)?rnd(0.02,0.25):rnd(0.8,1.25); }
+      else if(on&&P.danger>0.12&&Math.random()<P.danger*0.5) v*=rnd(0.05,0.4);
       l.L.intensity=on?l.base*v:0;
       l.tube.visible=on&&v>0.05;
       l.tube.material.color.setScalar(on?clamp(v,0.05,1):0);
@@ -2894,8 +3014,10 @@ async function boot(){
   try{
     set(0.02,'TERRAIN');
     await Terrain.load('./assets/terrain.png');
-    set(0.05,'FLOOR');
-    await loadFloorTex('./assets/floor_tile.png');
+    set(0.04,'FLOOR');
+    floorTex=await loadImageTex('./assets/floor_tile.png',true);
+    set(0.06,'SIGNBOARD');
+    signTex=await loadImageTex('./assets/igmc_sign.png',false);
     initMaterials();
     set(0.07,'IGMC SHIMLA — 3D SCAN');
     const geo=await loadSingle('./assets/igmc.glb',p=>set(0.07+p*0.42,'IGMC SHIMLA — '+Math.round(p*100)+'%'));
@@ -3003,7 +3125,7 @@ $('chapbtn').onclick=()=>{
     b.onclick=()=>startRun(i+1); c.appendChild(b); });
 };
 
-window.IGMC={P,State,Story,Ghost,Torch,Int,Ext,A,ITEMS,MISSIONS,camera,renderer,scene,key,head,
+window.IGMC={P,State,Story,Ghost,Torch,Int,Ext,A,ITEMS,MISSIONS,MAT,camera,renderer,scene,key,head,
   startRun,startMission,teleport,setFloor,roomC,FLOOR_H,HX,HZ,SWR,RUN,ELEV,Cine,Tape,Ending,
   give:(id)=>{ if(!ITEMS[id]) ITEMS[id]={label:id}; giveItem(id); },
   tp(x,z,yaw){ P.x=x; P.z=z; if(yaw!==undefined) P.yaw=yaw;

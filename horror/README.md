@@ -26,6 +26,7 @@ andar hai (server ki zarurat nahi).
 | mouse | dekhna |
 | `F` | torch on / off |
 | `E` / click | darwaza, cheez uthao, kaagaz padho, interact |
+| `J` | **test** — chudail bulao / wapas bhejo |
 | `R` | torch ka cell badlo |
 | `TAB` | objective dobara dekho |
 | `ESC` | pause |
@@ -62,7 +63,8 @@ Uske baad post-credits stinger.
 | `assets/terrain.png` | 512² map: R+G = ground height, B = collision |
 | `assets/props.glb` | tumhare 35 OBJ props (bed, wheelchair, cradle, diya, ghanti, generator…) |
 | `assets/chudail.glb` | Nirmala — tumhara chudail OBJ, colours bake kiye hue |
-| `assets/floor_tile.png` | brown granite tile floor texture |
+| `assets/floor_tile.png` | hospital floor — tumhare granite tile ko pale grey-white terrazzo me convert kiya |
+| `assets/igmc_sign.png` | asli IGMC signboard ki photo, deskew karke banner crop kiya |
 
 **Chudail:** `assets/chudail.glb` tumhare bheje hue OBJ se bana hai (49,300 tris, 1.80 m tall).
 Us OBJ ke saath texture PNG file nahi aayi thi, is liye colours geometry se bake kiye gaye hain:
@@ -96,6 +98,28 @@ horror/
 
 Console me `window.IGMC`: `tp(x,z,yaw)`, `setFloor(n)`, `startRun(m)`, `skip()` (agla beat),
 `give(id)`, `Ghost`, `Story.beats`, `Int.floors[f].special`.
+
+## Interior aur roshni
+
+Interior ab **hospital jaisa white** hai: pale terrazzo farsh, safed deewarein jinke neeche
+halka hara dado band, safed ceiling panels, aur white laminate darwaze. Torch pehle se
+kaafi tez hai (wider cone, thoda neeche jhuka hua, ek near-fill light) — aur ek chhoti
+lamp sirf haath par padti hai taaki view model kabhi kaala na dikhe.
+
+**Jab wo aati hai** (`hauntSurge`): torch stutter karti hai (`Torch.storm`), us floor ki
+saari tube lights strobe karti hain, aur camera hilta hai. Uske baad jab tak wo paas hai,
+`P.danger` ke hisaab se lights randomly bujhti-jalti rehti hain aur camera me halka rumble
+rehta hai. Test ke liye **J** dabao.
+
+Signboard building ke saamne, entrance porch ke upar laga hai — 26 m chauda, paanch lamps
+se lit.
+
+## Pandit ke haath
+
+Torch aur pandit-hands packs me sirf `fal.media` ke URL the (wo CDN yahan block hai), is liye
+first-person haath + torch procedurally banaye hain: kalai, kurta ka cuff, kalava dhaaga,
+mutthi jo torch pakadti hai, aur steel torch. Chalne pe sway karta hai aur chudail paas ho to
+kaanpta hai. Agar tum in packs ke asli OBJ/GLB bhej do to unhe swap karna aasan hai.
 
 ## Aage kya ho sakta hai
 
