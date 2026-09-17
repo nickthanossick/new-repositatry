@@ -1,7 +1,7 @@
 # IGMC: NIGHT WATCH
 
 Paanch-mission first-person horror, IGMC Shimla ke andar. Tu Dev Pandit hai — ek chudail
-(Nirmala Thakur) apni maut ke aakhri dus minute baar baar jee rahi hai, aur usse maarna nahi,
+(Naina Thakur) apni maut ke aakhri dus minute baar baar jee rahi hai, aur usse maarna nahi,
 **sach dena** hai.
 
 Sab kuch browser me chalta hai. Koi build step nahi, koi CDN nahi.
@@ -29,9 +29,22 @@ andar hai (server ki zarurat nahi).
 | `J` | **test** — chudail bulao / wapas bhejo |
 | `R` | torch ka cell badlo |
 | `TAB` | objective dobara dekho |
-| `H` | **hint** — abhi karna kya hai, poora bata dega |
+| `H` | **hint** — chhota HINT wala button khol/band karo |
 | `G` | guide arrow on / off (agar bina madad ke khelna ho) |
 | `ESC` | pause |
+
+### Phone par
+
+Phone ya tablet apne aap pehchaan liya jaata hai — koi setting nahi.
+
+* **baaya angutha** — jahan bhi rakho wahin joystick ban jaata hai; poora dabao to **daud**
+* **daayi taraf ungli ghumao** — idhar udhar dekhne ke liye
+* **daayin taraf ke buttons** — bada green **E** (darwaza / cheez / interact), **torch**,
+  **cell badlo**, aur **II** pause
+* **HINT** chip upar beech me — tap karo, padho, phir se tap karo to band
+
+Landscape me pakdo. Pixel ratio 1.25 par cap hai aur HUD chhota ho jaata hai, taaki phone
+par bhi seedha chale.
 
 Menu me **Mission chuno** se kisi bhi mission se shuru kar sakte ho.
 
@@ -39,7 +52,7 @@ Menu me **Mission chuno** se kisi bhi mission se shuru kar sakte ho.
 
 **Enter IGMC** dabate hi tumhari **asli 10 storyboard sketches** chalti hain —
 title card (*NIKJYAR STUDIOS PRESENTS · SHIMLA HORROR: IGMC · EPISODE I*) pehli sketch ke
-upar, phir Nirmala ki raat: ambulance, delivery, "bachcha nahi raha", flatline, khaali
+upar, phir Naina ki raat: ambulance, delivery, "bachcha nahi raha", flatline, khaali
 corridor, aur aakhir me Pandit torch leke darwaze par. Har frame par halka Ken-Burns pan,
 aakhri do par red wash + microshake, aur saath me sting/whisper/cry audio. Upar-daayein
 **SKIP >>**. Menu ke **Mission chuno** se shuru karo to intro skip ho jaati hai.
@@ -58,9 +71,10 @@ Teen cheezein saath chalti hain:
   aur stairwell ke andar pahunchte hi flight ki taraf mud jaata hai.
 * **Distance line** — teer ke neeche: cheez ka naam aur kitne meter door hai
   (`RONE KI AAWAZ (1/3) · 32 m`). Paas aane par `YAHI HAI`.
-* **Hint box** — har naye beat par apne aap 6 second dikhta hai, **H** par kabhi bhi,
-  aur agar 38 second tak beat aage na badhe to khud aa jaata hai. Har mission beat ka apna
-  Hinglish hint likha hua hai.
+* **HINT chip** — ek chhota sa button. Naya objective aate hi ye **blink** karta hai;
+  tap (ya **H**) karo to chhota sa panel khulta hai, dobara tap karo to band. Apne aap
+  sirf ek baar khulta hai agar 34 second tak kuch aage na badhe — uske baad sirf blink
+  karta hai. Screen kabhi text se nahi bharti.
 
 Target apne aap nikalta hai: jo item/hotspot abhi live hai usme se sabse paas wala. Jin beats
 me koi pickup nahi hai (bhaago, chhupo, corridor ke sire tak jao) unpe beat ka apna
@@ -71,7 +85,7 @@ Cutscene, tape, note aur choice ke waqt guide chhup jaata hai. **G** se poora ba
 
 1. **THE CRYING FLOOR** — Ground → Floor 2. Rone ki aawaz peecha karta hai par har baar jagah
    badal deti hai. Wheelchair khud hilti hai, lift khaali andhere me khulti hai, chaadar ke
-   neeche koi hota hai — aur nahi hota. Maternity register milta hai. Floor 2 pe Nirmala pehli
+   neeche koi hota hai — aur nahi hota. Maternity register milta hai. Floor 2 pe Naina pehli
    baar dikhti hai, batti jaati hai, pehla chase. Ward me chaandi ki paayal.
 2. **THE HOSPITAL REMEMBERS** — Floors 3–5. Teen yaadein: nurse ka ID (F3, silhouettes),
    khoon lagi surgical cloth (F4, ab wo patrol karti hai), aur death certificate (F5 — do fuse
@@ -98,7 +112,7 @@ Uske baad post-credits stinger.
 | `assets/props_small.glb` | tumhare 30 small horror objects (khoon, baby cheezein, ritual saamaan) |
 | `assets/music.mp3` | Corridor Of Whispers — loop me background score |
 | `assets/props.glb` | tumhare 35 OBJ props (bed, wheelchair, cradle, diya, ghanti, generator…) |
-| `assets/chudail.glb` | Nirmala — tumhara naya chudail GLB (59.7k tris), UVs ke saath |
+| `assets/chudail.glb` | Naina — tumhara naya chudail GLB (59.7k tris), UVs ke saath |
 | `assets/chudail_tex.jpg` | uski asli base-colour texture, 2048 se 1024 par re-encode ki hui |
 | `assets/floor_tile.png` | hospital floor — tumhare granite tile ko pale grey-white terrazzo me convert kiya |
 | `assets/igmc_sign.png` | asli IGMC signboard ki photo, deskew karke banner crop kiya |
@@ -124,6 +138,10 @@ kuch nahi. Chaar motions ek saath blend hote hain:
 | mummy stagger | stepped, jhatke wala lurch, ek kandha gira hua, aage jhuka hua | chase, dark |
 | attack lunge | poora upper body aage phenka, dono haath pakadne ke liye bahar | jab 3.4 m ke andar aaye |
 | crawl | aadhi height, aage ghisatti hui | reserve |
+| head snap | gardan jhatke se ghoom jaati hai (paas aane par tez) | hamesha |
+| neck stretch | gardan lambi ho jaati hai, 6–13 sec me ek baar | jab wo maar sakti ho |
+| dash | 3.6–7.2 sec me ek baar achanak **do guna tez** daud, scream ke saath | chase, dark |
+| blink | 9–17 sec me ek baar corridor ka ek hissa **chhod deti hai** — seedha paas | chase, dark |
 
 Har mode ka target pose `Ghost.poseFor()` deta hai, `Ghost.motion()` usme lerp karke shader
 uniforms (`uPh/uWalk/uStag/uAtk/uCrawl`) set karta hai, aur usi phase se body ka bob, roll
@@ -146,6 +164,30 @@ Console me `window.IGMC`: `tp(x,z,yaw)`, `setFloor(n)`, `startRun(m)`, `skip()` 
 `give(id)`, `Ghost`, `Guide`, `Intro`, `Story.beats`, `Int.floors[f].special`.
 
 Chudail ke pose test karne ke liye: `IGMC.MAT.ghost.userData.shader.uniforms.uAtk.value=1`.
+
+## Wo dikhti kaisi hai
+
+Pehle wo andhere me kaali dikhti thi. Ab uska shader use **apni roshni** deta hai
+(`uSelf`) aur ek thandi rim (`uRim`) — dono itne halke ki texture dhulti nahi, par poore
+andhere me bhi wo **model jaisi** dikhti hai, kaala dhabba nahi. Jitna paas aati hai utni
+tez hoti jaati hai.
+
+Aankhein alag se: texture ke laal texels se bana per-vertex mask diffuse ko laal karta hai
+aur emissive add karta hai, tone mapping ke neeche rehte hue — is liye wo **laal** rehti
+hain, safed nahi hoti.
+
+## Aur bhi darawna — `Dread`
+
+Ye sab sasta hai (sound, ek light, ek CSS overlay), ek bhi draw call nahi badhta, is liye
+kisi bhi floor par kabhi bhi chal sakta hai:
+
+* **Uska chehra** — poore andhere se ek frame ke liye screen bhar jaata hai, scream + shake
+  + torch stutter ke saath. 85–170 sec me ek baar, aur sirf jab wo khud aas paas na ho.
+* **Aage ki battiyan** — tumhare saamne wali paanch tube lights ek ek karke bujhti hain.
+* **Peeche kadam** — 3 se 5 kadam tumhare peeche, phir chup.
+* **Khoon** — jitna khatra badhta hai utna screen ke kinaron par laal chadhta hai
+  (torch khatam ho ya bijli chali jaye to aur).
+* Darwaza slam, bachche ka rona, corridor paar karti parchhaiyan, PA announcement.
 
 ## Interior aur roshni
 

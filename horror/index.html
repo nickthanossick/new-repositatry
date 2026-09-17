@@ -216,13 +216,77 @@
     background:rgba(4,6,5,.68);border:1px solid rgba(217,164,65,.22)}
   #gdist.on{opacity:.9}
   #gdist span{margin-left:12px;color:#cfe3d4;opacity:.75}
-  #hintbox{position:absolute;left:50%;top:21%;transform:translateX(-50%);max-width:58vw;min-width:280px;
-    text-align:center;font-size:clamp(10px,1.15vw,13px);letter-spacing:.12em;line-height:1.8;color:#cfe3d4;
-    background:rgba(6,10,8,.72);border:1px solid rgba(63,191,122,.30);padding:10px 18px;
-    opacity:0;transition:opacity .4s}
-  #hintbox.on{opacity:1}
+  /* hint lives behind a small chip — tap it, read it, it folds away again */
+  #hintwrap{position:absolute;left:50%;bottom:8.5%;transform:translateX(-50%);z-index:11;
+    display:flex;flex-direction:column;align-items:center;gap:7px;pointer-events:none}
+  #hintbtn{pointer-events:auto;cursor:pointer;font-family:var(--mono);font-size:10px;
+    letter-spacing:.2em;color:#9fd8b6;background:rgba(6,12,9,.82);
+    border:1px solid rgba(63,191,122,.40);padding:7px 13px;border-radius:14px;
+    display:flex;align-items:center;gap:7px;white-space:nowrap;
+    transition:border-color .25s,color .25s,background .25s}
+  #hintbtn:hover{color:#dcffe9;border-color:rgba(63,191,122,.8)}
+  #hintbtn i{font-style:normal;width:14px;height:14px;line-height:14px;text-align:center;
+    border-radius:50%;background:rgba(63,191,122,.22);border:1px solid rgba(63,191,122,.5);
+    font-size:9px}
+  #hintbtn.pulse{animation:hintpulse 1.5s ease-in-out infinite}
+  @keyframes hintpulse{0%,100%{border-color:rgba(63,191,122,.35);color:#9fd8b6}
+    50%{border-color:rgba(120,255,180,.95);color:#e6fff0}}
+  #hintbox{max-width:min(460px,76vw);text-align:center;font-size:11px;letter-spacing:.08em;
+    line-height:1.72;color:#cfe3d4;background:rgba(6,10,8,.88);
+    border:1px solid rgba(63,191,122,.30);padding:9px 14px;border-radius:9px;
+    opacity:0;transform:translateY(6px) scale(.96);transform-origin:50% 100%;
+    transition:opacity .22s,transform .22s;pointer-events:none;max-height:0;overflow:hidden}
+  #hintbox.on{opacity:1;transform:translateY(0) scale(1);max-height:40vh}
   #hintbox b{color:var(--green);font-weight:400}
 
+  /* ---------- touch controls (only on a touch device) ---------- */
+  #tlayer{position:absolute;inset:0;z-index:6;display:none;touch-action:none}
+  body.touch #tlayer{display:block}
+  #tpad{position:absolute;z-index:7;width:118px;height:118px;margin:-59px 0 0 -59px;
+    border-radius:50%;border:1px solid rgba(217,164,65,.28);background:rgba(8,10,12,.30);
+    opacity:0;transition:opacity .16s;pointer-events:none;display:none}
+  body.touch #tpad{display:block}
+  #tpad.on{opacity:1}
+  #tknob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;
+    border-radius:50%;background:rgba(217,164,65,.30);border:1px solid rgba(217,164,65,.6)}
+  #tbtns{position:absolute;right:16px;bottom:16px;z-index:12;display:none;
+    flex-direction:column-reverse;gap:11px;align-items:center}
+  body.touch #tbtns{display:flex}
+  .tbtn{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:rgba(8,12,10,.74);border:1px solid rgba(217,164,65,.42);color:#e8d9b4;
+    font:14px/1 var(--mono);letter-spacing:.06em;user-select:none;-webkit-user-select:none;
+    touch-action:none;pointer-events:auto}
+  .tbtn:active{background:rgba(217,164,65,.28)}
+  .tbtn.big{width:74px;height:74px;font-size:19px;border-color:rgba(63,191,122,.55);color:#bff0d2}
+  .tbtn.sm{width:44px;height:44px;font-size:11px;opacity:.7}
+  /* on a phone the HUD has to get out of the way */
+  @media (max-width:900px){
+    #topleft{font-size:9px;max-width:34vw} #objective{font-size:10px} #subobj{font-size:8px}
+    #botleft{font-size:8px;bottom:12px}
+    #inv{top:auto;bottom:58px;right:auto;left:14px;font-size:8px;text-align:left;
+      max-width:30vw;opacity:.8}
+    #hintwrap{bottom:auto;top:8px;left:50%;transform:translateX(-50%);
+      flex-direction:column-reverse;align-items:center}
+    #hintbox{transform-origin:50% 0;max-width:min(330px,42vw);font-size:9.5px;padding:7px 10px;
+      line-height:1.6}
+    #hintbox.on{transform:translateY(0) scale(1)}
+    #hintbtn{font-size:9px;padding:6px 11px}
+    #tbtns{right:12px;bottom:12px;gap:9px}
+    #prompt{font-size:10px}
+    #gdist{margin-top:96px;font-size:9px;letter-spacing:.16em}
+    #garrow{width:58px;height:58px;margin:-29px 0 0 -29px}
+    .icap{font-size:clamp(13px,3.2vw,20px);padding:10px 14px;bottom:5%}
+  }
+  /* ---------- extra dread ---------- */
+  #bloodfx{position:fixed;inset:0;pointer-events:none;z-index:7;opacity:0;transition:opacity 1.1s;
+    background:radial-gradient(ellipse at 20% 0%,rgba(120,0,0,.55),transparent 42%),
+               radial-gradient(ellipse at 88% 12%,rgba(96,0,0,.5),transparent 38%),
+               radial-gradient(ellipse at 50% 108%,rgba(110,0,0,.45),transparent 46%)}
+  #facefx{position:fixed;inset:0;pointer-events:none;z-index:9;opacity:0;display:flex;
+    align-items:center;justify-content:center;background:rgba(40,0,0,.55)}
+  #facefx img{width:118%;height:118%;object-fit:cover;object-position:46% 34%;
+    filter:contrast(1.65) brightness(.72) saturate(.35) drop-shadow(0 0 40px #000);
+    transform:scale(1.35)}
   #rot{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;
     background:#05060a;font-size:12px;letter-spacing:.22em;color:var(--dim);text-align:center;padding:30px}
   @media (max-width:820px) and (orientation:portrait){#rot{display:flex}}
@@ -235,6 +299,8 @@
 <div id="redroom"></div>
 <div id="damage"></div>
 <div id="flashfx"></div>
+<div id="bloodfx"></div>
+<div id="facefx"></div>
 
 <div id="hud">
   <div id="cross"></div>
@@ -264,7 +330,18 @@
       fill="rgba(217,164,65,.92)" stroke="rgba(0,0,0,.6)" stroke-width="3"/></svg></div>
   </div>
   <div id="gdist"></div>
-  <div id="hintbox"></div>
+  <div id="hintwrap">
+    <div id="hintbox"></div>
+    <div id="hintbtn"><i>?</i><span>HINT</span></div>
+  </div>
+  <div id="tlayer"></div>
+  <div id="tpad"><div id="tknob"></div></div>
+  <div id="tbtns">
+    <div class="tbtn big" id="tbE">E</div>
+    <div class="tbtn" id="tbF">🔦</div>
+    <div class="tbtn" id="tbR">⟳</div>
+    <div class="tbtn sm" id="tbP">II</div>
+  </div>
   <div id="prompt"></div>
   <div id="subs"></div>
   <div id="toast"></div>
@@ -380,7 +457,7 @@ import * as THREE from './lib/three.module.min.js';
    Exterior  : photogrammetry scan (igmc.glb) + baked terrain/collision map
    Interior  : procedurally generated, basement + 10 floors
    Props     : 35 hand-made OBJ props (props.glb)
-   Nirmala   : the chudail model (chudail.glb)
+   Naina   : the chudail model (chudail.glb)
    ═══════════════════════════════════════════════════════════════════════ */
 
 const TERRAIN={ X0:-45, X1:57, Z0:-35, Z1:67, MAXH:40, N:512 };
@@ -873,8 +950,8 @@ function initMaterials(){
   MAT.sign =new THREE.MeshBasicMaterial({color:0x2fbf6a,toneMapped:false});
   MAT.signR=new THREE.MeshBasicMaterial({color:0xd03b2a,toneMapped:false});
   MAT.bulb =new THREE.MeshBasicMaterial({color:0xfff0cf,toneMapped:false});
-  MAT.ghost=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0,
-              emissive:0x070707,emissiveIntensity:0.35,side:THREE.DoubleSide});
+  MAT.ghost=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.78,metalness:0,
+              emissive:0x0d0f14,emissiveIntensity:0.5,side:THREE.DoubleSide});
   /* the baked-red eye vertices glow on their own, so she is never fully dark */
   MAT.ghost.onBeforeCompile=sh=>{
     sh.uniforms.uGlow={value:0};
@@ -882,13 +959,17 @@ function initMaterials(){
        uPh   running phase        uWalk  creepy glide-walk
        uStag mummy-stagger lurch  uAtk   attack lunge / reach
        uCrawl crawl crouch                                                   */
+    sh.uniforms.uSelf  ={value:0.05};   // she lights herself — never a black blob
+    sh.uniforms.uRim   ={value:0.10};   // cold rim so she reads against the dark
+    sh.uniforms.uTwitch={value:0};      // head snap
+    sh.uniforms.uStretch={value:0};     // neck stretch
     sh.uniforms.uPh   ={value:0};
     sh.uniforms.uWalk ={value:0};
     sh.uniforms.uStag ={value:0};
     sh.uniforms.uAtk  ={value:0};
     sh.uniforms.uCrawl={value:0};
     sh.vertexShader='uniform float uPh;uniform float uWalk;uniform float uStag;'+
-      'uniform float uAtk;uniform float uCrawl;\n'+sh.vertexShader.replace(
+      'uniform float uAtk;uniform float uCrawl;uniform float uTwitch;uniform float uStretch;\n'+sh.vertexShader.replace(
       '#include <begin_vertex>',
       '#include <begin_vertex>\n'+
       '{\n'+
@@ -921,13 +1002,35 @@ function initMaterials(){
       /* --- crawl: folded down, dragging --- */
       '  transformed.y *= 1.0 - uCrawl*0.46;\n'+
       '  transformed.z -= uCrawl * up * 0.34;\n'+
+      /* --- her head snaps round on its own, and the neck can stretch --- */
+      '  transformed.y += uStretch * head * 0.30;\n'+
+      '  float tw = uTwitch * smoothstep(0.62, 0.99, gh);\n'+
+      '  float tc = cos(tw), ts = sin(tw);\n'+
+      '  transformed.xz = vec2(transformed.x*tc - transformed.z*ts,\n'+
+      '                        transformed.x*ts + transformed.z*tc);\n'+
       '}');
     sh.fragmentShader='uniform float uGlow;\n'+sh.fragmentShader.replace(
       '#include <emissivemap_fragment>',
       '#include <emissivemap_fragment>\n'+
-      'float redn = clamp(vColor.r - max(vColor.g, vColor.b) * 1.4, 0.0, 1.0);\n'+
-      'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.75,0.02,0.01), redn);\n'+
-      'totalEmissiveRadiance += vec3(1.0, 0.06, 0.03) * redn * uGlow;');
+      'float redn = clamp(vColor.r - max(vColor.g, vColor.b) * 1.15, 0.0, 1.0);\n'+
+      'redn = pow(redn, 0.72);\n'+
+      'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62,0.012,0.006), redn);\n'+
+      'totalEmissiveRadiance += vec3(1.0, 0.035, 0.018) * redn * uGlow;');
+    /* she carries her own pale light, plus a cold rim, so torch or no torch
+       she looks like the model instead of a silhouette */
+    /* NOTE: outgoingLight is summed just before <opaque_fragment>, so anything
+       added to totalEmissiveRadiance has to land at or before <aomap_fragment>. */
+    const anchor=['#include <aomap_fragment>','#include <lights_fragment_end>',
+                  '#include <opaque_fragment>','#include <output_fragment>']
+                 .find(a=>sh.fragmentShader.includes(a));
+    const hasView=sh.fragmentShader.includes('vViewPosition');
+    sh.fragmentShader='uniform float uSelf;\nuniform float uRim;\n'+
+      sh.fragmentShader.replace(anchor,
+      'totalEmissiveRadiance += diffuseColor.rgb * uSelf;\n'+
+      (hasView
+        ?'float grim = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)),0.0,1.0), 2.2);\n'+
+         'totalEmissiveRadiance += vec3(0.72,0.73,0.78) * grim * uRim;\n'
+        :'')+anchor);
     MAT.ghost.userData.shader=sh;
   };
   MAT.silh =new THREE.MeshBasicMaterial({color:0x04050a,toneMapped:false,fog:true});
@@ -1634,6 +1737,7 @@ const $=id=>document.getElementById(id);
 const ui={ hud:$('hud'),cross:$('cross'),misslab:$('misslab'),floorlab:$('floorlab'),
   objective:$('objective'),subobj:$('subobj'),mtime:$('mtime'),mhint:$('mhint'),
   garrow:$('garrow'),gdist:$('gdist'),hintbox:$('hintbox'),
+  hintbtn:$('hintbtn'),hintwrap:$('hintwrap'),
   bat:$('batfill'),batnum:$('batnum'),pulse:$('pulsefill'),pulsenum:$('pulsenum'),
   cells:$('cells'),invlist:$('invlist'),prompt:$('prompt'),subs:$('subs'),toast:$('toast'),
   damage:$('damage'),compass:$('compass'),redroom:$('redroom') };
@@ -1881,6 +1985,7 @@ const Intro={
   }
 };
 $('iskip').onclick=()=>Intro.finish();
+$('hintbtn').addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); Guide.toggle(); });
 
 /* ═════════════ player ═════════════ */
 const P={ x:SPAWN.x,z:SPAWN.z,footY:YARD_Y,camY:YARD_Y+EYE,
@@ -1907,7 +2012,8 @@ addEventListener('mousemove',e=>{
   if(!State.pointerLocked||P.frozen) return;
   P.yaw-=e.movementX*0.0021; P.pitch=clamp(P.pitch-e.movementY*0.0021,-1.35,1.35);
 });
-addEventListener('mousedown',()=>{ if(State.playing){ if(P.noteOpen) closeDoc(); else if(!P.frozen) interact(); } });
+addEventListener('mousedown',()=>{ if(Touch.on) return;
+  if(State.playing){ if(P.noteOpen) closeDoc(); else if(!P.frozen) interact(); } });
 
 function collide(F,px,pz,r){
   for(const rect of F.rects){
@@ -1953,16 +2059,19 @@ function tryOutside(nx,nz){
   return !(g-P.footY>0.75||P.footY-g>2.2);
 }
 function movePlayer(dt){
-  let ix=0,iz=0;
+  let ix=0,iz=0,mag=1;
   if(!P.frozen){
     if(key['KeyW']||key['ArrowUp'])   iz-=1;
     if(key['KeyS']||key['ArrowDown']) iz+=1;
     if(key['KeyA']||key['ArrowLeft']) ix-=1;
     if(key['KeyD']||key['ArrowRight'])ix+=1;
+    if(Touch.on&&(Touch.mx||Touch.my)){ ix+=Touch.mx; iz+=Touch.my; }
   }
-  P.run=!!(key['ShiftLeft']||key['ShiftRight'])&&(ix||iz);
-  const l=Math.hypot(ix,iz)||1; ix/=l; iz/=l;
-  const sp=(P.run?5.0:3.05);
+  const raw=Math.hypot(ix,iz);
+  P.run=(!!(key['ShiftLeft']||key['ShiftRight'])||(Touch.on&&Touch.run))&&raw>0.05;
+  if(raw>1) mag=1; else mag=raw;                       // stick gives analog speed
+  const l=raw||1; ix/=l; iz/=l;
+  const sp=(P.run?5.0:3.05)*(Touch.on?Math.max(mag,raw>0.05?0.35:0):1);
   const sy=Math.sin(P.yaw), cy=Math.cos(P.yaw);
   const wx=(ix*cy+iz*sy)*sp, wz=(iz*cy-ix*sy)*sp;
   const k=1-Math.exp(-13*dt);
@@ -2139,7 +2248,7 @@ function closeDoc(){
 }
 $('doc').onclick=()=>{ if(P.noteOpen) closeDoc(); };
 
-/* ═════════════ Nirmala — the chudail ═════════════ */
+/* ═════════════ Naina — the chudail ═════════════ */
 const Ghost={
   obj:null, mesh:null, mode:'off', floor:1, x:0, z:0, y:0, dist:99,
   field:null, fieldT:0, speed:1.95, deadly:true, frozen:0, seenT:0,
@@ -2148,13 +2257,14 @@ const Ghost={
     const g=new THREE.Group();
     const m=new THREE.Mesh(geo,MAT.ghost);
     m.castShadow=true; m.receiveShadow=false; g.add(m); this.mesh=m;
-    const eyes=new THREE.PointLight(0xff2a20,0,0.95,2.6); eyes.position.set(0,1.67,-0.32);
+    const eyes=new THREE.PointLight(0xff1408,0,0.85,2.8); eyes.position.set(0,1.67,-0.34);
     g.add(eyes); this.eyeLight=eyes;
     g.visible=false; Int.group.add(g); this.obj=g;
     this.silh=[];
   },
   hide(){ this.mode='off'; this.obj.visible=false; this.field=null;
-    this.mo.walk=this.mo.stag=this.mo.atk=this.mo.crawl=0; },
+    this.mo.walk=this.mo.stag=this.mo.atk=this.mo.crawl=this.mo.str=this.mo.tw=0;
+    this.mo.dash=0; this.mo.dashT=rnd(3,6); this.mo.blinkT=rnd(8,14); },
   place(floor,x,z,face){
     this.floor=floor; this.x=x; this.z=z;
     const F=Int.floors[floor]; this.y=F?F.y:0;
@@ -2225,6 +2335,27 @@ const Ghost={
     this.moving=spd>0.05;
     this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z))+(this.yawOff||0);
   },
+  /* every few seconds she suddenly sprints, and rarely she just skips
+     a metre of corridor — the two things that make a chase frightening */
+  burst(dt,F){
+    const m=this.mo;
+    m.dashT-=dt;
+    if(m.dashT<=0){ m.dashT=rnd(3.6,7.2); m.dash=0.85; A.scream(); Effects.shake(0.45);
+      Torch.storm=Math.max(Torch.storm,1.1); }
+    if(m.dash>0){ m.dash-=dt; }
+    m.blinkT-=dt;
+    if(m.blinkT<=0&&this.dist>3.2&&this.dist<15){
+      m.blinkT=rnd(9,17);
+      const bx=this.x+(P.x-this.x)*0.22, bz=this.z+(P.z-this.z)*0.22;
+      if(navFree(F,bx,bz)){
+        this.x=bx; this.z=bz;
+        this.obj.position.set(this.x,this.obj.position.y,this.z);
+        A.sting(); Effects.shake(0.7); Effects.pulse(0.35);
+        Torch.storm=Math.max(Torch.storm,1.6);
+      }
+    }
+    return m.dash>0?1.95:1;
+  },
   looksAt(){
     const fwd=new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
     const dx=this.x-P.x, dz=this.z-P.z, d=Math.hypot(dx,dz)||1;
@@ -2235,7 +2366,7 @@ const Ghost={
     if(sh&&sh.uniforms.uGlow) sh.uniforms.uGlow.value=v;
   },
   /* ---- motion pack: creepy walk / mummy stagger / lunge, all GPU-side ---- */
-  mo:{ph:0,walk:0,stag:0,atk:0,crawl:0,lurch:0},
+  mo:{ph:0,walk:0,stag:0,atk:0,crawl:0,lurch:0,tw:0,twT:2,str:0,strT:7,dash:0,dashT:5,blinkT:9},
   motion(dt,walk,stag,atk,crawl,rate){
     const m=this.mo, k=1-Math.exp(-5.5*dt), ka=1-Math.exp(-12*dt);
     m.walk +=(walk -m.walk )*k;
@@ -2243,11 +2374,31 @@ const Ghost={
     m.crawl+=(crawl-m.crawl)*k;
     m.atk  +=(atk  -m.atk  )*ka;
     m.ph+=dt*rate; if(m.ph>62831.8) m.ph-=62831.8;
+
+    /* --- her head snaps round on its own, faster the closer she gets --- */
+    const near=clamp((16-this.dist)/13,0,1);
+    m.twT-=dt;
+    if(m.twT<=0){ m.twT=rnd(1.1,3.4)-near*0.8;
+      m.twTarget=rnd(-1,1)*(0.35+near*0.75);
+      if(this.dist<9&&Math.random()<0.45) A.noise(0.12,{f:1700,q:9,g:0.05});  // neck crack
+    }
+    m.tw+=((m.twTarget||0)-m.tw)*(1-Math.exp(-(9+near*16)*dt));
+    /* --- and once in a while the neck itself stretches --- */
+    m.strT-=dt;
+    if(m.strT<=0&&this.deadly){ m.strT=rnd(6,13); m.str=1; A.growl(0.8); }
+    m.str+=(0-m.str)*(1-Math.exp(-1.6*dt));
+
     const sh=MAT.ghost.userData.shader;
     if(sh&&sh.uniforms.uPh){
       sh.uniforms.uPh.value=m.ph;     sh.uniforms.uWalk.value =m.walk;
       sh.uniforms.uStag.value=m.stag; sh.uniforms.uAtk.value  =m.atk;
       sh.uniforms.uCrawl.value=m.crawl;
+      sh.uniforms.uTwitch.value=m.tw; sh.uniforms.uStretch.value=m.str;
+      /* she brightens as she closes in — you see her coming, and it is worse */
+      /* enough self-light that she is never a black blob, never so much
+         that the texture washes out — the torch does the rest */
+      sh.uniforms.uSelf.value=0.050+near*0.070+m.atk*0.055;
+      sh.uniforms.uRim.value =0.100+near*0.115+m.atk*0.090;
     }
     /* whole-body part of the same motion — bob, roll, and a stagger yaw-snap */
     const ph=m.ph;
@@ -2272,7 +2423,7 @@ const Ghost={
     }
   },
   update(dt){
-    this.setGlow(this.obj&&this.obj.visible?clamp(2.2+this.eyeLight.intensity*3.4,0,7):0);
+    this.setGlow(this.obj&&this.obj.visible?clamp(1.05+this.eyeLight.intensity*1.7,0,2.9):0);
     if(this.mode==='off'||!P.inside) return;
     const F=Int.floors[this.floor];
     if(!F) return;
@@ -2307,13 +2458,14 @@ const Ghost={
       this.stepToward(F,dt,alert?this.speed*1.25:this.speed*0.65);
       this.eyeLight.intensity=lerp(this.eyeLight.intensity,alert?0.85:0.18,0.06);
     } else if(this.mode==='chase'){
-      this.stepToward(F,dt,this.speed);
-      this.eyeLight.intensity=0.95;
+      this.stepToward(F,dt,this.speed*this.burst(dt,F));
+      this.eyeLight.intensity=0.88+Math.sin(performance.now()*0.011)*0.12;
       if(this.timer>0){ this.timer-=dt; if(this.timer<=0){ this.hide(); if(this.onTimer) this.onTimer(); return; } }
     } else if(this.mode==='dark'){
       /* she only moves while the torch is out */
       const dark=!Torch.lit();
-      if(dark){ this.stepToward(F,dt,this.speed); if(Math.random()<dt*3) A.step(true,true); }
+      if(dark){ this.stepToward(F,dt,this.speed*this.burst(dt,F));
+        if(Math.random()<dt*3) A.step(true,true); }
       this.eyeLight.intensity=lerp(this.eyeLight.intensity,dark?0.07:0.9,0.15);
     } else if(this.mode==='ritual'){
       const c=this.anchor||{x:0,z:0};
@@ -2453,7 +2605,7 @@ function updateLights(dt){
 /* ═════════════ documents ═════════════ */
 const DOCS={
   register:{h:'MATERNITY REGISTER — 12 MARCH',
-    b:'Patient&nbsp;&nbsp;: <b>NIRMALA THAKUR</b>, 27 yrs, Kotkhai<br/>'+
+    b:'Patient&nbsp;&nbsp;: <b>NAINA</b>, 27 yrs, Kotkhai<br/>'+
       'Admitted&nbsp;: 21:10<br/>Delivery&nbsp;&nbsp;: 23:37 &mdash; emergency LSCS<br/>'+
       'Baby&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <b>STILLBORN</b><br/>'+
       'Mother&nbsp;&nbsp;&nbsp;: <b>DECEASED &mdash; 23:47</b>',
@@ -2462,7 +2614,7 @@ const DOCS={
     b:'INDIRA GANDHI MEDICAL COLLEGE<br/><br/><b>ASHA VERMA</b><br/>Staff Nurse &middot; Maternity<br/>ID: IGMC/N/2213',
     s:'— laminate cracked down the middle'},
   cert:{h:'CERTIFICATE OF DEATH',
-    b:'Name&nbsp;&nbsp;&nbsp;: NIRMALA THAKUR<br/>Time&nbsp;&nbsp;&nbsp;: 23:47<br/>'+
+    b:'Name&nbsp;&nbsp;&nbsp;: NAINA<br/>Time&nbsp;&nbsp;&nbsp;: 23:47<br/>'+
       'Cause&nbsp;&nbsp;: <b>Postpartum cardiac arrest</b><br/>Certified by: (signature illegible)',
     s:'', hand:'Patient was conscious after delivery. Severe untreated hemorrhage for approximately ten minutes. '+
       'I asked twice for the consultant. — A.V.'},
@@ -2481,7 +2633,7 @@ const DOCS={
     s:'— Asha Verma, Staff Nurse (unsigned)'},
   band:{h:'IDENTIFICATION BAND',
     b:'A newborn&rsquo;s wristband. Plastic, yellowed, the knot still tied.<br/><br/>'+
-      'Name field: <b>BABY OF NIRMALA</b><br/>Weight: 2.4 kg &middot; Time: 23:37',
+      'Name field: <b>BABY OF NAINA</b><br/>Weight: 2.4 kg &middot; Time: 23:37',
     s:''}
 };
 function docBody(d){ return d.b+(d.hand?'<div class="hand">'+d.hand+'</div>':''); }
@@ -2737,7 +2889,7 @@ MISSIONS[1]=()=>{
         prop:'17_red_bangle',scale:0.6,tint:0xcfd4d8,glow:0xbfd8ff,
         onTake(){
           A.cry(0.8,1.2); A.sting(); Effects.shake(0.7);
-          say('NIRMALA','“Mera bachcha mujhe de do!”',3.4);
+          say('NAINA','“Mera bachcha mujhe de do!”',3.4);
         }});
     },
     done(){ return hasItem('anklet') }
@@ -2762,7 +2914,7 @@ function scare(n){
 MISSIONS[2]=()=>{
   let silhT=5;
   return [
-  { obj:'Nirmala se judi teen yaadein dhundo', sub:'Floor 3 · 4 · 5  —  0 / 3',
+  { obj:'Naina se judi teen yaadein dhundo', sub:'Floor 3 · 4 · 5  —  0 / 3',
     hint:'Teen alag floors — <b>3</b>, <b>4</b> aur <b>5</b> — pe ek-ek cheez hai. Teer hamesha agli cheez pe hi hoga; doosre floor pe jaana ho to teer pehle seedhi dikhayega.',
     enter(){
       [3,4,5].forEach(f=>scatterCells(f,2));
@@ -2799,7 +2951,7 @@ MISSIONS[2]=()=>{
       }
     },
     done(){ return hasItem('nurseId') },
-    exit(){ Silh.hideAll(); setObjective('Nirmala se judi teen yaadein dhundo','Floor 3 · 4 · 5  —  1 / 3'); }
+    exit(){ Silh.hideAll(); setObjective('Naina se judi teen yaadein dhundo','Floor 3 · 4 · 5  —  1 / 3'); }
   },
 
   { obj:'Khoon lage surgical cloth — Floor 4', sub:'Operation theatre  —  1 / 3',
@@ -2920,7 +3072,7 @@ MISSIONS[2]=()=>{
             {say:['DEV','Tu hospital me nahi mari…'],dur:2.8},
             {say:['DEV','Tujhe marne diya gaya.'],dur:3.0},
             {fn(){ A.noise(0.1,{f:2000,q:6,g:0.02}); },dur:1.6},
-            {say:['NIRMALA','“Mera… bachcha…”'],dur:3.0}
+            {say:['NAINA','“Mera… bachcha…”'],dur:3.0}
           ]);
         }});
     },
@@ -3032,12 +3184,12 @@ function rideElevator(then){
         Int.floors[2].addProp('18_baby_blanket',m.x,m.z-0.35,0,{y:1.05,scale:1.4,tint:0x6e1414,solid:false});
         fadeTo(0,700); A.ding(); Effects.red(0.5);
       },dur:1.4},
-    {say:['NIRMALA','“Doctor saab…”'],dur:2.8},
-    {say:['NIRMALA','“Ek baar dekh lo…”'],dur:2.6,fn(){ Ghost.z+=0.9; Ghost.obj.position.z=Ghost.z; }},
-    {say:['NIRMALA','“Mera bachcha saans le raha hai…”'],dur:3.0,
+    {say:['NAINA','“Doctor saab…”'],dur:2.8},
+    {say:['NAINA','“Ek baar dekh lo…”'],dur:2.6,fn(){ Ghost.z+=0.9; Ghost.obj.position.z=Ghost.z; }},
+    {say:['NAINA','“Mera bachcha saans le raha hai…”'],dur:3.0,
       fn(){ Ghost.z+=1.0; Ghost.obj.position.z=Ghost.z; }},
     {fn(){ A.scream(); Effects.shake(1.4); Effects.pulse(0.85); },dur:0.3},
-    {say:['NIRMALA','“DEKH LO!”'],dur:1.6},
+    {say:['NAINA','“DEKH LO!”'],dur:1.6},
     {fn(){ A.slam(); fadeTo(1,500); Ghost.hide(); Effects.red(0); },dur:0.9},
     {fn(){ elevDisplay('7'); teleport(7,ELEV.x,ELEV.z-2.2,Math.PI); fadeTo(0,800); A.ding(); },dur:1.4}
   ],then);
@@ -3395,7 +3547,7 @@ MISSIONS[5]=()=>{
       Cine.play([
         {fn(){ Ghost.place(2,m.x,m.z+2.2); Ghost.eyeLight.intensity=0; },dur:1.4},
         {say:['','Sab ruk gaya. Wo phir se insaan lag rahi hai.'],dur:3.4},
-        {say:['NIRMALA','“Mera bachcha… roya tha?”'],dur:3.4}
+        {say:['NAINA','“Mera bachcha… roya tha?”'],dur:3.4}
       ],()=>{ showChoice([
         ['“Haan.”',()=>this.answer()],
         ['“Tumhara bachcha zinda paida hua tha.”',()=>this.answer()]
@@ -3403,14 +3555,14 @@ MISSIONS[5]=()=>{
       this.answer=()=>{
         Cine.play([
           {say:['DEV','Woh zinda paida hua tha.'],dur:3.0},
-          {say:['NIRMALA','“To usne… mujhe mehsoos kiya tha?”'],dur:3.4},
+          {say:['NAINA','“To usne… mujhe mehsoos kiya tha?”'],dur:3.4},
           {say:['DEV','Haan.'],dur:2.0},
           {fn(){ A.cry(0.5,2.4); },dur:1.2},
           {say:['','Wo pehli baar muskurai — bina darawni lage.'],dur:3.4},
           {fn(){ const F=Int.floors[2];
                  const l=new THREE.PointLight(0xcfe4ff,6,9,2);
                  l.position.set(m.x,F.y+1.0,m.z-6); F.group.add(l); },dur:1.6},
-          {say:['NIRMALA','“Mujhe yahan se jaane nahi dete the.”'],dur:3.4},
+          {say:['NAINA','“Mujhe yahan se jaane nahi dete the.”'],dur:3.4},
           {say:['DEV','Ab koi nahi rokega.'],dur:2.8},
           {fn(){ Ghost.hide(); A.bell(); fadeTo(1,2200); powerOn=false; },dur:2.4}
         ],()=>{ this.fin=true; });
@@ -3486,7 +3638,7 @@ const Ending={
         {say:['','Officer use uthata hai. Padhta hai. Hospital ki taraf dekhta hai.'],dur:4.2},
         {fn(){ lightning(0.9); const l=new THREE.PointLight(0xffe0a0,60,40,2);
                l.position.set(-9,27,9.6); Ext.group.add(l); },dur:1.6},
-        {say:['','Upar ek khidki jal uthi hai. Wahan koi khadi hai — Nirmala nahi.'],dur:4.4},
+        {say:['','Upar ek khidki jal uthi hai. Wahan koi khadi hai — Naina nahi.'],dur:4.4},
         {fn(){ fadeTo(1,1600); },dur:1.8}
       ],()=>this.credits());
     }
@@ -3495,7 +3647,7 @@ const Ending={
     State.playing=false; ui.hud.classList.remove('on');
     document.exitPointerLock&&document.exitPointerLock();
     const lines=[
-      'NIRMALA WAS NOT THE ONLY ONE<br/>WHO DIED THERE.',
+      'NAINA WAS NOT THE ONLY ONE<br/>WHO DIED THERE.',
       'IGMC: <em>NIGHT WATCH</em>',
       '&mdash; post credits &mdash;',
       'RADIO: “Control, IGMC premises cleared.”',
@@ -3511,7 +3663,7 @@ const Ending={
       if(i>=lines.length){
         $('credline').innerHTML='END';
         setTimeout(()=>{ $('credits').classList.remove('on');
-          $('winline').innerHTML='Paanchon mission poore. Nirmala chali gayi.<br/><br/>Total time: <em>'+
+          $('winline').innerHTML='Paanchon mission poore. Naina chali gayi.<br/><br/>Total time: <em>'+
             fmtTime((performance.now()-P.startT)/1000)+'</em>';
           $('win').classList.remove('hide'); State.over=true; },3400);
         return;
@@ -3613,6 +3765,148 @@ function updateScare(dt){
 
 /* ═════════════ main loop ═════════════ */
 let last=performance.now();
+/* ═════════════ DREAD — the things that happen when she is not there ═════
+   Every one of these is cheap: sound, a light, a CSS overlay. None of them
+   adds a draw call, so they can fire on any floor at any time.            */
+const Dread={
+  t:rnd(14,26), blood:0, faceT:rnd(70,140), dripT:rnd(30,60), stepT:rnd(20,40),
+  /* her face, one frame, straight out of the dark */
+  face(){
+    const el=$('facefx');
+    if(!el.firstChild){
+      const im=document.createElement('img'); im.src=INTRO_PIC[5]; im.alt=''; el.appendChild(im);
+    }
+    el.style.transition='none'; el.style.opacity='1';
+    A.sting(); A.scream(); Effects.shake(1.4); Effects.pulse(0.85);
+    Torch.storm=Math.max(Torch.storm,2.4);
+    P.pulse=Math.min(180,P.pulse+34);
+    setTimeout(()=>{ el.style.transition='opacity .5s'; el.style.opacity='0'; },140);
+  },
+  /* the corridor ahead of you goes out, one tube at a time */
+  killAhead(){
+    const F=Int.floors[P.floor]; if(!F||!F.lights.length) return;
+    const fx=-Math.sin(P.yaw), fz=-Math.cos(P.yaw);
+    const ahead=F.lights.filter(l=>{
+      const dx=l.L.position.x-P.x, dz=l.L.position.z-P.z, d=Math.hypot(dx,dz);
+      return d>3&&d<24&&(dx*fx+dz*fz)/d>0.55;
+    }).sort((a,b)=>dist2(a.L.position.x,a.L.position.z,P.x,P.z)-dist2(b.L.position.x,b.L.position.z,P.x,P.z));
+    if(!ahead.length) return;
+    ahead.slice(0,5).forEach((l,i)=>setTimeout(()=>{
+      l.forced=0.0; A.lightClick();
+      if(i===0) say('','Aage ki battiyan ek ek karke bujh rahi hain.',2.6);
+    }, i*340));
+    setTimeout(()=>ahead.forEach(l=>l.forced=null), 5200);
+  },
+  /* footsteps that stop the moment you turn round */
+  behind(){
+    const n=Math.floor(rnd(3,6));
+    for(let i=0;i<n;i++) setTimeout(()=>A.step(true,true), i*rnd(380,520));
+    setTimeout(()=>{ if(Math.random()<0.5) A.creak(); }, n*460+300);
+  },
+  /* blood creeps in at the edges the longer you stay on a floor */
+  drip(v){ this.blood=clamp(v,0,1); $('bloodfx').style.opacity=String(this.blood*0.7); },
+  update(dt){
+    if(!P.inside||!State.playing||State.over||Cine.active||Tape.active){ return; }
+    /* blood tracks how hunted you are, and bleeds off slowly */
+    const want=clamp(P.danger*0.85+(Torch.battery<0.2?0.3:0)+(powerOn?0:0.25),0,1);
+    this.drip(lerp(this.blood,want,1-Math.exp(-0.7*dt)));
+
+    /* the rare, expensive one: her face */
+    this.faceT-=dt;
+    if(this.faceT<=0){
+      this.faceT=rnd(85,170);
+      if(Ghost.mode==='off'&&P.danger<0.1&&Math.random()<0.6) this.face();
+    }
+    /* footsteps behind you */
+    this.stepT-=dt;
+    if(this.stepT<=0){ this.stepT=rnd(26,52); if(Ghost.mode==='off') this.behind(); }
+    /* the lights ahead */
+    this.t-=dt;
+    if(this.t<=0){
+      this.t=rnd(30,62);
+      const r=Math.random();
+      if(r<0.34) this.killAhead();
+      else if(r<0.55){ A.slam(); Effects.shake(0.5);
+        say('','Kahin koi darwaza zor se band hua.',2.4); }
+      else if(r<0.72){ A.cry(0.5,rnd(1.6,2.6));
+        say('','Bachche ke rone ki aawaz phir se.',2.4); }
+      else if(r<0.88){ const a=P.yaw+rnd(-0.5,0.5);
+        Silh.show(P.floor,P.x-Math.sin(a)*rnd(9,15),P.z-Math.cos(a)*rnd(9,15),rnd(0.6,1.1));
+        A.whisper(); }
+      else { A.announce&&A.announce(); }
+    }
+  },
+  reset(){ this.t=rnd(14,26); this.faceT=rnd(70,140); this.stepT=rnd(20,40);
+    this.blood=0; $('bloodfx').style.opacity='0'; $('facefx').style.opacity='0'; }
+};
+
+/* ═════════════ TOUCH — phone and tablet controls ═════════════
+   Left thumb drives a virtual stick, the right half of the screen looks
+   around, and the actions sit as thumb-sized buttons down the right edge.
+   Nothing here runs at all on a desktop.                                  */
+const Touch={
+  on:false, mx:0, my:0, run:false, stickId:null, lookId:null,
+  sx:0, sy:0, lx:0, ly:0, R:52,
+  detect(){
+    return (navigator.maxTouchPoints||0)>0 &&
+           (matchMedia('(pointer:coarse)').matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
+  },
+  init(){
+    if(!this.detect()) return;
+    this.on=true;
+    document.body.classList.add('touch');
+    const pad=$('tpad'), knob=$('tknob');
+    /* one handler for every finger, sorted by which half it started in */
+    const area=$('tlayer');
+    const pos=e=>({x:e.clientX,y:e.clientY});
+    area.addEventListener('pointerdown',e=>{
+      if(!State.playing||State.paused) return;
+      const p=pos(e);
+      if(p.x<innerWidth*0.46&&this.stickId===null){
+        this.stickId=e.pointerId; this.sx=p.x; this.sy=p.y;
+        pad.style.left=p.x+'px'; pad.style.top=p.y+'px'; pad.classList.add('on');
+        knob.style.transform='translate(-50%,-50%)';
+      } else if(this.lookId===null){
+        this.lookId=e.pointerId; this.lx=p.x; this.ly=p.y;
+      }
+      try{ area.setPointerCapture(e.pointerId); }catch(_){}
+    },{passive:false});
+    area.addEventListener('pointermove',e=>{
+      const p=pos(e);
+      if(e.pointerId===this.stickId){
+        let dx=p.x-this.sx, dy=p.y-this.sy;
+        const d=Math.hypot(dx,dy), R=this.R;
+        if(d>R){ dx*=R/d; dy*=R/d; }
+        knob.style.transform='translate(calc(-50% + '+dx.toFixed(0)+'px),calc(-50% + '+dy.toFixed(0)+'px))';
+        this.mx=dx/R; this.my=dy/R;                  // +y on screen = backwards
+        this.run=Math.hypot(this.mx,this.my)>0.82;
+      } else if(e.pointerId===this.lookId){
+        if(P.frozen) return;
+        P.yaw-=(p.x-this.lx)*0.0052;
+        P.pitch=clamp(P.pitch-(p.y-this.ly)*0.0044,-1.35,1.35);
+        this.lx=p.x; this.ly=p.y;
+      }
+    },{passive:false});
+    const up=e=>{
+      if(e.pointerId===this.stickId){ this.stickId=null; this.mx=this.my=0; this.run=false;
+        pad.classList.remove('on'); }
+      else if(e.pointerId===this.lookId) this.lookId=null;
+    };
+    area.addEventListener('pointerup',up);
+    area.addEventListener('pointercancel',up);
+
+    /* action buttons */
+    const tap=(id,fn)=>$(id).addEventListener('pointerdown',e=>{
+      e.preventDefault(); e.stopPropagation(); fn(); });
+    tap('tbE',()=>{ if(P.noteOpen) closeDoc(); else if(!P.frozen) interact(); });
+    tap('tbF',()=>{ if(!P.frozen) Torch.toggle(); });
+    tap('tbR',()=>{ if(!P.frozen) Torch.swap(); });
+    tap('tbP',()=>pauseGame());
+    /* phones do not want a 2x framebuffer of a dark corridor */
+    renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));
+  }
+};
+
 /* ═════════════ GUIDE — arrow, distance and hints ═════════════
    The player should never have to guess what the next action is.  The arrow
    ring around the crosshair always points at the live objective, the line
@@ -3670,23 +3964,32 @@ const Guide={
     if(d<2.6)  return '<b>'+t.label+'</b> saamne hi hai — crosshair uspe le jao aur <b>E</b> dabao.';
     return 'Teer ke peeche chalo — <b>'+t.label+'</b>, '+Math.round(d)+' m. Paas jaake <b>E</b> dabao.';
   },
-  show(ms){ ui.hintbox.innerHTML=this.text(); ui.hintbox.classList.add('on'); this.hintT=(ms||6000)/1000; },
-  toggle(){ this.idle=0; this.show(8000); },
+  open:false,
+  show(ms){ ui.hintbox.innerHTML=this.text(); ui.hintbox.classList.add('on');
+    ui.hintbtn.classList.remove('pulse'); this.open=true; this.hintT=(ms||10000)/1000; },
+  close(){ ui.hintbox.classList.remove('on'); this.open=false; this.hintT=0; },
+  toggle(){ this.idle=0; if(this.open) this.close(); else this.show(12000); },
+  /* a new beat only nudges the chip — it never covers the screen */
+  nudge(){ ui.hintbtn.classList.add('pulse');
+    clearTimeout(this._nt); this._nt=setTimeout(()=>ui.hintbtn.classList.remove('pulse'),9000); },
 
-  reset(){ this.tgt=null; this.rescan=0; this.hintT=0; this.idle=0;
+  reset(){ this.tgt=null; this.rescan=0; this.hintT=0; this.idle=0; this.open=false;
     this.lastBeat=-1; this.lastMission=0; ui.hintbox.classList.remove('on');
+    ui.hintbtn.classList.remove('pulse');
     ui.garrow.classList.remove('on'); ui.gdist.classList.remove('on'); },
 
   update(dt){
     const busy=Cine.active||Tape.active||P.noteOpen||State.over||P.frozen||
                $('choice').classList.contains('on');
-    if(busy||!this.on){ ui.garrow.classList.remove('on'); ui.gdist.classList.remove('on'); return; }
+    if(busy||!this.on){ ui.garrow.classList.remove('on'); ui.gdist.classList.remove('on');
+      ui.hintwrap.style.opacity='0'; ui.hintwrap.style.pointerEvents='none'; return; }
+    ui.hintwrap.style.opacity=''; ui.hintwrap.style.pointerEvents='';
 
     /* new beat → say what to do, unprompted */
     if(Story.beat!==this.lastBeat||Story.mission!==this.lastMission){
       this.lastBeat=Story.beat; this.lastMission=Story.mission;
-      this.idle=0; this.rescan=0; this.tgt=this.via(this.resolve());
-      if(Story.beat>=0) this.show(6500);
+      this.idle=0; this.rescan=0; this.autoLeft=1; this.tgt=this.via(this.resolve());
+      if(Story.beat>=0){ this.close(); this.nudge(); }
     }
     if((this.rescan-=dt)<=0){ this.rescan=0.22; this.tgt=this.via(this.resolve()); }
 
@@ -3697,7 +4000,8 @@ const Guide={
       const cy=Math.cos(P.yaw), sy=Math.sin(P.yaw);
       const ang=Math.atan2(dx*cy-dz*sy, -dx*sy-dz*cy)*57.2958;
       const d=Math.hypot(dx,dz);
-      ui.garrow.style.transform='rotate('+ang.toFixed(1)+'deg) translateY(-104px)';
+      ui.garrow.style.transform='rotate('+ang.toFixed(1)+'deg) translateY('+
+        (innerWidth<900?-72:-104)+'px)';
       ui.garrow.style.opacity=(Math.abs(ang)<14&&d<4.5)?'0.30':'';
       ui.garrow.classList.add('on');
       ui.gdist.innerHTML=this.strip(t.label).toUpperCase()+
@@ -3707,8 +4011,11 @@ const Guide={
 
     /* stalled for a while → pop the hint by itself */
     this.idle+=dt;
-    if(this.idle>38){ this.idle=12; this.show(6000); }
-    if(this.hintT>0){ this.hintT-=dt; if(this.hintT<=0) ui.hintbox.classList.remove('on'); }
+    if(this.idle>34){ this.idle=10;
+      if(this.autoLeft===undefined||this.autoLeft>0){ this.autoLeft=(this.autoLeft||1)-1; this.show(9000); }
+      else this.nudge(); }
+    if(this.hintT>0){ this.hintT-=dt; if(this.hintT<=0) this.close(); }
+    if(this.open) ui.hintbox.innerHTML=this.text();
   }
 };
 
@@ -3724,7 +4031,7 @@ function frame(now){
       Ghost.update(dt); Silh.update(dt);
       Torch.update(dt,P.danger);
       scanFocus(); Story.update(dt); Ending.update(dt); Guide.update(dt);
-      Effects.update(dt); updateScare(dt);
+      Effects.update(dt); updateScare(dt); Dread.update(dt);
       if(!P.inside) updateExterior(dt,P.x,P.camY,P.z);
     }
     updateHUD(dt);
@@ -3751,10 +4058,10 @@ async function boot(){
     PROPS=await loadLibrary('./assets/props.glb',p=>set(0.28+p*0.16,'PROPS — '+Math.round(p*100)+'%'));
     set(0.45,'SMALL OBJECTS');
     Object.assign(PROPS, await loadLibrary('./assets/props_small.glb',p=>set(0.45+p*0.12,'SMALL OBJECTS — '+Math.round(p*100)+'%')));
-    set(0.56,'NIRMALA');
+    set(0.56,'NAINA');
     const chTex=await loadImageTex('./assets/chudail_tex.jpg',false);
     chTex.flipY=false;
-    const ch=await loadSingle('./assets/chudail.glb',p=>set(0.56+p*0.06,'NIRMALA — '+Math.round(p*100)+'%'));
+    const ch=await loadSingle('./assets/chudail.glb',p=>set(0.56+p*0.06,'NAINA — '+Math.round(p*100)+'%'));
     MAT.ghost.map=chTex; MAT.ghost.needsUpdate=true;
     set(0.62,'SOUND');
     Music.load('./assets/music.mp3');
@@ -3769,6 +4076,7 @@ async function boot(){
     }
     set(1,'READY');
     await new Promise(r=>setTimeout(r,260));
+    Touch.init();                        // phone controls, if this is a phone
     Intro.build();                       // decode the storyboard while the menu is up
     $('loader').classList.add('hide'); $('menu').classList.remove('hide');
   }catch(e){
@@ -3832,23 +4140,25 @@ function startRun(m){
   A.init(); A.ambience(); A.boot(); Music.start();
   P.startT=performance.now();
   fadeTo(0,400);
-  Guide.reset(); Guide.on=true;
+  Guide.reset(); Guide.on=true; Dread.reset();
   if(m===1){ startMission(1); card(1); }
   else startMission(m);
   /* control primer, once per run — the arrow does the rest */
   setTimeout(()=>{ if(!State.playing) return;
-    ui.hintbox.innerHTML='<b>WASD</b> chalo · <b>SHIFT</b> bhaago · <b>F</b> torch · '+
-      '<b>E</b> kaam karo · <b>H</b> hint · <b>TAB</b> objective<br/>'+
-      'Crosshair ke aas-paas ka <b>teer</b> hamesha agle kaam ki taraf point karta hai.';
-    ui.hintbox.classList.add('on'); Guide.hintT=9;
+    ui.hintbox.innerHTML=Touch.on
+      ? 'Baayen <b>joystick</b> se chalo · daayen ungli se <b>dekho</b> · buttons se torch aur kaam.'
+      : '<b>WASD</b> chalo · <b>SHIFT</b> bhaago · <b>F</b> torch · <b>E</b> kaam karo · <b>H</b> hint';
+    ui.hintbox.classList.add('on'); Guide.open=true; Guide.hintT=8;
   }, m===1?3600:900);
 }
 document.addEventListener('pointerlockchange',()=>{
   State.pointerLocked=document.pointerLockElement===renderer.domElement;
+  if(Touch.on) return;
   if(!State.pointerLocked&&State.playing&&!P.noteOpen&&!State.over&&!Cine.active&&!Tape.active
      &&!$('choice').classList.contains('on')) pauseGame();
 });
 renderer.domElement.addEventListener('click',()=>{
+  if(Touch.on) return;
   if(State.playing&&!State.pointerLocked&&!P.noteOpen)
     renderer.domElement.requestPointerLock&&renderer.domElement.requestPointerLock();
 });
@@ -3868,7 +4178,7 @@ $('chapbtn').onclick=()=>{
 };
 
 window.IGMC={P,State,Story,Ghost,Torch,Int,Ext,A,Music,ITEMS,MISSIONS,MAT,camera,renderer,scene,key,head,
-  Intro,Guide,INTRO_FRAMES,Sketch,
+  Intro,Guide,Dread,Touch,INTRO_FRAMES,INTRO_PIC,Sketch,
   startRun,startMission,teleport,setFloor,roomC,FLOOR_H,HX,HZ,SWR,RUN,ELEV,Cine,Tape,Ending,
   give:(id)=>{ if(!ITEMS[id]) ITEMS[id]={label:id}; giveItem(id); },
   tp(x,z,yaw){ P.x=x; P.z=z; if(yaw!==undefined) P.yaw=yaw;
