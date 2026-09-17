@@ -29,8 +29,31 @@ html=html.replace('<title>IGMC: NIGHT WATCH</title>',
 html=html.replace(/'<br\/><br\/>Ise <b>http server<\/b> se kholo:<br\/><code>python3 -m http\.server<\/code>'/,
   "'<br/><br/>Browser WebGL support karta hai ya nahi, check karo.'");
 
+/* the recorded audio pack: every mp3 under assets/audio is inlined as a lookup the
+   page consults before it falls back to a relative path. The folder may be
+   empty, in which case the game just uses its synthesised audio. */
+function walk(rel){
+  const abs=path.join(dir,rel);
+  if(!fs.existsSync(abs)) return [];
+  return fs.readdirSync(abs,{withFileTypes:true}).flatMap(e=>
+    e.isDirectory()?walk(path.join(rel,e.name)):[path.join(rel,e.name)]);
+}
+const clips=walk('assets/audio').filter(f=>f.toLowerCase().endsWith('.mp3'));
+if(clips.length){
+  const map={};
+  for(const f of clips){
+    const key=f.replace(/^assets\/audio\//,'').replace(/\.mp3$/i,'');
+    map[key]='data:audio/mpeg;base64,'+b64(f);
+  }
+  html=html.replace('<script type="module">',
+    '<script>window.SFX_DATA='+JSON.stringify(map)+';</script>\n<script type="module">');
+  console.log('inlined',clips.length,'audio clips');
+}
+
 const left=html.match(/\.\/(assets|lib)\/[\w.]+/g);
-if(left) throw new Error('still references '+[...new Set(left)].join(', '));
+const allow=new Set(['./assets/audio']);          // built at runtime, may be absent
+const bad=(left||[]).filter(x=>!allow.has(x));
+if(bad.length) throw new Error('still references '+[...new Set(bad)].join(', '));
 const out=path.join(dir,'andhera-standalone.html');
 fs.writeFileSync(out,html);
 console.log('inlined',inlined,'assets + three.js ->',(fs.statSync(out).size/1e6).toFixed(2)+'MB');

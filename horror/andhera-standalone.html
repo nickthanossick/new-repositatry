@@ -394,6 +394,7 @@
   </p>
   <div class="row">
     <button class="btn primary" id="startbtn">Enter IGMC</button>
+    <button class="btn hide" id="contbtn">Continue</button>
     <button class="btn" id="chapbtn">Mission chuno</button>
   </div>
   <div id="chapters" class="row" style="display:none"></div>
@@ -417,6 +418,7 @@
   <div class="stat" id="pausestat"></div>
   <div class="row">
     <button class="btn" id="resumebtn">Resume</button>
+    <button class="btn" id="savebtn">Save</button>
     <button class="btn" id="quitbtn" style="border-color:rgba(140,27,27,.5);color:#c26a6a">Menu</button>
   </div>
 </div>
@@ -426,7 +428,8 @@
   <div class="title">MAUT</div>
   <div class="rule"></div>
   <p class="lede" id="deathline"></p>
-  <button class="btn primary" id="retrybtn">Checkpoint se phir</button>
+  <div class="stat" id="lives"></div>
+  <button class="btn primary" id="retrybtn">Wahin se phir</button>
 </div>
 
 <div class="screen hide" id="win">
@@ -2060,6 +2063,7 @@ function tryOutside(nx,nz){
   return !(g-P.footY>0.75||P.footY-g>2.2);
 }
 function movePlayer(dt){
+  if(P.grace>0) P.grace-=dt;
   let ix=0,iz=0,mag=1;
   if(!P.frozen){
     if(key['KeyW']||key['ArrowUp'])   iz-=1;
@@ -2485,7 +2489,8 @@ const Ghost={
     this.y=F.y;
     const sy=stairY(F,this.x,this.z); if(sy!==null) this.y=sy;
     this.obj.position.x=this.x; this.obj.position.z=this.z;
-    if(this.deadly&&this.dist<1.2&&P.alive&&!State.over) die(this.deathLine||'Usne tujhe chhoo liya.');
+    if(this.deadly&&this.dist<1.2&&P.alive&&!State.over&&!(P.grace>0))
+      die(this.deathLine||'Usne tujhe chhoo liya.');
   }
 };
 
@@ -2673,6 +2678,7 @@ const Story={
     if(!b){ this.missionComplete(); return; }
     if(b.obj) setObjective(b.obj,b.sub);
     if(b.enter) b.enter();
+    if(!Save.ff) setTimeout(()=>Save.write(),60);   // checkpoint at every beat
   },
   missionComplete(){
     if(this.mission>=5){ Ending.start(); return; }
@@ -3682,6 +3688,239 @@ const Ending={
 /* ═════════════ state, death, pause ═════════════ */
 const State={playing:false,paused:false,pointerLocked:false,over:false,t:0};
 function fmtTime(s){ const m=Math.floor(s/60); return m+'m '+Math.floor(s%60)+'s'; }
+/* ═════════════ SFX — the recorded audio pack ═════════════
+   Drop the pack's `audio` folder into horror/assets/ and every line below
+   starts playing the real recording instead of the synthesised one. Nothing
+   is preloaded and nothing blocks: a file that is not there fails once, is
+   marked missing, and that event falls back to WebAudio for the rest of the
+   session. Layout is exactly what the pack's download script produces:
+       assets/audio/sfx/08_naina_scream.mp3
+       assets/audio/dialogue/naina/07_jhooth_bola_tha.mp3                   */
+const SFX={
+  on:true, miss:{}, pool:{}, base:'./assets/audio/',
+  url(rel){ return (window.SFX_DATA&&window.SFX_DATA[rel])||(this.base+rel+'.mp3'); },
+  /* two elements per clip so a rapid re-trigger never cuts itself off */
+  get(rel){
+    let p=this.pool[rel];
+    if(!p){
+      p=this.pool[rel]=[0,1].map(()=>{ const a=new Audio();
+        a.preload='none'; a.src=this.url(rel);
+        a.addEventListener('error',()=>{ this.miss[rel]=1; },{once:true});
+        return a; });
+    }
+    return p;
+  },
+  /* returns true only when a real file actually started */
+  play(rel,opt){
+    if(!this.on||!rel||this.miss[rel]) return false;
+    const o=opt||{}, p=this.get(rel);
+    const a=p.find(e=>e.paused||e.ended)||p[0];
+    try{
+      a.volume=clamp(o.vol===undefined?0.9:o.vol,0,1);
+      a.playbackRate=o.rate||1;
+      a.loop=!!o.loop;
+      a.currentTime=0;
+      const r=a.play();
+      if(r&&r.catch) r.catch(()=>{ this.miss[rel]=1; });
+      return true;
+    }catch(_){ this.miss[rel]=1; return false; }
+  },
+  stop(rel){ const p=this.pool[rel]; if(p) p.forEach(a=>{ try{ a.pause(); }catch(_){} }); },
+  /* pick one of several, so repeats do not sound identical */
+  any(list,opt){ return this.play(list[(Math.random()*list.length)|0],opt); }
+};
+
+/* ---- every synthesised cue now prefers its recording ---- */
+const S_SFX={
+  scream :'sfx/08_naina_scream',
+  screech:'sfx/09_naina_attack_screech',
+  sob    :'sfx/07_naina_sobbing',
+  whisper:'sfx/10_ghost_whisper_swarm',
+  breath :'sfx/11_close_ghost_breathing',
+  cryFar :'sfx/05_baby_cry_distant',
+  cryNear:'sfx/06_baby_cry_close',
+  creak  :'sfx/17_door_creak',
+  slam   :'sfx/18_door_slam',
+  tray   :'sfx/19_metal_tray_crash',
+  buzz   :'sfx/20_fluorescent_buzz',
+  outage :'sfx/21_power_outage',
+  drip   :'sfx/22_pipe_drip',
+  ding   :'sfx/23_elevator_ding',
+  pa     :'sfx/24_pa_static',
+  chain  :'sfx/25_chain_rattle',
+  thunder:'sfx/26_rain_thunder',
+  bell   :'sfx/27_ritual_bell',
+  sting  :'sfx/28_jumpscare_stinger',
+  trolley:'sfx/15_trolley_squeak',
+  wheel  :'sfx/16_wheelchair_roll',
+  hbSlow :'sfx/12_heartbeat_slow',
+  hbFast :'sfx/13_heartbeat_panic'
+};
+(function wireSFX(){
+  const over=(name,rel,vol)=>{
+    const orig=A[name].bind(A);
+    A[name]=function(...a){ if(SFX.play(rel,{vol:typeof vol==='function'?vol(...a):vol})) return; return orig(...a); };
+  };
+  over('scream', S_SFX.scream, 0.95);
+  over('sting',  S_SFX.sting,  0.9);
+  over('slam',   S_SFX.slam,   0.85);
+  over('creak',  S_SFX.creak,  0.7);
+  over('ding',   S_SFX.ding,   0.8);
+  over('bell',   S_SFX.bell,   0.85);
+  over('thunder',S_SFX.thunder,0.8);
+  over('radio',  S_SFX.pa,     0.8);
+  over('announce',S_SFX.pa,    0.75);
+  /* these take arguments that shape the sound, so honour them */
+  const growl=A.growl.bind(A);
+  A.growl=function(v){ if(SFX.play(S_SFX.breath,{vol:clamp(0.35+(v||0)*0.5,0,1)})) return; return growl(v); };
+  const whisper=A.whisper.bind(A);
+  A.whisper=function(){ if(SFX.any([S_SFX.whisper,S_SFX.sob],{vol:0.6})) return; return whisper(); };
+  const cry=A.cry.bind(A);
+  A.cry=function(v,d){ const far=(v||1)<0.55;
+    if(SFX.play(far?S_SFX.cryFar:S_SFX.cryNear,{vol:clamp(0.35+(v||0.5)*0.6,0,1)})) return;
+    return cry(v,d); };
+  const heart=A.heart.bind(A);
+  A.heart=function(v){ if(SFX.play((v||0)>0.55?S_SFX.hbFast:S_SFX.hbSlow,{vol:clamp(0.3+(v||0)*0.5,0,1)})) return;
+    return heart(v); };
+  const light=A.lightClick.bind(A);
+  A.lightClick=function(){ if(SFX.play(S_SFX.buzz,{vol:0.5})) return; return light(); };
+})();
+
+/* ---- spoken lines: say() looks the exact text up and plays the take ---- */
+const VO={
+  NAINA:{
+    'Tune bhi suna?':'dialogue/naina/02_tune_bhi_suna',
+    'Sab bolte rahe... mar gaya.':'dialogue/naina/03_sab_bolte_rahe',
+    'Mere... das minute.':'dialogue/naina/05_mere_das_minute',
+    'Maine kaha tha na...':'dialogue/naina/06_maine_kaha_tha_na',
+    'JHOOTH BOLA THA!':'dialogue/naina/07_jhooth_bola_tha',
+    'Bas ek baar... dikha dete...':'dialogue/naina/08_bas_ek_baar_dikha_dete',
+    '“Mera bachcha mujhe de do!”':'dialogue/naina/09_mera_bachcha_de_do',
+    '“Mera… bachcha…”':'dialogue/naina/10_mera_bachcha',
+    '“Doctor saab…”':'dialogue/naina/11_doctor_saab',
+    '“Ek baar dekh lo…”':'dialogue/naina/12_ek_baar_dekh_lo',
+    '“Mera bachcha saans le raha hai…”':'dialogue/naina/13_saans_le_raha_hai',
+    '“DEKH LO!”':'dialogue/naina/14_dekh_lo',
+    '“To usne… mujhe mehsoos kiya tha?”':'dialogue/naina/16_mehsoos_kiya_tha',
+    '“Mera bachcha… roya tha?”':'dialogue/naina/15_mera_bachcha_roya_tha'
+  },
+  PANDIT:{
+    'Naina... main tumhe maarne nahi aaya.':'dialogue/pandit/01_naina_main_tumhe',
+    'Ab le ja.':'dialogue/pandit/03_ab_le_ja',
+    'Jo bhatak rahi thi... woh chali gayi.':'dialogue/pandit/04_jo_bhatak_rahi_thi'
+  },
+  POLICE:{ 'Khatam?':'dialogue/police/02_khatam',
+           'Aur... hospital?':'dialogue/police/03_aur_hospital' },
+  DOCTOR:{ 'Bachcha... nahi raha.':'dialogue/doctor/01_bachcha_nahi_raha' },
+  RADIO:{}
+};
+function voFor(who,text){
+  if(!who) return null;
+  const bag=VO[String(who).toUpperCase()]; if(!bag) return null;
+  if(bag[text]) return bag[text];
+  /* the scripts use curly quotes and ellipses in places — match loosely */
+  const norm=t=>String(t).replace(/[“”"']/g,'').replace(/[…]/g,'...').replace(/\s+/g,' ').trim().toLowerCase();
+  const n=norm(text);
+  for(const k in bag) if(norm(k)===n) return bag[k];
+  return null;
+}
+
+/* ═════════════ SAVE + LIVES ═════════════
+   Three deaths put you back where you fell, with the corridor cleared and a
+   fresh cell. The fourth sends you back to the start of the mission.
+   The game also writes a checkpoint at every beat, so closing the tab is
+   not the end of a two-hour run.                                          */
+const SAVE_KEY='igmc.nightwatch.save.v1';
+const Save={
+  lives:3, ff:false,
+  /* --- write --- */
+  snapshot(){
+    if(!State.playing||!Story.mission) return null;
+    if(Story.beat<0||Story.beat>=Story.beats.length) return null;   // between beats
+    return {v:1, t:Date.now(),
+      mission:Story.mission, beat:Story.beat, mt:Story.mt,
+      floor:P.floor, x:+P.x.toFixed(2), z:+P.z.toFixed(2), yaw:+P.yaw.toFixed(3),
+      inside:P.inside, items:[...P.items], lives:this.lives,
+      cells:Torch.cells, battery:+Torch.battery.toFixed(3), elapsed:performance.now()-P.startT};
+  },
+  write(){
+    const d=this.snapshot(); if(!d) return false;
+    try{ localStorage.setItem(SAVE_KEY,JSON.stringify(d)); return true; }catch(_){ return false; }
+  },
+  read(){
+    try{ const r=localStorage.getItem(SAVE_KEY); if(!r) return null;
+      const d=JSON.parse(r); return (d&&d.v===1&&d.mission>=1&&d.mission<=5)?d:null;
+    }catch(_){ return null; }
+  },
+  clear(){ try{ localStorage.removeItem(SAVE_KEY); }catch(_){} this.refresh(); },
+  refresh(){
+    const d=this.read(), b=$('contbtn'); if(!b) return;
+    if(d){ b.classList.remove('hide');
+      b.textContent='Continue — M'+d.mission+' · '+MISSION_TITLES[d.mission-1][1].split(' ')[0];
+    } else b.classList.add('hide');
+  },
+
+  /* --- read back --- */
+  load(){
+    const d=this.read(); if(!d) return false;
+    this.lives=(d.lives===undefined?3:d.lives);
+    startRun(d.mission,true);                       // quiet: no card, no primer
+    this.ff=true;                                   // replay the beats we already did
+    try{ let guard=0;
+      while(Story.beat<d.beat&&Story.beats[Story.beat+1]&&guard++<64){
+        /* a floor hook armed by a beat we are replaying would fire the moment
+           we teleport back in, so only the final beat's hooks survive */
+        Story.floorHooks={};
+        Save.step();
+      } }
+    catch(e){ console.warn('fast-forward stopped:',e&&e.message); }
+    this.ff=false;
+    Cine.active=false; Cine.steps.length=0; Tape.active=false; P.frozen=0;
+    $('tape').classList.remove('on'); $('doc').classList.remove('on');
+    clearInventory(); (d.items||[]).forEach(id=>giveItem(id));
+    Torch.cells=d.cells!==undefined?d.cells:2;
+    Torch.battery=d.battery!==undefined?d.battery:1;
+    P.inside=!!d.inside;
+    Ext.group.visible=!P.inside; Int.group.visible=P.inside;
+    setRain(!P.inside); A.indoor(P.inside);
+    Story.canEnter=!P.inside;
+    if(P.inside) teleport(d.floor,d.x,d.z,d.yaw);
+    else { P.x=d.x; P.z=d.z; P.yaw=d.yaw; P.footY=groundOutside(d.x,d.z); P.camY=P.footY+EYE;
+           head.position.set(P.x,P.camY,P.z); head.rotation.y=P.yaw; }
+    Story.mt=d.mt||0;
+    P.startT=performance.now()-(d.elapsed||0);
+    Ghost.hide(); Guide.reset(); Dread.reset();
+    toast('CHECKPOINT SE SHURU — MISSION '+d.mission);
+    return true;
+  },
+
+  /* --- dying --- */
+  respawnable(){ return this.lives>0; },
+  useLife(){ this.lives=Math.max(0,this.lives-1); return this.lives; },   // called on respawn
+  resetLives(){ this.lives=3; }
+};
+/* nothing narrates or freezes the player while we replay old beats, and a
+   cinematic callback must not advance the story out from under the loop */
+const _advance=Story.advance.bind(Story);
+Story.advance=function(){ if(Save.ff) return; return _advance(); };
+Save.step=()=>_advance();
+const _cinePlay=Cine.play.bind(Cine), _tapePlay=Tape.play.bind(Tape), _say=say;
+Cine.play=function(steps,onDone){
+  if(Save.ff){ (steps||[]).forEach(st=>{ if(st.fn){ try{ st.fn(); }catch(_){} } });
+    if(onDone) onDone(); return; }
+  return _cinePlay(steps,onDone);
+};
+Tape.play=function(lines,onDone){
+  if(Save.ff){ if(onDone) onDone(); return; }
+  return _tapePlay(lines,onDone);
+};
+say=function(who,text,dur){
+  if(Save.ff) return;
+  const v=voFor(who,text===undefined?who:text);
+  if(v) SFX.play(v,{vol:0.95});
+  return _say(who,text,dur);
+};
+
 function die(reason){
   if(!P.alive||State.over) return;
   P.alive=false; State.playing=false; State.over=true;
@@ -3689,9 +3928,16 @@ function die(reason){
   ui.damage.style.opacity='1';
   Effects.shake(1.6);
   document.exitPointerLock&&document.exitPointerLock();
+  /* remember exactly where you fell — three of those come back here */
+  P.fallen={floor:P.floor,x:P.x,z:P.z,yaw:P.yaw,inside:P.inside};
+  const left=Save.lives;                 // spent in retry(), not here
   setTimeout(()=>{
     $('deathline').innerHTML=reason+'<br/><br/>Mission <em>'+Story.mission+'</em> — '+
       MISSION_TITLES[Story.mission-1][1];
+    $('lives').innerHTML = left>0
+      ? 'Wahin se phir — <em>'+left+'</em> mauke bache hain'
+      : 'Mauke khatam. Ab <em>mission shuru</em> se.';
+    $('retrybtn').textContent = left>0?'Wahin se phir':'Mission shuru se';
     $('death').classList.remove('hide'); ui.hud.classList.remove('on');
   },950);
 }
@@ -3703,7 +3949,30 @@ function retry(){
   Cine.active=false; Cine.steps.length=0; P.frozen=0; P.noteOpen=false;
   $('doc').classList.remove('on'); $('tape').classList.remove('on');
   $('choice').classList.remove('on'); ritualHUD(0);
+  const spot=P.fallen;
+  if(Save.respawnable()&&spot){
+    Save.useLife();
+    /* same corridor, same beat — she is sent away and you get a breath */
+    State.playing=true; State.over=false;
+    ui.hud.classList.add('on');
+    Ghost.hide(); Dread.reset(); Guide.reset();
+    Torch.cells=Math.max(Torch.cells,1);
+    P.inside=spot.inside;
+    Ext.group.visible=!P.inside; Int.group.visible=P.inside;
+    setRain(!P.inside); A.indoor(P.inside);
+    if(P.inside) teleport(spot.floor,spot.x,spot.z,spot.yaw);
+    else { P.x=spot.x; P.z=spot.z; P.yaw=spot.yaw;
+           P.footY=groundOutside(spot.x,spot.z); P.camY=P.footY+EYE;
+           head.position.set(P.x,P.camY,P.z); head.rotation.y=P.yaw; }
+    P.vx=P.vz=0; P.pulse=118; P.grace=3.2;
+    fadeTo(1,0); setTimeout(()=>fadeTo(0,900),80);
+    A.heart(1); toast(Save.lives?Save.lives+' MAUKE BACHE HAIN':'AAKHRI MAUKA');
+    Save.write();
+    return;
+  }
+  Save.resetLives();
   startMission(Story.mission);
+  Save.write();
 }
 function pauseGame(){
   if(!State.playing) return;
@@ -4078,6 +4347,7 @@ async function boot(){
     set(1,'READY');
     await new Promise(r=>setTimeout(r,260));
     Touch.init();                        // phone controls, if this is a phone
+    Save.refresh();                      // show Continue only if there is a save
     Intro.build();                       // decode the storyboard while the menu is up
     $('loader').classList.add('hide'); $('menu').classList.remove('hide');
   }catch(e){
@@ -4097,7 +4367,7 @@ function resetPlayer(){
   $('doc').classList.remove('on'); $('tape').classList.remove('on');
   $('choice').classList.remove('on'); ritualHUD(0);
 }
-function startMission(m){
+function startMission(m,quiet){
   resetPlayer();
   State.over=false; State.paused=false; State.playing=true;
   ui.hud.classList.add('on');
@@ -4130,21 +4400,25 @@ function startMission(m){
       band:'BABY ID BAND'})[id]}; giveItem(id); });
     const startFloor={2:3,3:5,4:7,5:10}[m]||1;
     teleport(startFloor,SW_DOOR_X,SWR.z0-2.4,Math.PI);
-    card(m,()=>Story.begin(m));
+    /* a load has to have the beats in hand right now, so it skips the card */
+    if(quiet) Story.begin(m); else card(m,()=>Story.begin(m));
     return;
   }
   renderer.domElement.requestPointerLock&&renderer.domElement.requestPointerLock();
 }
-function startRun(m){
+function startRun(m,quiet){
   $('menu').classList.add('hide'); $('death').classList.add('hide'); $('win').classList.add('hide');
   $('credits').classList.remove('on');
   A.init(); A.ambience(); A.boot(); Music.start();
   P.startT=performance.now();
   fadeTo(0,400);
-  Guide.reset(); Guide.on=true; Dread.reset();
-  if(m===1){ startMission(1); card(1); }
+  Guide.reset(); Guide.on=true; Dread.reset(); P.grace=0; P.fallen=null;
+  if(quiet) startMission(m,true);
+  else if(m===1){ startMission(1); card(1); }
   else startMission(m);
+  if(!quiet) Save.resetLives();
   /* control primer, once per run — the arrow does the rest */
+  if(quiet) return;
   setTimeout(()=>{ if(!State.playing) return;
     ui.hintbox.innerHTML=Touch.on
       ? 'Baayen <b>joystick</b> se chalo · daayen ungli se <b>dekho</b> · buttons se torch aur kaam.'
@@ -4165,10 +4439,12 @@ renderer.domElement.addEventListener('click',()=>{
 });
 $('startbtn').onclick=()=>{ $('menu').classList.add('hide'); Intro.play(()=>startRun(1)); };
 $('retrybtn').onclick=retry;
+$('contbtn').onclick=()=>{ if(!Save.load()) toast('KOI SAVE NAHI MILA'); };
+$('savebtn').onclick=()=>{ toast(Save.write()?'SAVE HO GAYA':'SAVE NAHI HO PAYA'); };
 $('againbtn').onclick=()=>startRun(1);   /* replay skips the intro */
 $('resumebtn').onclick=resumeGame;
 $('quitbtn').onclick=()=>{ $('pause').classList.add('hide'); State.paused=false; State.playing=false;
-  ui.hud.classList.remove('on'); $('menu').classList.remove('hide'); };
+  ui.hud.classList.remove('on'); $('menu').classList.remove('hide'); Save.write(); Save.refresh(); };
 $('chapbtn').onclick=()=>{
   const c=$('chapters');
   if(c.style.display==='flex'){ c.style.display='none'; return; }
@@ -4185,7 +4461,8 @@ window.IGMC={P,State,Story,Ghost,Torch,Int,Ext,A,Music,ITEMS,MISSIONS,MAT,camera
   tp(x,z,yaw){ P.x=x; P.z=z; if(yaw!==undefined) P.yaw=yaw;
     P.footY=P.inside?groundInside(x,z,P.footY):groundOutside(x,z); P.camY=P.footY+EYE;
     head.position.set(P.x,P.camY,P.z); head.rotation.y=P.yaw; },
-  skip(){ Story.advance(); }};
+  skip(){ Story.advance(); },
+  Save,SFX,VO};
 boot();
 </script>
 </body>

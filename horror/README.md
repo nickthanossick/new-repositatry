@@ -31,7 +31,7 @@ andar hai (server ki zarurat nahi).
 | `TAB` | objective dobara dekho |
 | `H` | **hint** — chhota HINT wala button khol/band karo |
 | `G` | guide arrow on / off (agar bina madad ke khelna ho) |
-| `ESC` | pause |
+| `ESC` | pause (yahin se **Save** bhi) |
 
 ### Phone par
 
@@ -47,6 +47,33 @@ Landscape me pakdo. Pixel ratio 1.25 par cap hai aur HUD chhota ho jaata hai, ta
 par bhi seedha chale.
 
 Menu me **Mission chuno** se kisi bhi mission se shuru kar sakte ho.
+
+## Save aur maut
+
+**Teen mauke.** Marne par tum **wahin se** wapas aate ho — wahi floor, wahi corridor,
+wahi beat. Wo bhaga di jaati hai, torch ka cell bhar jaata hai aur 3 second ki
+chhoot milti hai taaki respawn hote hi phir na maaro. **Chautha** marne par mission
+apni shuruaat se chalta hai aur teeno mauke wapas mil jaate hain.
+
+**Checkpoint apne aap banta hai** — har objective badalne par. Menu me **Continue**
+tabhi dikhta hai jab koi save ho, aur pause menu me **Save** button hai. Save me
+mission, beat, floor, position, saamaan, torch ke cells aur bacha hua time sab hota hai;
+load karte waqt game pehle ke beats ko chup-chaap dobara chala deta hai (koi cutscene,
+koi subtitle nahi) aur tumhe theek wahin khada kar deta hai.
+
+Save browser ke localStorage me jaata hai, is liye tab band karke wapas aane par bhi
+rehta hai.
+
+## Awaaz
+
+Abhi ka saara audio WebAudio se synth hota hai — koi file nahi. FAL wala recorded pack
+seedha upar se chadh sakta hai: pack ke script se MP3 download karke `audio` folder
+`horror/assets/` me daal do (`assets/audio/sfx/...`, `assets/audio/dialogue/naina/...`),
+bas. Har cue pehle recording dhoondhta hai, na mile to synth chala leta hai — ek ek
+karke, kuch todta nahi. `assets/audio/README.txt` me poori list hai.
+
+Naina, Pandit, Police aur Doctor ki lines `say()` ke exact text se match hoti hain, is
+liye dialogue bhi apne aap bajne lagega.
 
 ## Intro story
 
