@@ -959,60 +959,10 @@ function initMaterials(){
   /* the baked-red eye vertices glow on their own, so she is never fully dark */
   MAT.ghost.onBeforeCompile=sh=>{
     sh.uniforms.uGlow={value:0};
-    /* ---- motion pack, done entirely on the GPU so the CPU cost stays zero ----
-       uPh   running phase        uWalk  creepy glide-walk
-       uStag mummy-stagger lurch  uAtk   attack lunge / reach
-       uCrawl crawl crouch                                                   */
-    sh.uniforms.uSelf  ={value:0.05};   // she lights herself — never a black blob
-    sh.uniforms.uRim   ={value:0.10};   // cold rim so she reads against the dark
-    sh.uniforms.uTwitch={value:0};      // head snap
-    sh.uniforms.uStretch={value:0};     // neck stretch
-    sh.uniforms.uPh   ={value:0};
-    sh.uniforms.uWalk ={value:0};
-    sh.uniforms.uStag ={value:0};
-    sh.uniforms.uAtk  ={value:0};
-    sh.uniforms.uCrawl={value:0};
-    sh.vertexShader='uniform float uPh;uniform float uWalk;uniform float uStag;'+
-      'uniform float uAtk;uniform float uCrawl;uniform float uTwitch;uniform float uStretch;\n'+sh.vertexShader.replace(
-      '#include <begin_vertex>',
-      '#include <begin_vertex>\n'+
-      '{\n'+
-      '  float gh   = clamp(transformed.y/1.74, 0.0, 1.0);\n'+   /* 0 hem .. 1 head */
-      '  float up   = smoothstep(0.30, 1.00, gh);\n'+            /* torso and above  */
-      '  float hem  = 1.0 - smoothstep(0.02, 0.58, gh);\n'+      /* saree skirt      */
-      '  float arm  = smoothstep(0.40,0.63,gh)*(1.0-smoothstep(0.80,0.96,gh))\n'+
-      '             * smoothstep(0.075,0.34,abs(transformed.x));\n'+
-      '  float head = smoothstep(0.80, 1.00, gh);\n'+
-      /* --- creepy walk: a slow unnatural roll, the hem dragging behind --- */
-      '  float sw = sin(uPh);\n'+
-      '  transformed.x += sw * uWalk * 0.085 * gh * gh;\n'+
-      '  transformed.z += sin(uPh*2.0) * uWalk * 0.030 * up;\n'+
-      '  transformed.y -= abs(sw) * uWalk * 0.030 * gh;\n'+
-      '  transformed.x += sin(uPh*2.0 + transformed.y*4.6) * (uWalk*0.034 + uStag*0.026) * hem;\n'+
-      '  transformed.z += cos(uPh*1.7 + transformed.y*3.1) * uWalk * 0.020 * hem;\n'+
-      /* --- head lolls the other way, hair lags --- */
-      '  transformed.x -= sw * uWalk * 0.045 * head;\n'+
-      /* --- mummy stagger: stepped, lurching, one shoulder dropped --- */
-      '  float st = sin(floor(uPh*1.6)*2.399);\n'+
-      '  transformed.x += st * uStag * 0.115 * up;\n'+
-      '  transformed.y -= abs(st) * uStag * 0.070 * gh;\n'+
-      '  transformed.z -= uStag * 0.105 * up;\n'+
-      '  transformed.x += st * uStag * 0.10 * arm;\n'+
-      /* --- attack: whole body thrown forward, arms out for the grab --- */
-      '  transformed.z -= uAtk * (up*0.34 + arm*0.26);\n'+
-      '  transformed.y += uAtk * arm * 0.10;\n'+
-      '  transformed.x += uAtk * sign(transformed.x) * arm * 0.05;\n'+
-      '  transformed.y -= uAtk * head * 0.06;\n'+
-      /* --- crawl: folded down, dragging --- */
-      '  transformed.y *= 1.0 - uCrawl*0.46;\n'+
-      '  transformed.z -= uCrawl * up * 0.34;\n'+
-      /* --- her head snaps round on its own, and the neck can stretch --- */
-      '  transformed.y += uStretch * head * 0.30;\n'+
-      '  float tw = uTwitch * smoothstep(0.62, 0.99, gh);\n'+
-      '  float tc = cos(tw), ts = sin(tw);\n'+
-      '  transformed.xz = vec2(transformed.x*tc - transformed.z*ts,\n'+
-      '                        transformed.x*ts + transformed.z*tc);\n'+
-      '}');
+    /* The mesh is never deformed. She is the model, standing exactly as she
+       was built — the fear is that she is suddenly THERE, not that she sways. */
+    sh.uniforms.uSelf={value:0.05};   // she lights herself — never a black blob
+    sh.uniforms.uRim ={value:0.10};   // cold rim so she reads against the dark
     sh.fragmentShader='uniform float uGlow;\n'+sh.fragmentShader.replace(
       '#include <emissivemap_fragment>',
       '#include <emissivemap_fragment>\n'+
@@ -2268,7 +2218,6 @@ const Ghost={
     this.silh=[];
   },
   hide(){ this.mode='off'; this.obj.visible=false; this.field=null;
-    this.mo.walk=this.mo.stag=this.mo.atk=this.mo.crawl=this.mo.str=this.mo.tw=0;
     this.mo.dash=0; this.mo.dashT=rnd(3,6); this.mo.blinkT=rnd(8,14); },
   place(floor,x,z,face){
     this.floor=floor; this.x=x; this.z=z;
@@ -2338,7 +2287,7 @@ const Ghost={
     const mx=tx-this.x, mz=tz-this.z, ml=Math.hypot(mx,mz)||1;
     this.x+=mx/ml*spd*dt; this.z+=mz/ml*spd*dt;
     this.moving=spd>0.05;
-    this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z))+(this.yawOff||0);
+    this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z));
   },
   /* every few seconds she suddenly sprints, and rarely she just skips
      a metre of corridor — the two things that make a chase frightening */
@@ -2348,16 +2297,11 @@ const Ghost={
     if(m.dashT<=0){ m.dashT=rnd(3.6,7.2); m.dash=0.85; A.scream(); Effects.shake(0.45);
       Torch.storm=Math.max(Torch.storm,1.1); }
     if(m.dash>0){ m.dash-=dt; }
+    /* out of nowhere, right in front of you */
     m.blinkT-=dt;
-    if(m.blinkT<=0&&this.dist>3.2&&this.dist<15){
-      m.blinkT=rnd(9,17);
-      const bx=this.x+(P.x-this.x)*0.22, bz=this.z+(P.z-this.z)*0.22;
-      if(navFree(F,bx,bz)){
-        this.x=bx; this.z=bz;
-        this.obj.position.set(this.x,this.obj.position.y,this.z);
-        A.sting(); Effects.shake(0.7); Effects.pulse(0.35);
-        Torch.storm=Math.max(Torch.storm,1.6);
-      }
+    if(m.blinkT<=0&&this.dist>5&&this.dist<22&&this.looksAt()<0.55){
+      m.blinkT=rnd(11,19);
+      this.appear(rnd(2.4,3.4),{blackout:true});
     }
     return m.dash>0?1.95:1;
   },
@@ -2370,62 +2314,43 @@ const Ghost={
     const sh=MAT.ghost.userData.shader;
     if(sh&&sh.uniforms.uGlow) sh.uniforms.uGlow.value=v;
   },
-  /* ---- motion pack: creepy walk / mummy stagger / lunge, all GPU-side ---- */
-  mo:{ph:0,walk:0,stag:0,atk:0,crawl:0,lurch:0,tw:0,twT:2,str:0,strT:7,dash:0,dashT:5,blinkT:9},
-  motion(dt,walk,stag,atk,crawl,rate){
-    const m=this.mo, k=1-Math.exp(-5.5*dt), ka=1-Math.exp(-12*dt);
-    m.walk +=(walk -m.walk )*k;
-    m.stag +=(stag -m.stag )*k;
-    m.crawl+=(crawl-m.crawl)*k;
-    m.atk  +=(atk  -m.atk  )*ka;
-    m.ph+=dt*rate; if(m.ph>62831.8) m.ph-=62831.8;
-
-    /* --- her head snaps round on its own, faster the closer she gets --- */
+  /* ---- she does not animate. She is the model, standing still. ---- */
+  mo:{dashT:5, blinkT:9, dash:0},
+  motion(){
+    /* the only thing that changes on her is how much of her own light she
+       carries — enough to read in the dark, more the nearer she is */
     const near=clamp((16-this.dist)/13,0,1);
-    m.twT-=dt;
-    if(m.twT<=0){ m.twT=rnd(1.1,3.4)-near*0.8;
-      m.twTarget=rnd(-1,1)*(0.35+near*0.75);
-      if(this.dist<9&&Math.random()<0.45) A.noise(0.12,{f:1700,q:9,g:0.05});  // neck crack
-    }
-    m.tw+=((m.twTarget||0)-m.tw)*(1-Math.exp(-(9+near*16)*dt));
-    /* --- and once in a while the neck itself stretches --- */
-    m.strT-=dt;
-    if(m.strT<=0&&this.deadly){ m.strT=rnd(6,13); m.str=1; A.growl(0.8); }
-    m.str+=(0-m.str)*(1-Math.exp(-1.6*dt));
-
     const sh=MAT.ghost.userData.shader;
-    if(sh&&sh.uniforms.uPh){
-      sh.uniforms.uPh.value=m.ph;     sh.uniforms.uWalk.value =m.walk;
-      sh.uniforms.uStag.value=m.stag; sh.uniforms.uAtk.value  =m.atk;
-      sh.uniforms.uCrawl.value=m.crawl;
-      sh.uniforms.uTwitch.value=m.tw; sh.uniforms.uStretch.value=m.str;
-      /* she brightens as she closes in — you see her coming, and it is worse */
-      /* enough self-light that she is never a black blob, never so much
-         that the texture washes out — the torch does the rest */
-      sh.uniforms.uSelf.value=0.050+near*0.070+m.atk*0.055;
-      sh.uniforms.uRim.value =0.100+near*0.115+m.atk*0.090;
+    if(sh&&sh.uniforms.uSelf){
+      sh.uniforms.uSelf.value=0.050+near*0.070;
+      sh.uniforms.uRim.value =0.100+near*0.115;
     }
-    /* whole-body part of the same motion — bob, roll, and a stagger yaw-snap */
-    const ph=m.ph;
-    this.bobY=(Math.sin(ph*2)*0.020+Math.sin(ph*0.9)*0.012)*(0.35+m.walk+m.stag)
-             -m.crawl*0.30-m.atk*0.05;
-    this.rollZ=Math.sin(ph)*0.035*m.walk+Math.sin(Math.floor(ph*1.6)*2.399)*0.075*m.stag;
-    m.lurch+=(Math.sin(Math.floor(ph*1.6)*1.117)*0.10*m.stag-m.lurch)*k;
-    this.yawOff=m.lurch+Math.sin(ph*0.7)*0.05*m.walk;
   },
-  /* the target pose for whatever she is doing right now */
-  poseFor(dt){
-    const near=clamp((3.4-this.dist)/2.0,0,1);
-    const atk=(this.deadly&&this.mode!=='still'&&this.mode!=='glimpse')?near:0;
-    switch(this.mode){
-      case 'still':   return [0.22,0.00,0,0, 0.9];
-      case 'glimpse': return [0.35,0.10,0,0, 1.2];
-      case 'patrol':  return [0.85,0.15+atk*0.4,atk,0, this.moving?3.0:1.0];
-      case 'chase':   return [0.45,0.90,atk,0, 6.0];
-      case 'dark':    return [0.20,1.00,atk,0, this.moving?7.4:0.8];
-      case 'ritual':  return [1.00,0.20,atk,0, 2.4];
-      default:        return [0.2,0,0,0,1];
+  /* ═══ the jumpscare: she is not there, and then she is, in your face ═══ */
+  appear(dist,opts){
+    const o=opts||{};
+    const F=Int.floors[P.floor]; if(!F) return false;
+    const d=dist||2.6;
+    let x=0,z=0,found=false;
+    for(let r=d;r<=d+2.4;r+=0.4){                     // straight down the view axis
+      x=P.x-Math.sin(P.yaw)*r; z=P.z-Math.cos(P.yaw)*r;
+      if(navFree(F,x,z)){ found=true; break; }
     }
+    if(!found) return false;
+    this.place(P.floor,x,z);
+    this.floor=P.floor;
+    this.obj.rotation.y=Math.atan2(-(P.x-x),-(P.z-z));    // dead on
+    this.obj.visible=true;
+    this.eyeLight.intensity=1.15;
+    /* everything lands on the same frame */
+    A.sting(); A.scream();
+    Effects.shake(1.5); Effects.pulse(0.9);
+    Torch.storm=Math.max(Torch.storm,2.6);
+    if(o.blackout) Torch.forceOff=Math.max(Torch.forceOff,0.5);
+    F.lights.forEach(l=>{ l.surge=2.2; });
+    P.pulse=Math.min(180,P.pulse+38);
+    Effects.red(0.55); setTimeout(()=>Effects.red(0),520);
+    return true;
   },
   update(dt){
     this.setGlow(this.obj&&this.obj.visible?clamp(1.05+this.eyeLight.intensity*1.7,0,2.9):0);
@@ -2436,21 +2361,19 @@ const Ghost={
     this.dist=dist2(this.x,this.z,P.x,P.z);
     const facing=this.looksAt();
     this.obj.visible=true;
-    /* motion pack drives bob / roll / lurch — she is never a statue */
-    const pose=this.poseFor(dt);
-    this.motion(dt,pose[0],pose[1],pose[2],pose[3],pose[4]);
-    this.obj.position.y=this.y+this.bobY;
-    this.mesh.rotation.z=this.rollZ;
+    this.motion();
+    this.obj.position.y=this.y;
+    this.mesh.rotation.z=0;
     this.moving=false;
 
     if(this.mode==='still'){
-      this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z))+(this.yawOff||0);
+      this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z));
       this.eyeLight.intensity=lerp(this.eyeLight.intensity,this.dist<14?0.8:0.16,0.05);
       if(this.timer>0){ this.timer-=dt; if(this.timer<=0&&this.onTimer) this.onTimer(); }
       return;
     }
     if(this.mode==='glimpse'){
-      this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z))+(this.yawOff||0);
+      this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z));
       this.timer-=dt; if(this.timer<=0) this.hide();
       return;
     }
@@ -2480,7 +2403,7 @@ const Ghost={
       this.x=lerp(this.x,tx,1-Math.exp(-2.4*dt));
       this.z=lerp(this.z,tz,1-Math.exp(-2.4*dt));
       this.moving=true;
-      this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z))+(this.yawOff||0);
+      this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z));
       this.eyeLight.intensity=0.95;
       this.lunge-=dt;
       if(this.lunge<=0){ this.lunge=rnd(4.5,8);
@@ -4084,8 +4007,17 @@ const Dread={
     /* the rare, expensive one: her face */
     this.faceT-=dt;
     if(this.faceT<=0){
-      this.faceT=rnd(85,170);
-      if(Ghost.mode==='off'&&P.danger<0.1&&Math.random()<0.6) this.face();
+      this.faceT=rnd(70,140);
+      if(Ghost.mode==='off'&&P.danger<0.1){
+        /* half the time it is the picture, half the time it is her, standing
+           in the corridor you were just looking down. She does not chase —
+           she is gone by the time the torch steadies. */
+        if(Math.random()<0.5) this.face();
+        else if(Ghost.appear(rnd(2.2,3.2),{blackout:true})){
+          Ghost.mode='glimpse'; Ghost.deadly=false; Ghost.timer=rnd(0.9,1.5);
+          Ghost.floor=P.floor;
+        }
+      }
     }
     /* footsteps behind you */
     this.stepT-=dt;

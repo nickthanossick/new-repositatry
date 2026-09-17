@@ -155,42 +155,15 @@ par diffuse ko laal karta hai aur emissive add karta hai (`uGlow`), is liye **po
 sirf uski aankhein dikhti hain**. Normals byte me aur UVs short me quantize kiye — file 4.5 MB
 se 3.16 MB.
 
-**Movements:** motions pack sirf fal.media URLs ka tha aur wo CDN yahan block hai, is liye
-saare movements **vertex shader me** banaye gaye hain — CPU par cost zero, GPU par bhi
-kuch nahi. Chaar motions ek saath blend hote hain:
+**Movements:** Wo **hilti nahi**. Mesh par koi deformation nahi hai — wo bilkul model jaisi, seedhi
+khadi rehti hai, aur chalti hai to bas glide karti hai. Darr uske hilne se nahi, uske
+**achanak wahan hone** se aata hai:
 
-| motion | kaisa dikhta hai | kab |
-|---|---|---|
-| creepy walk | dheere se roll, hem peeche ghisatta hua, sar ulti taraf luddhakta hua | patrol, ritual |
-| mummy stagger | stepped, jhatke wala lurch, ek kandha gira hua, aage jhuka hua | chase, dark |
-| attack lunge | poora upper body aage phenka, dono haath pakadne ke liye bahar | jab 3.4 m ke andar aaye |
-| crawl | aadhi height, aage ghisatti hui | reserve |
-| head snap | gardan jhatke se ghoom jaati hai (paas aane par tez) | hamesha |
-| neck stretch | gardan lambi ho jaati hai, 6–13 sec me ek baar | jab wo maar sakti ho |
-| dash | 3.6–7.2 sec me ek baar achanak **do guna tez** daud, scream ke saath | chase, dark |
-| blink | 9–17 sec me ek baar corridor ka ek hissa **chhod deti hai** — seedha paas | chase, dark |
-
-Har mode ka target pose `Ghost.poseFor()` deta hai, `Ghost.motion()` usme lerp karke shader
-uniforms (`uPh/uWalk/uStag/uAtk/uCrawl`) set karta hai, aur usi phase se body ka bob, roll
-aur yaw-snap bhi aata hai — is liye kadam aur jhatka sync me rehte hain.
-
-## Files
-
-```
-horror/
-  index.html               poora game (~3800 lines, three.js module)
-  andhera-standalone.html  single-file build — sab inline, offline chalta hai
-  lib/                     three.js r180, npm se vendor kiya (MIT)
-  assets/                  glb + png
-  tools/build-single.js    standalone file dobara banane ke liye
-```
-
-## Debugging
-
-Console me `window.IGMC`: `tp(x,z,yaw)`, `setFloor(n)`, `startRun(m)`, `skip()` (agla beat),
-`give(id)`, `Ghost`, `Guide`, `Intro`, `Story.beats`, `Int.floors[f].special`.
-
-Chudail ke pose test karne ke liye: `IGMC.MAT.ghost.userData.shader.uniforms.uAtk.value=1`.
+| kya | kab |
+|---|---|
+| **Jumpscare — saamne aa jaana** | tum jis taraf dekh rahe ho theek wahan, 2.4–3.4 m par, 11–19 sec me ek baar — sirf tab jab wo abhi nazar me na ho. Sting + scream + camera shake + **torch bujh jaati hai** + laal flash, sab ek hi frame par. |
+| **Dash** | 3.6–7.2 sec me ek baar achanak do guna tez, scream ke saath |
+| **Chhupi hui glimpse** | kabhi kabhi wo saamne aati hai, maarti nahi — torch sambhalne tak gayab |
 
 ## Wo dikhti kaisi hai
 
