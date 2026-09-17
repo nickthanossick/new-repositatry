@@ -1,0 +1,40 @@
+# Netlify serves the game from horror/, not the repo root — the root
+# index.html is a different project entirely.
+[build]
+  publish = "horror"
+  command = ""
+
+# three.js is loaded as an ES module, and the GLB/PNG loaders read the
+# responses as ArrayBuffers, so the types have to be right.
+[[headers]]
+  for = "/*.glb"
+  [headers.values]
+    Content-Type = "model/gltf-binary"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/lib/*.js"
+  [headers.values]
+    Content-Type = "text/javascript; charset=utf-8"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.mp3"
+  [headers.values]
+    Content-Type = "audio/mpeg"
+
+# the page itself must never be served stale, or a rebuild looks broken
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/andhera-standalone.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

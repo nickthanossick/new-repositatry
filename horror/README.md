@@ -6,6 +6,37 @@ Paanch-mission first-person horror, IGMC Shimla ke andar. Tu Dev Pandit hai — 
 
 Sab kuch browser me chalta hai. Koi build step nahi, koi CDN nahi.
 
+## Netlify par daalna
+
+Do raste hain. Dono me **repo root ka `index.html` mat deploy karna** — wo ek alag
+purana project hai (Placement Tracker), aur Netlify default me wahi serve kar deta hai.
+
+**1. Drag and drop (sabse aasaan)**
+
+```bash
+node horror/tools/make-site.js      # horror/igmc-netlify.zip banata hai, ~8.4 MB
+```
+
+Us zip ko https://app.netlify.com/drop par kheench ke chhod do. Bas. Na git, na branch,
+na build settings.
+
+**2. Git se jodna**
+
+Repo me `netlify.toml` pada hai jo `publish = "horror"` set karta hai, to publish
+directory apne aap sahi ho jaati hai. **Branch zaroor badalna padega** — Netlify default
+branch (`claude/batch-outreach-bulk-operations-81blgn`) leta hai aur usme game hai hi
+nahi. Netlify me jao:
+
+*Site configuration → Build & deploy → Branches and deploy contexts →
+Production branch* → `claude/affectionate-volta-e3zcn6`
+
+Build command khaali chhod do. `netlify.toml` GLB, JS aur MP3 ke content-types aur
+caching bhi set kar deta hai.
+
+**18 MB wali single file Netlify par mat daalo.** `andhera-standalone.html` offline
+double-click ke liye hai; web par alag files bahut behtar chalti hain — browser
+progressively load karta hai aur dobara aane par cache se uthata hai.
+
 ## Khelna kaise hai
 
 ```bash
