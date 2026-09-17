@@ -1007,14 +1007,24 @@ function initMaterials(){
     /* The mesh is never deformed. She is the model, standing exactly as she
        was built — the fear is that she is suddenly THERE, not that she sways. */
     sh.uniforms.uSelf={value:0.05};   // she lights herself — never a black blob
+    sh.uniforms.uMouth={value:0};     // the scream, 0..1
     sh.uniforms.uRim ={value:0.10};   // cold rim so she reads against the dark
     /* The texture is a fragmented atlas with no skin/cloth separation, so the
        body is identified from object-space position instead: brown skin on the
        face and the arms, blood running down from both, grime in the hem. */
     sh.vertexShader=sh.vertexShader.replace('#include <common>',
-      '#include <common>\nvarying vec3 vBody;')
-      .replace('#include <begin_vertex>','#include <begin_vertex>\nvBody = transformed;');
-    sh.fragmentShader='uniform float uGlow;\nvarying vec3 vBody;\n'+
+      '#include <common>\nvarying vec3 vBody;\nuniform float uMouth;')
+      .replace('#include <begin_vertex>','#include <begin_vertex>\n'+
+      'vBody = transformed;\n'+
+      /* the jaw drops far further than a jaw should — the pack calls this the
+         "very wide mouth-open scream", and a static mesh can still do it */
+      '{ float mh = clamp(transformed.y/1.80, 0.0, 1.0);\n'+
+      '  float jaw = smoothstep(0.895,0.845,mh) * (1.0 - smoothstep(0.845,0.79,mh))\n'+
+      '            * (1.0 - smoothstep(0.055,0.135,abs(transformed.x)))\n'+
+      '            * (1.0 - smoothstep(0.0,0.10,transformed.z));\n'+
+      '  transformed.y -= uMouth * jaw * 0.155;\n'+
+      '  transformed.z -= uMouth * jaw * 0.045; }');
+    sh.fragmentShader='uniform float uGlow;\nuniform float uMouth;\nvarying vec3 vBody;\n'+
       'float gSkinMask;\n'+
       'float gnoise(vec3 p){ return fract(sin(dot(p,vec3(12.9898,78.233,37.719)))*43758.5453); }\n'+
       'float gfbm(vec3 p){ return gnoise(p)*0.6 + gnoise(p*2.7)*0.3 + gnoise(p*6.1)*0.1; }\n'+
@@ -1053,6 +1063,10 @@ function initMaterials(){
       'dirty *= mix(1.0, 0.80+gfbm(vBody*9.0)*0.35, 0.55);\n'+
       'diffuseColor.rgb = mix(diffuseColor.rgb, dirty*vec3(1.02,0.995,0.955), cloth);\n'+
       /* --- and the eyes stay burning --- */
+      /* inside the open mouth there is nothing but dark and a little blood */
+      'float cav = smoothstep(0.885,0.850,bh) * (1.0 - smoothstep(0.850,0.800,bh))\n'+
+      '          * (1.0 - smoothstep(0.035,0.105,ax)) * (1.0 - smoothstep(-0.02,0.07,vBody.z));\n'+
+      'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.035,0.006,0.006), cav*uMouth);\n'+
       'float redn = clamp(vColor.r - max(vColor.g, vColor.b) * 1.15, 0.0, 1.0);\n'+
       'redn = pow(redn, 0.72);\n'+
       'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62,0.012,0.006), redn);\n'+
@@ -1328,6 +1342,47 @@ const ROOM_SIGN={maternity:'20_female_ward', ot:'23_ot', records:'30_authorized'
 const SIGN_WALL=['01_shanti','03_tambakoo','04_hiv','05_beti','06_no_smoking','07_swachh',
   '08_handwash','09_mask','10_blood_donation','24_queue','25_medicine','26_no_litter',
   '27_dustbin','28_visiting','29_firestairs'];
+/* The 240-piece clutter library, grouped so a room gets things that belong
+   in it. Everything here goes through addDeco, so a whole floor of litter is
+   still one merged mesh and costs no extra draw calls. */
+const CLUT={
+  ward:['033_clipboard','034_patient_folder','035_loose_paper_scrap','036_pen','041_call_bell',
+        '042_plastic_cup','043_water_bottle','008_gauze_pad','009_bandage_roll','010_medical_glove',
+        '006_pill_bottle','007_pill_strip','004_iv_bag','005_iv_bottle'],
+  surgical:['017_scalpel','018_surgical_scissors','019_forceps','020_hemostat_clamp',
+        '021_instrument_tray','022_kidney_dish','023_retractor_small','025_suture_scissors',
+        '001_syringe_small','002_syringe_large','003_needle_cap'],
+  diag:['161_stethoscope','162_bp_cuff','163_pulse_oximeter','164_reflex_hammer','165_otoscope',
+        '166_glucometer','167_ecg_electrode','168_sensor_clip','169_nebulizer_mask','170_oxygen_mask'],
+  office:['145_rubber_stamp','146_stamp_pad','147_stapler','150_calculator','151_notebook',
+        '152_register_book','153_envelope','154_file_tag','155_id_card'],
+  maternity:['049_baby_rattle','050_pacifier','051_tiny_baby_socks','052_baby_cap',
+        '053_feeding_bottle','054_baby_id_tag','055_folded_baby_cloth','056_ultrasound_photo',
+        '057_maternity_file'],
+  ritual:['113_diya','114_ritual_bell','115_incense_stand','116_incense_bundle','117_sindoor_box',
+        '118_rudraksha_mala','119_black_thread','120_lemon_chilli_charm','121_ash_bowl'],
+  store:['177_medicine_box','178_small_crate','179_plastic_basket','180_metal_box','181_lockbox',
+        '182_drawer_tray','183_instrument_case','185_sample_bag','186_zip_pouch'],
+  cafe:['209_steel_cup','210_plastic_cup_cafeteria','211_spoon','212_steel_plate','213_small_bowl',
+        '214_thermos','215_tea_glass','216_sugar_jar','217_biscuit_packet','218_water_bottle_caf'],
+  clean:['065_mop_head','066_mop_bucket','067_spray_bottle','068_cleaner_bottle','069_soap_dispenser',
+        '070_cleaning_brush','071_dustpan','072_small_broom','073_dirty_rag','074_sponge'],
+  maint:['097_wrench','098_screwdriver','099_pliers','100_hammer','104_pipe_valve',
+        '105_duct_tape_roll','106_padlock','107_chain_section','108_key_ring'],
+  elec:['081_wall_switch','082_old_socket','083_fuse','084_breaker_switch','085_extension_board',
+        '086_plug','088_loose_wire_coil','090_battery'],
+  /* the floor litter that makes a corridor look abandoned */
+  debris:['225_paper_scrap_debris','226_crumpled_paper','227_cardboard_piece','228_glass_shard_debris',
+        '229_loose_screw','230_loose_bolt','231_loose_washer','232_ceiling_tile_fragment',
+        '237_dry_leaf','238_plastic_cap','239_broken_tile'],
+  /* flat decals: these lie on the floor, never on a table */
+  gore:['129_blood_puddle_decal','130_bloody_handprint_decal','131_wall_scratch_decal',
+        '132_cracked_mirror_shard','133_broken_glass_shard','134_burnt_paper','135_toe_tag',
+        '240_small_puddle_decal']
+};
+const ROOM_CLUT={maternity:'maternity', ot:'surgical', records:'office', office:'office',
+  duty:'ward', prayer:'ritual', storeA:'store', storeB:'store', wardA:'ward', wardB:'ward',
+  icu:'diag', lab:'diag', xray:'diag'};
 const FLOOR_NAME=f=> f===0?'BASEMENT':(f===1?'GROUND FLOOR':'FLOOR '+f);
 
 function buildFloor(fi){
@@ -1768,6 +1823,46 @@ function buildFloor(fi){
     }
   });
 
+  /* --- clutter: a handful of the right small objects in every room, plus
+         litter and gore down the corridors. All merged, all free. --- */
+  (()=>{
+    if(!PROPS['033_clipboard']) return;               // library not loaded
+    const pick=a=>a[(rng()*a.length)|0];
+    const drop=(name,x,z,yy,extra)=>{
+      if(!PROPS[name]) return;
+      addDeco(name,x,z,rng()*6.283,Object.assign({y:yy,solid:false},extra||{}));
+    };
+    allRooms.forEach(r=>{
+      const w=r.x1-r.x0, d=r.z1-r.z0;
+      if(w<2.2||d<2.2) return;
+      const bag=CLUT[ROOM_CLUT[r.kind]||'ward'];
+      /* things on surfaces, roughly waist height, around the edges */
+      for(let i=0;i<4;i++){
+        const x=r.x0+0.8+rng()*(w-1.6), z=r.z0+0.8+rng()*(d-1.6);
+        drop(pick(bag),x,z,rng()<0.45?0.78:0.0);
+      }
+      /* and a little debris on the floor */
+      for(let i=0;i<2;i++)
+        drop(pick(CLUT.debris), r.x0+0.6+rng()*(w-1.2), r.z0+0.6+rng()*(d-1.2), 0.0);
+      /* the higher you go the more it has been left to rot */
+      if(rng()<0.30+fi*0.045)
+        drop(pick(CLUT.gore), r.x0+1.0+rng()*(w-2.0), r.z0+1.0+rng()*(d-2.0), 0.005);
+    });
+    /* corridor litter along the band, away from the middle so it is walkable */
+    for(let i=0;i<16;i++){
+      const x=-HX+1.4+rng()*(HX*2-2.8), z=-HZ+1.4+rng()*(HZ*2-2.8);
+      if(Math.abs(x)<CORE_X-1&&Math.abs(z)<CORE_Z-1) continue;   // not inside the core
+      drop(pick(rng()<0.22?CLUT.gore:CLUT.debris), x, z, 0.004);
+    }
+    /* maintenance and cleaning things get left in corners */
+    for(let i=0;i<5;i++){
+      const side=(rng()*4)|0;
+      const x=side<2?(-HX+1.6+rng()*(HX*2-3.2)):(side===2?-HX+1.5:HX-1.5);
+      const z=side<2?(side?HZ-1.5:-HZ+1.5):(-HZ+1.6+rng()*(HZ*2-3.2));
+      drop(pick(rng()<0.5?CLUT.clean:CLUT.maint), x, z, 0.0);
+    }
+  })();
+
   /* a department board beside every tagged room's door, on the corridor side */
   allRooms.forEach(r=>{
     if(!r.tagged) return;
@@ -1813,8 +1908,14 @@ function buildFloor(fi){
   if(DECO.v){
     const dg=new THREE.BufferGeometry();
     dg.setAttribute('position',new THREE.Float32BufferAttribute(DECO.p,3));
-    dg.setAttribute('normal',new THREE.Float32BufferAttribute(DECO.n,3));
-    dg.setAttribute('color',new THREE.Float32BufferAttribute(DECO.c,3));
+    /* normals and colours do not need 32 bits each — this is most of the
+       building's memory, and a phone has to hold eleven floors of it */
+    const nq=new Int8Array(DECO.n.length);
+    for(let i=0;i<DECO.n.length;i++) nq[i]=Math.max(-127,Math.min(127,Math.round(DECO.n[i]*127)));
+    dg.setAttribute('normal',new THREE.BufferAttribute(nq,3,true));
+    const cq=new Uint8Array(DECO.c.length);
+    for(let i=0;i<DECO.c.length;i++) cq[i]=Math.max(0,Math.min(255,Math.round(DECO.c[i]*255)));
+    dg.setAttribute('color',new THREE.BufferAttribute(cq,3,true));
     dg.setIndex(DECO.i); dg.computeBoundingSphere();
     const dm=new THREE.Mesh(dg,MAT.prop); dm.castShadow=true; dm.receiveShadow=true;
     F.group.add(dm);
@@ -2399,7 +2500,8 @@ const Ghost={
   },
   hide(){ this.mode='off'; this.obj.visible=false; this.field=null;
     this.mo.dash=0; this.mo.dashT=rnd(3,6); this.mo.blinkT=rnd(8,14);
-    this.grow=0; this.payalT=0.2; },
+    this.grow=0; this.payalT=0.2;
+    this.atk=0; this.mouth=0; this.atkT=0; this.atkCool=0; this.atkCombo=0; },
   place(floor,x,z,face){
     this.floor=floor; this.x=x; this.z=z;
     const F=Int.floors[floor]; this.y=F?F.y:0;
@@ -2496,6 +2598,52 @@ const Ghost={
   },
   /* ---- she does not animate. She is the model, standing still. ---- */
   mo:{dashT:5, blinkT:9, dash:0}, payalT:0, grow:0,
+
+  /* ═══ the pack's state machine, on a mesh that cannot be rigged ═══
+     >15 m  stalk slowly   11-15 m  close in   1.55-11 m  full run
+     <=1.55 m attack: mouth opens 0.08-0.38, held to 0.82, hurts you between
+     0.36 and 0.62, closes by 1.05. Sometimes it comes as a double.         */
+  D_STALK:15.0, D_CHASE:11.0, D_ATTACK:1.55,
+  atk:0, atkT:0, atkCool:0, atkCombo:0, mouth:0, didHit:false,
+  bandSpeed(){
+    const d=this.dist;
+    if(d>this.D_STALK) return 0.55;          // she is barely moving out there
+    if(d>this.D_CHASE) return 0.80;          // stalking in
+    return 1.32;                             // running
+  },
+  startAttack(combo){
+    this.atk=1; this.atkT=0; this.didHit=false;
+    this.atkCombo=combo===undefined?(Math.random()<0.34?1:0):combo;
+    A.scream(); Torch.storm=Math.max(Torch.storm,2.0);
+    Effects.shake(1.1);
+  },
+  attackStep(dt){
+    this.atkT+=dt;
+    const t=this.atkT;
+    /* the mouth curve, straight out of the pack's timings */
+    let m=0;
+    if(t<0.08) m=0;
+    else if(t<0.38) m=(t-0.08)/0.30;
+    else if(t<0.82) m=1;
+    else if(t<1.05) m=1-(t-0.82)/0.23;
+    this.mouth=clamp(m,0,1);
+    /* she lunges in over the open-mouth window */
+    if(t>0.10&&t<0.62){
+      const dx=P.x-this.x, dz=P.z-this.z, d=Math.hypot(dx,dz)||1;
+      const sp=1.7*dt;
+      this.x+=dx/d*sp; this.z+=dz/d*sp;
+    }
+    /* the damage window */
+    if(!this.didHit&&t>0.36&&t<0.62&&this.dist<2.0&&this.deadly&&P.alive&&!State.over&&!(P.grace>0)){
+      this.didHit=true;
+      die(this.deathLine||'Usne tujhe pakad liya.');
+    }
+    if(t>=1.05){
+      if(this.atkCombo>0){ this.atkCombo--; this.atkT=0; this.didHit=false; A.scream(); }
+      else { this.atk=0; this.mouth=0; this.atkCool=rnd(1.1,2.0); }
+    }
+  },
+
   motion(dt){
     /* the only thing that changes on her is how much of her own light she
        carries — enough to read in the dark, more the nearer she is */
@@ -2504,6 +2652,7 @@ const Ghost={
     if(sh&&sh.uniforms.uSelf){
       sh.uniforms.uSelf.value=0.050+near*0.070;
       sh.uniforms.uRim.value =0.100+near*0.115;
+      if(sh.uniforms.uMouth) sh.uniforms.uMouth.value=this.mouth||0;
     }
 
     /* ---- payal: you hear her long before you see her ----
@@ -2588,14 +2737,25 @@ const Ghost={
       this.stepToward(F,dt,alert?this.speed*1.25:this.speed*0.65);
       this.eyeLight.intensity=lerp(this.eyeLight.intensity,alert?0.85:0.18,0.06);
     } else if(this.mode==='chase'){
-      this.stepToward(F,dt,this.speed*this.burst(dt,F));
-      this.eyeLight.intensity=0.88+Math.sin(performance.now()*0.011)*0.12;
+      if(this.atk>0){ this.attackStep(dt); }
+      else {
+        if(this.atkCool>0) this.atkCool-=dt;
+        if(this.dist<=this.D_ATTACK&&this.atkCool<=0&&this.deadly) this.startAttack();
+        else this.stepToward(F,dt,this.speed*this.bandSpeed()*this.burst(dt,F));
+      }
+      this.obj.rotation.y=Math.atan2(-(P.x-this.x),-(P.z-this.z));
+      this.eyeLight.intensity=0.88+Math.sin(performance.now()*0.011)*0.12+this.mouth*0.35;
       if(this.timer>0){ this.timer-=dt; if(this.timer<=0){ this.hide(); if(this.onTimer) this.onTimer(); return; } }
     } else if(this.mode==='dark'){
       /* she only moves while the torch is out */
       const dark=!Torch.lit();
-      if(dark){ this.stepToward(F,dt,this.speed*this.burst(dt,F));
-        if(Math.random()<dt*3) A.step(true,true); }
+      if(this.atk>0) this.attackStep(dt);
+      else if(dark){
+        if(this.atkCool>0) this.atkCool-=dt;
+        if(this.dist<=this.D_ATTACK&&this.atkCool<=0&&this.deadly) this.startAttack();
+        else this.stepToward(F,dt,this.speed*this.bandSpeed()*this.burst(dt,F));
+        if(Math.random()<dt*3) A.step(true,true);
+      }
       this.eyeLight.intensity=lerp(this.eyeLight.intensity,dark?0.07:0.9,0.15);
     } else if(this.mode==='ritual'){
       const c=this.anchor||{x:0,z:0};
@@ -2614,7 +2774,7 @@ const Ghost={
     this.y=F.y;
     const sy=stairY(F,this.x,this.z); if(sy!==null) this.y=sy;
     this.obj.position.x=this.x; this.obj.position.z=this.z;
-    if(this.deadly&&this.dist<1.2&&P.alive&&!State.over&&!(P.grace>0))
+    if(this.deadly&&this.atk<=0&&this.dist<1.05&&P.alive&&!State.over&&!(P.grace>0))
       die(this.deathLine||'Usne tujhe chhoo liya.');
   }
 };
@@ -4737,10 +4897,12 @@ async function boot(){
     PROPS=await loadLibrary('./assets/props.glb',p=>set(0.28+p*0.16,'PROPS — '+Math.round(p*100)+'%'));
     set(0.45,'SMALL OBJECTS');
     Object.assign(PROPS, await loadLibrary('./assets/props_small.glb',p=>set(0.45+p*0.12,'SMALL OBJECTS — '+Math.round(p*100)+'%')));
-    set(0.56,'NAINA');
+    set(0.57,'CLUTTER');
+    Object.assign(PROPS, await loadLibrary('./assets/props240.glb',p=>set(0.57+p*0.10,'CLUTTER — '+Math.round(p*100)+'%')));
+    set(0.67,'NAINA');
     const chTex=await loadImageTex('./assets/chudail_tex.jpg',false);
     chTex.flipY=false;
-    const ch=await loadSingle('./assets/chudail.glb',p=>set(0.56+p*0.06,'NAINA — '+Math.round(p*100)+'%'));
+    const ch=await loadSingle('./assets/chudail.glb',p=>set(0.67+p*0.05,'NAINA — '+Math.round(p*100)+'%'));
     MAT.ghost.map=chTex; MAT.ghost.needsUpdate=true;
     set(0.62,'SOUND');
     Music.load('./assets/music.mp3');
@@ -4868,7 +5030,7 @@ $('chapbtn').onclick=()=>{
 };
 
 window.IGMC={P,State,Story,Ghost,Torch,Int,Ext,A,Music,ITEMS,MISSIONS,MAT,camera,renderer,scene,key,head,
-  Intro,Guide,Dread,Touch,Quality,Walls,Jolt,INTRO_FRAMES,INTRO_PIC,Sketch,
+  Intro,Guide,Dread,Touch,Quality,Walls,Jolt,PROPS,CLUT,INTRO_FRAMES,INTRO_PIC,Sketch,
   startRun,startMission,teleport,setFloor,roomC,FLOOR_H,HX,HZ,SWR,RUN,ELEV,Cine,Tape,Ending,
   give:(id)=>{ if(!ITEMS[id]) ITEMS[id]={label:id}; giveItem(id); },
   tp(x,z,yaw){ P.x=x; P.z=z; if(yaw!==undefined) P.yaw=yaw;

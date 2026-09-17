@@ -96,6 +96,25 @@ nichoda ja raha hai, sirf tint nahi. Saari deewarein, ceiling aur props ek-ek ma
 share karte hain, is liye ye poore floor par teen assignment ka kaam hai — ek bhi
 draw call nahi badhta. `hauntSurge` turant push deta hai, phir `P.danger` sambhal leta hai.
 
+## Uska vyavhaar — state machine
+
+`CHUDAIL_REALISTIC_CHASE_ATTACK_PACK` ka state machine poora laga hua hai (model aur
+animation clips nahi aa paye — neeche dekho), doori ke hisaab se:
+
+| doori | wo kya karti hai |
+|---|---|
+| 15 m se door | mushkil se hilti hai (0.55× speed) |
+| 11–15 m | paas aati hai (0.80×) |
+| 1.55–11 m | **poori daud** (1.32×) |
+| 1.55 m ke andar | **attack** |
+
+Attack ki timing bhi pack se hi hai: muh **0.08–0.38 s** me khulta hai, **0.82 s** tak
+poora khula rehta hai, **0.36–0.62 s** ke beech maar sakti hai, aur **1.05 s** tak band.
+Kabhi kabhi ye **double** aata hai. Us poore window me wo tumhari taraf lunge karti hai.
+
+**Muh** shader me khulta hai — jabda 15 cm neeche girta hai aur andar ka hissa kaala-laal
+ho jaata hai. Rig nahi hai to bhi "very wide mouth-open scream" ban jaata hai.
+
 ## Har 15 second — `Jolt`
 
 Chaar cheezon me se ek, har **13–18 second**, aur kabhi do baar ek jaisi nahi:
@@ -232,6 +251,8 @@ Uske baad post-credits stinger.
 | `assets/chudail_tex.jpg` | uski asli base-colour texture, 2048 se 1024 par re-encode ki hui |
 | `assets/floor_tile.png` | hospital floor — tumhare granite tile ko pale grey-white terrazzo me convert kiya |
 | `assets/igmc_sign.png` | asli IGMC signboard ki photo, deskew karke banner crop kiya |
+| `assets/props240.glb` | tumhare 240 low-poly hospital props, 15 category, 23k tris total |
+| `assets/hindi_signs.jpg` | 30 Hindi signboards ka atlas, 2560×1536 |
 | `assets/intro0.jpg` … `intro9.jpg` | tumhari 10 intro storyboard sketches, 1376×768, PNG se JPEG (20.8 MB → 2.9 MB) |
 
 **Chudail:** tumhara bheja hua GLB seedha use hota hai — 59,729 tris, apni asli texture ke
@@ -317,6 +338,17 @@ se lit.
 Sirf torch dikhti hai — koi haath nahi. Steel barrel, knurled grip, laal switch. Chalne pe
 sway karti hai, chudail paas ho to kaanpti hai. Ek chhoti lamp sirf usi par padti hai taaki
 kabhi flat black na dikhe.
+
+## Clutter — 240 props
+
+Tumhare 240 low-poly props (15 category: surgical, diagnostics, maternity clues, ritual,
+ward clutter, debris, gore decals…) har kamre me uske hisaab se bikhre hue hain, aur
+corridor me kachra aur khoon ke dhabbe. Sab `addDeco` se jaate hain, matlab poore floor
+ka clutter **usi ek merged mesh** me hai — **ek bhi extra draw call nahi**.
+
+Isse memory badh gayi thi (136 MB geometry), to merged scenery ke normals ab **Int8** aur
+colours **Uint8** me hain — 36 bytes per vertex se **20** — aur geometry **72 MB** par
+aa gayi. Draw calls aur triangles wahi hain jo pehle the.
 
 ## Performance
 
