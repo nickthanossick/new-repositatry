@@ -3,7 +3,7 @@
 const fs=require('fs'), path=require('path');
 const dir=path.resolve(__dirname,'..');
 const b64=f=>fs.readFileSync(path.join(dir,f)).toString('base64');
-const MIME={'.glb':'model/gltf-binary','.png':'image/png','.jpg':'image/jpeg','.bin':'application/octet-stream'};
+const MIME={'.glb':'model/gltf-binary','.png':'image/png','.jpg':'image/jpeg','.mp3':'audio/mpeg','.ogg':'audio/ogg','.bin':'application/octet-stream'};
 
 const coreURL='data:text/javascript;base64,'+b64('lib/three.core.min.js');
 let mod=fs.readFileSync(path.join(dir,'lib/three.module.min.js'),'utf8');

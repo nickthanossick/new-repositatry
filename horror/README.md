@@ -59,8 +59,10 @@ Uske baad post-credits stinger.
 
 | cheez | kahan se |
 |---|---|
-| `assets/igmc.glb` | IGMC Shimla ka 3D scan — 272k tris, vertex colours bake kiye hue |
-| `assets/terrain.png` | 512² map: R+G = ground height, B = collision |
+| `assets/hospital.glb` | tumhara IGMC Hospital Exact model — 8k tris, apne signboards ke saath |
+| `assets/terrain.png` | 512² map us model se bake kiya: R+G = ground height, B = collision |
+| `assets/props_small.glb` | tumhare 30 small horror objects (khoon, baby cheezein, ritual saamaan) |
+| `assets/music.mp3` | Corridor Of Whispers — loop me background score |
 | `assets/props.glb` | tumhare 35 OBJ props (bed, wheelchair, cradle, diya, ghanti, generator…) |
 | `assets/chudail.glb` | Nirmala — tumhara chudail OBJ, colours bake kiye hue |
 | `assets/floor_tile.png` | hospital floor — tumhare granite tile ko pale grey-white terrazzo me convert kiya |
@@ -114,12 +116,17 @@ rehta hai. Test ke liye **J** dabao.
 Signboard building ke saamne, entrance porch ke upar laga hai — 26 m chauda, paanch lamps
 se lit.
 
-## Pandit ke haath
+## Torch
 
-Torch aur pandit-hands packs me sirf `fal.media` ke URL the (wo CDN yahan block hai), is liye
-first-person haath + torch procedurally banaye hain: kalai, kurta ka cuff, kalava dhaaga,
-mutthi jo torch pakadti hai, aur steel torch. Chalne pe sway karta hai aur chudail paas ho to
-kaanpta hai. Agar tum in packs ke asli OBJ/GLB bhej do to unhe swap karna aasan hai.
+Sirf torch dikhti hai — koi haath nahi. Steel barrel, knurled grip, laal switch. Chalne pe
+sway karti hai, chudail paas ho to kaanpti hai. Ek chhoti lamp sirf usi par padti hai taaki
+kabhi flat black na dikhe.
+
+## Performance
+
+Har floor ki saari scenery (bade props + 30 chhote objects) ek hi merged mesh me jaati hai,
+is liye 400+ objects hone ke bawajood draw calls ~79 rehte hain (pehle ~185 the). Naya
+hospital model 8k tris ka hai (purana scan 272k tha), to exterior ab bahut halka hai.
 
 ## Aage kya ho sakta hai
 
