@@ -1328,44 +1328,66 @@ const Torch={
     rigGroup.rotation.x=-Math.PI/2;                             // +Y becomes forward (-Z)
 
     /* ---- the hand that holds it ----
-       Wrist at the model's origin, fingers up +Y, palm +Z. Turned a quarter
-       so the palm faces the barrel and the thumb lies along it, and the
-       fingers are curled around the barrel in the vertex shader, because a
-       hand modelled flat cannot grip anything on its own. */
+       Wrist at the model's origin, fingers up +Y, palm +Z. A hand modelled
+       flat cannot grip, so the fingers are closed in the vertex shader: past
+       the knuckle line every slice swings around the barrel's axis keeping
+       its own distance from it, which is what a finger closing actually
+       does. The hand then hangs off a group that SITS on the barrel axis, so
+       it is placed by the torch rather than by eye and can be rolled around
+       the barrel until the grip faces the camera. The wrist end is stretched
+       down past the bottom of the frame, so there is never a gap between the
+       arm and the edge of the screen. */
     if(HAND){
+      const KN=0.120, CZ=0.052, KRV=15.0, AMAX=2.40;   // knuckles, axis, curl
+      const AX=-0.004, ROLL=-0.62, TILT=0.10, TWIST=0.22, HSC=1.22;
       const hmat=new THREE.MeshStandardMaterial({map:handTex,normalMap:handNrm,
         roughness:0.76,metalness:0.0});
       if(handNrm) hmat.normalScale.set(0.7,0.7);
       hmat.onBeforeCompile=sh=>{
-        sh.uniforms.uCurl ={value:13.2};      // radians per metre past the knuckles
-        sh.uniforms.uKnuck={value:0.132};     // where the fingers start
-        const D='uniform float uCurl;\nuniform float uKnuck;\nconst float HZP=0.028;\n'+
-          'void handCurl(float oy, inout vec3 p, inout vec3 n){\n'+
-          '  float t=oy-uKnuck; if(t<=0.0) return;\n'+
-          '  float a=uCurl*t, ca=cos(a), sa=sin(a);\n'+
-          '  vec2 q=vec2(p.y-uKnuck, p.z-HZP);\n'+
-          '  p.y=uKnuck+q.x*ca-q.y*sa;\n'+
-          '  p.z=HZP  +q.x*sa+q.y*ca;\n'+
+        sh.uniforms.uKN     ={value:KN};
+        sh.uniforms.uCZ     ={value:CZ};
+        sh.uniforms.uK      ={value:KRV};
+        sh.uniforms.uAMax   ={value:AMAX};
+        sh.uniforms.uStretch={value:0.26};    // how far the forearm runs off screen
+        sh.uniforms.uWrist  ={value:0.060};
+        const D='uniform float uKN;\nuniform float uCZ;\nuniform float uK;\n'+
+          'uniform float uAMax;\nuniform float uStretch;\nuniform float uWrist;\n'+
+          'void handPose(float oy, float oz, inout vec3 p, inout vec3 n){\n'+
+          '  p.y -= (1.0-smoothstep(0.0,uWrist,oy))*uStretch;\n'+
+          '  float t=oy-uKN; if(t<=0.0) return;\n'+
+          '  float th=min(t*uK,uAMax), s=sin(th), c=cos(th);\n'+
+          '  float r=uCZ-oz;\n'+
+          '  p.y=uKN+r*s;\n'+
+          '  p.z=uCZ-r*c;\n'+
           '  vec2 m=vec2(n.y,n.z);\n'+
-          '  n.y=m.x*ca-m.y*sa; n.z=m.x*sa+m.y*ca;\n'+
+          '  n.y=m.x*c-m.y*s; n.z=m.x*s+m.y*c;\n'+
           '}\n';
         sh.vertexShader=D+sh.vertexShader
           .replace('#include <beginnormal_vertex>',
-                   '#include <beginnormal_vertex>\n{ vec3 pp=position; handCurl(position.y,pp,objectNormal); }')
+                   '#include <beginnormal_vertex>\n{ vec3 pp=position; handPose(position.y,position.z,pp,objectNormal); }')
           .replace('#include <begin_vertex>',
-                   '#include <begin_vertex>\n{ vec3 nn=vec3(0.0); handCurl(position.y,transformed,nn); }');
+                   '#include <begin_vertex>\n{ vec3 nn=vec3(0.0); handPose(position.y,position.z,transformed,nn); }');
         hmat.userData.shader=sh;
       };
       const hand=new THREE.Mesh(HAND,hmat);
-      hand.rotation.set(0.10,-Math.PI/2,0.16);
-      hand.position.set(0.066,-0.108,-0.045);
+      hand.rotation.set(TILT,-Math.PI/2,TWIST);
+      hand.scale.setScalar(HSC);
+      /* the grip sits ON the barrel axis and rolls about it */
+      const grip=new THREE.Group();
+      grip.position.set(0,0,-0.085);
+      grip.rotation.z=ROLL;
+      /* and the hand hangs so that its (AX,KN,CZ) lands on that axis */
+      const hrot=new THREE.Matrix4().makeRotationFromEuler(hand.rotation);
+      const want=new THREE.Vector3(AX,KN,CZ).multiplyScalar(HSC).applyMatrix4(hrot);
+      hand.position.set(-want.x,-want.y,-want.z);
+      grip.add(hand);
       hand.frustumCulled=false;
-      this.hand=hand;
+      this.hand=hand; this.grip=grip;
     }
 
     this.view=new THREE.Group();
     this.view.add(rigGroup);
-    if(this.hand) this.view.add(this.hand);
+    if(this.grip) this.view.add(this.grip);
     this.view.position.set(0.275,-0.245,-0.52);
     this.view.rotation.set(0.05,0.30,0.02);
     this.view.scale.setScalar(0.86);
