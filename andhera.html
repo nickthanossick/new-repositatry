@@ -3262,13 +3262,29 @@ const Scare={
       this.show(sp[0],sp[1],rnd(0.45,0.7),1.05);
       A.bam(0.9,'wood'); A.growl(1);
       this.hit(0.9,{shake:1.2,storm:2.0});
-    } else if(k===3){                            /* her face, one frame */
-      Dread.face();
-      Walls.amt=Math.max(Walls.amt,0.8);
-      panditAnswers(1);
+    } else if(k===3){                            /* her face, in your eyes */
+      if(!this.faceRush()) return this.doorway(F);
+      Walls.amt=Math.max(Walls.amt,0.9);
     } else {
       this.doorway(F);
     }
+  },
+  /* an arm's length from the camera, at eye height, for a quarter of a
+     second: all you get is the face, and then the corridor again */
+  faceRush(){
+    const F=Int.floors[P.floor]; if(!F||!this.obj) return false;
+    const sp=this.spot(F,0.82);
+    if(!sp) return false;
+    /* she stands on the floor like everything else, so lift her a touch to
+       put the face on the camera's line rather than the chest */
+    this.obj.position.set(sp[0],F.y+0.07,sp[1]);
+    this.obj.rotation.y=Math.atan2(-(P.x-sp[0]),-(P.z-sp[1]));
+    this.obj.scale.set(1.06,1.06,1.06);
+    this.obj.visible=true;
+    this.live=rnd(0.22,0.34);
+    this.hit(1,{blackout:0.65,shake:1.7,pulse:0.95,storm:3.0});
+    F.lights.forEach(l=>{ l.surge=2.6; });
+    return true;
   },
   /* standing in a doorway you have already walked past */
   doorway(F){
@@ -4967,17 +4983,18 @@ let last=performance.now();
    adds a draw call, so they can fire on any floor at any time.            */
 const Dread={
   t:rnd(14,26), blood:0, faceT:rnd(70,140), dripT:rnd(30,60), stepT:rnd(20,40),
-  /* her face, one frame, straight out of the dark */
+  /* Her face, out of the dark, filling the screen — the MODEL, an arm's
+     length from the camera and gone again. This used to paste the intro
+     storyboard's artwork over the view, which read as a picture from
+     another game the moment the 3D Naina existed. */
   face(){
-    const el=$('facefx');
-    if(!el.firstChild){
-      const im=document.createElement('img'); im.src=INTRO_PIC[5]; im.alt=''; el.appendChild(im);
-    }
-    el.style.transition='none'; el.style.opacity='1';
-    A.sting(); A.scream(1,{force:true,gain:1.35,dip:3.4}); Effects.shake(1.4); Effects.pulse(0.85);
+    if(Scare.faceRush()) return true;
+    /* nowhere to put her (a wall in your nose): still make the noise */
+    A.sting(); A.scream(1,{force:true,gain:1.35,dip:3.4});
+    Effects.shake(1.4); Effects.pulse(0.85);
     Torch.storm=Math.max(Torch.storm,2.4);
     P.pulse=Math.min(180,P.pulse+34);
-    setTimeout(()=>{ el.style.transition='opacity .5s'; el.style.opacity='0'; },140);
+    return false;
   },
   /* the corridor ahead of you goes out, one tube at a time */
   killAhead(){
@@ -5013,7 +5030,7 @@ const Dread={
     if(this.faceT<=0){
       this.faceT=rnd(150,240);          /* Scare runs the frequent ones now */
       if(Ghost.mode==='off'&&P.danger<0.1){
-        /* half the time it is the picture, half the time it is her, standing
+        /* half the time she is in your face, half the time she is standing
            in the corridor you were just looking down. She does not chase —
            she is gone by the time the torch steadies. */
         if(Math.random()<0.5) this.face();
