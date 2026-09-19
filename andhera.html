@@ -1596,6 +1596,63 @@ const SIGN_WALL=['01_shanti','03_tambakoo','04_hiv','05_beti','06_no_smoking','0
   '08_handwash','09_mask','10_blood_donation','24_queue','25_medicine','26_no_litter',
   '27_dustbin','28_visiting','29_firestairs'];
 const FLOOR_NAME=f=> f===0?'BASEMENT':(f===1?'GROUND FLOOR':'FLOOR '+f);
+const FLOOR_DEPT=f=>(FTHEME[clamp(f,0,FTHEME.length-1)]||{}).name||'';
+
+/* ═════════════ what makes each floor its own place ═════════════
+   The building was one floor plan repeated eleven times: same paint, same
+   lamps, same furniture, so every landing looked like the one below it and
+   you lost any sense of having climbed. Each floor now has a department,
+   and the department decides its paint, its light, what is in its rooms,
+   what is abandoned in its corridors, and how badly it has been let go.
+   None of it costs a draw call - it all merges into the same per-floor
+   scenery mesh the building already built.                                */
+const FTHEME=[
+  { key:'basement', name:'MURDAGHAR',
+    wall:0x9a9ea3, slab:0x9a9891, ceil:0x84837d, lamp:0x8fa6b4,
+    lit:0.22, broken:0.82, damage:1.15, kinds:['store','morgue','store','ruin'],
+    clutter:['03_stretcher_trolley','06_oxygen_cylinder','27_broken_wheelchair','34_fire_extinguisher'] },
+  { key:'opd', name:'OPD',
+    wall:0xfdfdfe, slab:0xf4f5f2, ceil:0xf0f1ee, lamp:0xdfe9f2,
+    lit:0.56, broken:0.24, damage:0.55, kinds:['waiting','office','store','ward'],
+    clutter:['10_waiting_bench','10_waiting_bench','02_wheelchair','34_fire_extinguisher'] },
+  { key:'ward', name:'GENERAL WARD',
+    wall:0xe9f1ee, slab:0xeaf0ed, ceil:0xe4ece9, lamp:0xcfe0e8,
+    lit:0.44, broken:0.44, damage:0.85, kinds:['ward','ward','ward','store'],
+    clutter:['01_hospital_bed','03_stretcher_trolley','04_iv_stand','02_wheelchair'] },
+  { key:'records', name:'RECORDS',
+    wall:0xece5d6, slab:0xe6ddc9, ceil:0xded5c2, lamp:0xe8d9b0,
+    lit:0.40, broken:0.50, damage:0.80, kinds:['records2','office','records2','store'],
+    clutter:['32_file_record_stack','32_file_record_stack','07_medicine_cabinet','10_waiting_bench'] },
+  { key:'peds', name:'BAAL WARD',
+    wall:0xf6efd8, slab:0xf1e9cd, ceil:0xeae2c4, lamp:0xf2e6c8,
+    lit:0.46, broken:0.42, damage:0.95, kinds:['peds','peds','ward','store'],
+    clutter:['11_baby_cradle','11_baby_cradle','02_wheelchair','10_waiting_bench'] },
+  { key:'ot', name:'SURGICAL',
+    wall:0xe4eef6, slab:0xdde8f1, ceil:0xd6e2ec, lamp:0xdff0ff,
+    lit:0.48, broken:0.38, damage:1.00, kinds:['ot2','ot2','store','office'],
+    clutter:['03_stretcher_trolley','30_medical_tray_tools','06_oxygen_cylinder','13_operation_theatre_light'] },
+  { key:'pharm', name:'BHANDAR',
+    wall:0xe6e9d8, slab:0xdfe3cf, ceil:0xd8dcc8, lamp:0xd8e2c0,
+    lit:0.36, broken:0.56, damage:0.90, kinds:['pharmacy','pharmacy','store','office'],
+    clutter:['07_medicine_cabinet','08_hiding_locker','06_oxygen_cylinder','34_fire_extinguisher'] },
+  { key:'ruin', name:'BAND HISSA',
+    wall:0xc9ccc8, slab:0xb9bbb6, ceil:0xacaea9, lamp:0x9fb0bb,
+    lit:0.16, broken:0.92, damage:1.45, kinds:['ruin','ruin','ruin','store'],
+    clutter:['28_damaged_hospital_bed','27_broken_wheelchair','06_oxygen_cylinder','03_stretcher_trolley'] },
+  { key:'psych', name:'MANSIK ROG',
+    wall:0xdfeadb, slab:0xd6e2d2, ceil:0xcedac9, lamp:0xc8e6c0,
+    lit:0.30, broken:0.72, damage:1.30, kinds:['psych','psych','ward','store'],
+    clutter:['08_hiding_locker','28_damaged_hospital_bed','02_wheelchair','10_waiting_bench'] },
+  { key:'icu', name:'ICU',
+    wall:0xdfe8f0, slab:0xd7e1eb, ceil:0xd0dae5, lamp:0xbcd6ea,
+    lit:0.34, broken:0.50, damage:1.05, kinds:['icu','icu','ward','store'],
+    clutter:['05_patient_monitor','06_oxygen_cylinder','03_stretcher_trolley','04_iv_stand'] },
+  { key:'mat', name:'PRASUTI',
+    wall:0xf2e2d6, slab:0xebd8c9, ceil:0xe3d0c1, lamp:0xf0c49a,
+    lit:0.30, broken:0.76, damage:1.40, kinds:['ward','peds','ward','ruin'],
+    clutter:['11_baby_cradle','01_hospital_bed','27_broken_wheelchair','29_blood_stained_curtain'] }
+];
+const theme=fi=>FTHEME[clamp(fi,0,FTHEME.length-1)]||FTHEME[2];
 
 function buildFloor(fi){
   const base=fi===0;
@@ -1605,7 +1662,8 @@ function buildFloor(fi){
   const F={index:fi,y,rects:[],group:new THREE.Group(),doors:[],items:[],lights:[],rooms:[],
            openings:[],nav:null,special:{},props:[],dyn:{}};
   const W=new Builder(), FL=new Builder(), CE=new Builder(), PR=new Builder(), MT=new Builder();
-  const wallCol = base?0x9a9ea3:0xfdfdfe;
+  const TH=theme(fi);
+  const wallCol = TH.wall;
   const push=(x0,z0,x1,z1,d)=>F.rects.push({x0:Math.min(x0,x1),z0:Math.min(z0,z1),
       x1:Math.max(x0,x1),z1:Math.max(z0,z1),door:d||null});
   const wallX=(zf,from,to,ops,col)=>{
@@ -1631,12 +1689,12 @@ function buildFloor(fi){
     B.slab(-HX,hole[1],hole[0],hole[3],yy,t,col,uv);
     B.slab(hole[2],hole[1],HX,hole[3],yy,t,col,uv);
   };
-  cut(y-0.25,0.25,FL,base?0x9a9891:0xf4f5f2,0.34);
-  if(fi<TOP) cut(y+CH,0.22,CE,base?0x84837d:0xf0f1ee,0.3);
-  else CE.slab(-HX,-HZ,HX,HZ,y+CH,0.3,0xe6e7e3,0.3);
+  cut(y-0.25,0.25,FL,TH.slab,0.34);
+  if(fi<TOP) cut(y+CH,0.22,CE,TH.ceil,0.3);
+  else CE.slab(-HX,-HZ,HX,HZ,y+CH,0.3,TH.ceil,0.3);
 
   /* perimeter */
-  const perimCol=base?0x92969b:0xf7f8fa;
+  const perimCol=TH.wall;
   wallZ(-HX+WALL_T/2,-HZ,HZ,[],perimCol);
   wallZ( HX-WALL_T/2,-HZ,HZ,[],perimCol);
   wallX(-HZ+WALL_T/2,-HX,HX,[],perimCol);
@@ -1797,9 +1855,29 @@ function buildFloor(fi){
 
   /* Scenery is merged into one mesh per floor — hundreds of small objects
      would otherwise be hundreds of draw calls. */
-  const DECO={p:[],n:[],c:[],i:[],v:0};
+  /* One merged mesh for a whole floor can never be frustum-culled: its
+     bounds cover the building, so every prop on the floor is submitted
+     every frame, including the ones behind you and through two walls.
+     The scenery is merged into a GRID of tiles instead - same triangles,
+     same material, one more draw call per tile actually on screen, and
+     the two thirds of the floor you are not looking at cost nothing. */
+  const DTX=2, DTZ=2;
+  const DECOT=[];
+  for(let i=0;i<DTX*DTZ;i++) DECOT.push({p:[],n:[],c:[],i:[],v:0});
+  const decoTile=(x,z)=>{
+    const ix=clamp(Math.floor((x+HX)/(2*HX)*DTX),0,DTX-1);
+    const iz=clamp(Math.floor((z+HZ)/(2*HZ)*DTZ),0,DTZ-1);
+    return DECOT[iz*DTX+ix];
+  };
+  /* Every department dresses its floor differently, and some of them would
+     happily fill it: the loose horror dressing stops once a floor has spent
+     its share, so the heaviest floor never costs much more than the
+     lightest one. Rooms and landmarks are placed first and are never cut. */
+  let decoV=0; const DECO_BUDGET=46000;
   const addDeco=(name,x,z,ry,opts={})=>{
     const g=PROPS[name]; if(!g) return;
+    if(decoV>DECO_BUDGET&&opts.trim) return;
+    const DECO=decoTile(x,z);
     const pos=g.attributes.position, nor=g.attributes.normal, col=g.attributes.color, idx=g.index;
     const sc=opts.scale||1, ry2=ry||0, rx=opts.rx||0;
     const cy2=Math.cos(ry2), sy2=Math.sin(ry2), crx=Math.cos(rx), srx=Math.sin(rx);
@@ -1817,7 +1895,7 @@ function buildFloor(fi){
       DECO.c.push(r,g2,b2);
     }
     for(let i=0;i<idx.count;i++) DECO.i.push(base+idx.getX(i));
-    DECO.v+=pos.count;
+    DECO.v+=pos.count; decoV+=pos.count;
     if(opts.solid){
       const bb=g.boundingBox, sx2=(bb.max.x-bb.min.x)*sc, sz2=(bb.max.z-bb.min.z)*sc;
       const c2=Math.abs(cy2), s2=Math.abs(sy2);
@@ -1895,51 +1973,191 @@ function buildFloor(fi){
   allRooms.forEach(r=>{
     if(r.tagged) return;
     const w=r.x1-r.x0, d=r.z1-r.z0, cx=(r.x0+r.x1)/2, cz=(r.z0+r.z1)/2;
-    const kind=base?'store':pick(['ward','ward','ward','store','office','lab']);
+    /* the department decides what is behind the door */
+    const kind=pick(TH.kinds);
     r.kind=kind;
     const inward=r.dir>0?-1:1;             // towards the corridor
-    if(kind==='ward'){
-      const n=Math.max(1,Math.floor(Math.min(w,d)/2.8));
+    const ang=(r.door.axis==='x')?0:Math.PI/2;
+    const back=r.dir>0?r.z1-1.7:r.z0+1.7;
+    const beds=(n,dmg)=>{
       for(let i=0;i<n;i++){
         if(rng()<0.1) continue;
         const bx=r.x0+1.4+(w-2.8)*(n===1?0.5:i/(n-1));
-        const bz=r.dir>0?r.z1-1.7:r.z0+1.7;
-        const ang=(r.door.axis==='x')?0:Math.PI/2;
-        sceneryProp(rng()<0.18?'28_damaged_hospital_bed':'01_hospital_bed',bx,bz,ang+(rng()<0.15?rnd(-0.4,0.4):0));
-        if(rng()<0.4) sceneryProp('04_iv_stand',bx-1.0,bz+inward*0.9,0,{solid:false});
-        if(rng()<0.3) sceneryProp('05_patient_monitor',bx+1.0,bz-inward*0.1,ang,{solid:false});
-        if(rng()<0.35) sceneryProp('29_blood_stained_curtain',bx+1.25,bz,ang,{solid:false});
+        sceneryProp(rng()<dmg?'28_damaged_hospital_bed':'01_hospital_bed',bx,back,
+                    ang+(rng()<0.15?rnd(-0.4,0.4):0));
+        if(rng()<0.4) sceneryProp('04_iv_stand',bx-1.0,back+inward*0.9,0,{solid:false});
+        if(rng()<0.3) sceneryProp('05_patient_monitor',bx+1.0,back-inward*0.1,ang,{solid:false});
+        if(rng()<0.35) sceneryProp('29_blood_stained_curtain',bx+1.25,back,ang,{solid:false});
       }
+    };
+    const shelves=(what)=>{
+      for(let i=0;i<3;i++) sceneryProp(what(),r.x0+1.1+i*1.15,cz+inward*(d/2-0.8),ang);
+    };
+    if(kind==='ward'){
+      beds(Math.max(1,Math.floor(Math.min(w,d)/2.8)),0.18);
     } else if(kind==='store'){
-      for(let i=0;i<3;i++) sceneryProp(rng()<0.5?'07_medicine_cabinet':'08_hiding_locker',
-        r.x0+1.1+i*1.15,cz+inward*(d/2-0.8),r.door.axis==='x'?0:Math.PI/2);
+      shelves(()=>rng()<0.5?'07_medicine_cabinet':'08_hiding_locker');
       if(rng()<0.5) sceneryProp('32_file_record_stack',cx,cz,rnd(0,3),{solid:false});
       if(rng()<0.4) sceneryProp('06_oxygen_cylinder',r.x1-0.9,r.z0+0.9,0,{solid:false});
     } else if(kind==='office'){
-      sceneryProp('09_nurse_station_desk',cx,cz,r.door.axis==='x'?0:Math.PI/2);
+      sceneryProp('09_nurse_station_desk',cx,cz,ang);
       sceneryProp('32_file_record_stack',cx+0.6,cz-inward*0.9,rnd(0,3),{solid:false});
-      sceneryProp('16_cctv_terminal',cx-1.5,cz+inward*(d/2-0.7),r.door.axis==='x'?0:Math.PI/2,{solid:false});
+      sceneryProp('16_cctv_terminal',cx-1.5,cz+inward*(d/2-0.7),ang,{solid:false});
       if(rng()<0.5) sceneryProp('33_wall_clock',cx,cz+inward*(d/2-0.3),0,{y:2.0,solid:false});
-    } else {
-      sceneryProp('30_medical_tray_tools',cx,cz,0,{y:0.9,solid:false});
-      sceneryProp('09_nurse_station_desk',cx,cz,r.door.axis==='x'?0:Math.PI/2);
-      if(rng()<0.6) sceneryProp('13_operation_theatre_light',cx+1.6,cz,0,{y:1.9,solid:false});
+    } else if(kind==='waiting'){
+      /* the outpatient floor: rows of benches facing a desk nobody is at */
+      for(let i=0;i<3;i++) sceneryProp('10_waiting_bench',cx-1.6+i*1.6,back,ang);
+      if(rng()<0.6) sceneryProp('09_nurse_station_desk',cx,cz-inward*1.0,ang);
+      if(rng()<0.5) sceneryProp('33_wall_clock',cx,cz+inward*(d/2-0.3),0,{y:2.05,solid:false});
+      if(rng()<0.4) sceneryProp('02_wheelchair',r.x1-1.2,cz,rnd(0,6.28));
+    } else if(kind==='records2'){
+      /* paper to the ceiling */
+      for(let i=0;i<4;i++) sceneryProp('07_medicine_cabinet',r.x0+1.1+i*1.2,back,ang);
+      for(let i=0;i<3;i++) addDeco('32_file_record_stack',cx+rnd(-1.8,1.8),cz+rnd(-1.4,1.4),rnd(0,6.28),{solid:false});
+      if(rng()<0.6) sceneryProp('09_nurse_station_desk',cx,cz-inward*1.2,ang);
+    } else if(kind==='peds'){
+      /* cots instead of beds, and the toys are still where they were left */
+      const n=Math.max(2,Math.floor(w/2.0));
+      for(let i=0;i<n;i++){
+        const bx=r.x0+1.1+(w-2.2)*(n===1?0.5:i/(n-1));
+        sceneryProp('11_baby_cradle',bx,back,ang+rnd(-0.2,0.2));
+        if(rng()<0.5) addDeco('31_nursery_toy',bx+rnd(-0.6,0.6),back+inward*1.1,rnd(0,6.28),{y:0.02,solid:false});
+        if(rng()<0.4) addDeco('18_baby_blanket',bx+rnd(-0.5,0.5),back+inward*0.7,rnd(0,6.28),{y:0.02,solid:false});
+      }
+      if(rng()<0.5) sceneryProp('05_patient_monitor',r.x1-1.1,back,ang,{solid:false});
+    } else if(kind==='ot2'){
+      sceneryProp('13_operation_theatre_light',cx,back,0,{y:1.85,solid:false});
+      sceneryProp('03_stretcher_trolley',cx,back,ang);
+      addDeco('30_medical_tray_tools',cx+1.3,cz,rnd(0,6.28),{y:0.9,solid:false});
+      if(rng()<0.7) sceneryProp('06_oxygen_cylinder',r.x1-1.0,back,0,{solid:false});
+      if(rng()<0.6) addDeco('08_iv_fluid_bag',cx-1.1,cz+inward*1.2,0,{y:1.55,solid:false});
+      if(rng()<0.5) sceneryProp('29_blood_stained_curtain',cx+1.9,back,ang,{solid:false});
+    } else if(kind==='pharmacy'){
+      shelves(()=>'07_medicine_cabinet');
+      for(let i=0;i<4;i++) addDeco('07_medicine_bottle',cx+rnd(-1.8,1.8),cz+rnd(-1.4,1.4),rnd(0,6.28),{y:0.02,solid:false});
+      if(rng()<0.5) sceneryProp('08_hiding_locker',r.x1-1.1,cz,ang);
+    } else if(kind==='icu'){
+      /* one bed, and everything the machine needs to keep somebody alive */
+      const bx=cx;
+      sceneryProp('01_hospital_bed',bx,back,ang);
+      sceneryProp('05_patient_monitor',bx+1.3,back,ang,{solid:false});
+      sceneryProp('04_iv_stand',bx-1.2,back+inward*0.6,0,{solid:false});
+      sceneryProp('06_oxygen_cylinder',r.x1-1.0,back,0,{solid:false});
+      sceneryProp('29_blood_stained_curtain',bx+2.0,back,ang,{solid:false});
+      if(rng()<0.6) addDeco('08_iv_fluid_bag',bx-1.2,back+inward*0.6,0,{y:1.55,solid:false});
+    } else if(kind==='psych'){
+      /* every bed turned to face the door */
+      const n=Math.max(1,Math.floor(w/3.0));
+      for(let i=0;i<n;i++){
+        const bx=r.x0+1.5+(w-3.0)*(n===1?0.5:i/(n-1));
+        sceneryProp(rng()<0.45?'28_damaged_hospital_bed':'01_hospital_bed',bx,back,ang+Math.PI/2);
+      }
+      sceneryProp('08_hiding_locker',r.x1-1.1,cz,ang);
+      for(let i=0;i<3;i++) addDeco('03_wall_scratch_decal',cx+rnd(-2,2),r.dir>0?r.z1-0.22:r.z0+0.22,
+        r.dir>0?Math.PI:0,{y:rnd(0.9,1.9),scale:rnd(1.0,1.8),solid:false});
+      if(rng()<0.6) addDeco('30_mirror_shard',cx+rnd(-1.5,1.5),cz+rnd(-1.5,1.5),rnd(0,6.28),{y:0.02,solid:false});
+    } else if(kind==='morgue'){
+      for(let i=0;i<2;i++) sceneryProp('12_morgue_freezer_unit',r.x0+1.6+i*3.0,back,ang);
+      sceneryProp('03_stretcher_trolley',cx,cz,ang);
+      if(rng()<0.7) addDeco('14_toe_tag',cx+rnd(-1,1),cz+rnd(-1,1),rnd(0,6.28),{y:0.02,solid:false});
+    } else {                                   /* ruin: nothing is upright */
+      const n=Math.max(1,Math.floor(w/2.6));
+      for(let i=0;i<n;i++){
+        const bx=r.x0+1.4+(w-2.8)*(n===1?0.5:i/(n-1));
+        if(rng()<0.35) continue;
+        sceneryProp('28_damaged_hospital_bed',bx,back+rnd(-0.6,0.6),rnd(0,6.28));
+      }
+      for(let i=0;i<3;i++) addDeco('29_hanging_chain',cx+rnd(-2,2),cz+rnd(-1.6,1.6),0,
+        {y:CH-0.34,scale:rnd(1.4,2.8),solid:false});
+      if(rng()<0.7) sceneryProp('27_broken_wheelchair',cx+rnd(-1.5,1.5),cz+rnd(-1,1),rnd(0,6.28));
+      for(let i=0;i<2;i++) addDeco('30_mirror_shard',cx+rnd(-2,2),cz+rnd(-1.6,1.6),rnd(0,6.28),{y:0.02,solid:false});
     }
   });
 
-  /* corridor clutter */
+  /* corridor clutter: whatever this department leaves lying in its halls */
   for(let i=0;i<12;i++){
     const onX=rng()<0.5;
     const px=onX?rnd(-HX+3,HX-3):(rng()<0.5?-1:1)*rnd(xc+0.7,xb-0.7);
     const pz=onX?(rng()<0.5?-1:1)*rnd(zc+0.7,zb-0.7):rnd(-HZ+3,HZ-3);
-    const r=rng();
-    if(r<0.3) sceneryProp('02_wheelchair',px,pz,rnd(0,6.28));
-    else if(r<0.45) sceneryProp('03_stretcher_trolley',px,pz,rnd(0,6.28));
-    else if(r<0.6) sceneryProp('27_broken_wheelchair',px,pz,rnd(0,6.28));
-    else if(r<0.75) sceneryProp('10_waiting_bench',px,pz,onX?0:Math.PI/2);
-    else if(r<0.85) sceneryProp('34_fire_extinguisher',px,pz,0,{solid:false});
-    else sceneryProp('06_oxygen_cylinder',px,pz,0,{solid:false});
+    const nm=TH.clutter[(rng()*TH.clutter.length)|0];
+    const flat=(nm==='34_fire_extinguisher'||nm==='06_oxygen_cylinder'||
+                nm==='29_blood_stained_curtain'||nm==='13_operation_theatre_light'||
+                nm==='30_medical_tray_tools');
+    sceneryProp(nm,px,pz,nm==='10_waiting_bench'?(onX?0:Math.PI/2):rnd(0,6.28),
+      flat?{solid:false,y:nm==='13_operation_theatre_light'?1.85:(nm==='30_medical_tray_tools'?0.9:0)}:undefined);
   }
+  /* ---- the one thing you remember about this floor ----
+     A landmark in the corridor ring, so you know where you are the moment
+     the torch finds it, instead of counting landings. */
+  const CZN=zb-CORR/2, CZS=-(zb-CORR/2), CXE=xb-CORR/2, CXW=-(xb-CORR/2);
+  switch(TH.key){
+    case 'basement':                        /* trolleys queued at the freezers */
+      for(let i=0;i<5;i++) sceneryProp('03_stretcher_trolley',-19+i*2.4,CZS,0);
+      for(let i=0;i<4;i++) addDeco('14_toe_tag',-19+i*2.4+rnd(-0.4,0.4),CZS+rnd(-0.6,0.6),rnd(0,6.28),{y:0.02,solid:false});
+      sceneryProp('14_emergency_generator',CXW+1.2,-6,Math.PI/2);
+      sceneryProp('15_fuse_box',CXW+0.6,-2.2,Math.PI/2,{y:1.2,solid:false});
+      break;
+    case 'opd':                             /* the queue that never moved */
+      for(let i=0;i<6;i++) sceneryProp('10_waiting_bench',-9+i*3.0,CZN,0);
+      sceneryProp('35_hospital_signboard',0,CZN+1.6,0,{y:2.1,solid:false});
+      for(let i=0;i<3;i++) sceneryProp('02_wheelchair',CXE,-6+i*4.5,rnd(0,6.28));
+      break;
+    case 'ward':                            /* beds pushed out of the rooms */
+      for(let i=0;i<5;i++) sceneryProp(i%3?'01_hospital_bed':'28_damaged_hospital_bed',
+        -12+i*5.2,CZN,Math.PI/2);
+      for(let i=0;i<4;i++) sceneryProp('04_iv_stand',-10+i*5.2,CZN-1.0,0,{solid:false});
+      break;
+    case 'records':                         /* paper, in drifts */
+      for(let i=0;i<14;i++) addDeco('32_file_record_stack',rnd(-HX+4,HX-4),
+        (rng()<0.5?CZN:CZS)+rnd(-1.2,1.2),rnd(0,6.28),{solid:false});
+      for(let i=0;i<6;i++) sceneryProp('07_medicine_cabinet',-8+i*3.0,CZS,0);
+      for(let i=0;i<4;i++) addDeco('23_nurse_note',rnd(-12,12),CZS+rnd(-1,1),rnd(0,6.28),
+        {y:0.02,rx:-Math.PI/2,solid:false});
+      break;
+    case 'peds':                            /* cots in the corridor, toys everywhere */
+      for(let i=0;i<7;i++) sceneryProp('11_baby_cradle',-12+i*4.0,CZN,rnd(-0.25,0.25));
+      for(let i=0;i<10;i++) addDeco('31_nursery_toy',rnd(-HX+4,HX-4),
+        (rng()<0.5?CZN:CZS)+rnd(-1.4,1.4),rnd(0,6.28),{y:0.02,solid:false});
+      for(let i=0;i<5;i++) addDeco('11_baby_rattle',rnd(-14,14),CZS+rnd(-1,1),rnd(0,6.28),{y:0.02,solid:false});
+      break;
+    case 'ot':                              /* theatre lights left burning over nothing */
+      for(let i=0;i<4;i++) sceneryProp('13_operation_theatre_light',-9+i*6.0,CZN,0,{y:1.85,solid:false});
+      for(let i=0;i<4;i++) sceneryProp('03_stretcher_trolley',-9+i*6.0,CZN,Math.PI/2);
+      for(let i=0;i<6;i++) addDeco('04_syringe',rnd(-12,12),CZN+rnd(-1.4,1.4),rnd(0,6.28),{y:0.02,solid:false});
+      break;
+    case 'pharm':                           /* the store that was emptied in a hurry */
+      for(let i=0;i<6;i++) sceneryProp('07_medicine_cabinet',-8+i*3.2,CZS,0);
+      for(let i=0;i<4;i++) sceneryProp('08_hiding_locker',CXE,-6+i*3.4,Math.PI/2);
+      for(let i=0;i<12;i++) addDeco('07_medicine_bottle',rnd(-HX+4,HX-4),
+        (rng()<0.5?CZN:CZS)+rnd(-1.6,1.6),rnd(0,6.28),{y:0.02,solid:false});
+      break;
+    case 'ruin':                            /* the wing they gave up on */
+      for(let i=0;i<10;i++) addDeco('29_hanging_chain',rnd(-HX+4,HX-4),
+        (rng()<0.5?CZN:CZS)+rnd(-1.4,1.4),0,{y:CH-0.34,scale:rnd(1.6,3.0),solid:false});
+      for(let i=0;i<6;i++) sceneryProp('28_damaged_hospital_bed',rnd(-14,14),
+        (rng()<0.5?CZN:CZS)+rnd(-1,1),rnd(0,6.28));
+      for(let i=0;i<8;i++) MT.box(rnd(-HX+4,HX-4),y+0.22,rnd(-HZ+4,HZ-4),
+        rnd(0.6,1.8),0.44,rnd(0.6,1.8),0x5a5750,1.2);
+      break;
+    case 'psych':                           /* doors watched from inside */
+      for(let i=0;i<6;i++) sceneryProp('08_hiding_locker',-9+i*3.6,CZN,0);
+      for(let i=0;i<10;i++) addDeco('03_wall_scratch_decal',rnd(-HX+5,HX-5),CZN+2.6,Math.PI,
+        {y:rnd(0.8,2.0),scale:rnd(1.2,2.2),solid:false});
+      for(let i=0;i<8;i++) addDeco('30_mirror_shard',rnd(-14,14),CZS+rnd(-1.4,1.4),rnd(0,6.28),{y:0.02,solid:false});
+      break;
+    case 'icu':                             /* every machine still on */
+      for(let i=0;i<6;i++) sceneryProp('05_patient_monitor',-10+i*4.2,CZN,0,{solid:false});
+      for(let i=0;i<5;i++) sceneryProp('06_oxygen_cylinder',-8+i*4.2,CZS,0,{solid:false});
+      for(let i=0;i<4;i++) sceneryProp('29_blood_stained_curtain',-6+i*5.0,CZN-1.2,0,{solid:false});
+      break;
+    default:                                /* maternity: a path of diyas */
+      for(let i=0;i<9;i++) addDeco('16_diya',lerp(-14,14,i/8),CZN+rnd(-0.4,0.4),0,{y:0.02,solid:false});
+      for(let i=0;i<4;i++) sceneryProp('11_baby_cradle',-6+i*4.0,CZS,rnd(-0.2,0.2));
+      addDeco('23_ritual_thali',0,CZN,0,{y:0.02,solid:false});
+      for(let i=0;i<6;i++) addDeco('01_blood_puddle_decal',rnd(-12,12),CZS+rnd(-1.4,1.4),rnd(0,6.28),
+        {y:0.012,rx:-Math.PI/2,scale:rnd(0.9,1.7),solid:false});
+  }
+
   if(fi===1){
     sceneryProp('09_nurse_station_desk',2.5,-(zb-CORR/2)-0.2,0);
     sceneryProp('09_nurse_station_desk',4.6,-(zb-CORR/2)-0.2,0);
@@ -1968,18 +2186,18 @@ function buildFloor(fi){
       const wallZ_=r.dir>0?r.z1-0.22:r.z0+0.22;
       /* something on the floor of most rooms */
       if(rng()<0.72) addDeco(pick(SMALL_TABLE),cx+rnd(-1.6,1.6),cz+rnd(-1.6,1.6),rnd(0,6.28),
-        {y:0.02,scale:1,solid:false});
+        {y:0.02,scale:1,solid:false,trim:true});
       /* blood on the floor */
-      if(rng()<0.34) addDeco('01_blood_puddle_decal',cx+rnd(-2,2),cz+rnd(-2,2),rnd(0,6.28),
-        {y:0.012,rx:-Math.PI/2,scale:rnd(0.8,1.5),solid:false});
+      if(rng()<0.34*TH.damage) addDeco('01_blood_puddle_decal',cx+rnd(-2,2),cz+rnd(-2,2),rnd(0,6.28),
+        {y:0.012,rx:-Math.PI/2,scale:rnd(0.8,1.5),solid:false,trim:true});
       /* handprints and scratches on the room wall */
-      if(rng()<0.30) addDeco('02_bloody_handprint_decal',cx+rnd(-2,2),wallZ_,r.dir>0?Math.PI:0,
-        {y:rnd(1.0,1.6),scale:rnd(0.9,1.3),solid:false});
-      if(rng()<0.26) addDeco('03_wall_scratch_decal',cx+rnd(-2,2),wallZ_,r.dir>0?Math.PI:0,
-        {y:rnd(1.1,1.8),scale:rnd(0.9,1.6),solid:false});
+      if(rng()<0.30*TH.damage) addDeco('02_bloody_handprint_decal',cx+rnd(-2,2),wallZ_,r.dir>0?Math.PI:0,
+        {y:rnd(1.0,1.6),scale:rnd(0.9,1.3),solid:false,trim:true});
+      if(rng()<0.26*TH.damage) addDeco('03_wall_scratch_decal',cx+rnd(-2,2),wallZ_,r.dir>0?Math.PI:0,
+        {y:rnd(1.1,1.8),scale:rnd(0.9,1.6),solid:false,trim:true});
       /* baby things cluster near the maternity end of the building */
       if(r.kind==='maternity'||rng()<0.22){
-        addDeco(pick(SMALL_BABY),cx+rnd(-1.8,1.8),cz+rnd(-1.6,1.6),rnd(0,6.28),{y:0.02,solid:false});
+        addDeco(pick(SMALL_BABY),cx+rnd(-1.8,1.8),cz+rnd(-1.6,1.6),rnd(0,6.28),{y:0.02,solid:false,trim:true});
         if(rng()<0.5) addDeco('13_mothers_bangles',cx+rnd(-1.5,1.5),cz+rnd(-1.5,1.5),rnd(0,6.28),
           {y:0.015,solid:false});
       }
@@ -2025,13 +2243,13 @@ function buildFloor(fi){
   spots.push([xb-CORR/2,0],[-(xb-CORR/2),0],[0,0],[-9,0],[9,0]);
   spots.forEach(p=>{
     MT.box(p[0],y+CH-0.12,p[1],1.25,0.09,0.24,0xd8d6cf,1.6);
-    if(rng()<0.38){
-      const L=new THREE.PointLight(0xcfe0e8,0,12,2);
+    if(rng()<TH.lit){
+      const L=new THREE.PointLight(TH.lamp,0,12,2);
       L.position.set(p[0],y+CH-0.3,p[1]); F.group.add(L);
       const tube=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.06,0.16),
-        new THREE.MeshBasicMaterial({color:0xdfeaf0,toneMapped:false}));
+        new THREE.MeshBasicMaterial({color:TH.lamp,toneMapped:false}));
       tube.position.copy(L.position); F.group.add(tube);
-      F.lights.push({L,tube,base:rnd(2.4,5.6),phase:rnd(0,9),broken:rng()<0.55,x:p[0],z:p[1],forced:null});
+      F.lights.push({L,tube,base:rnd(2.4,5.6),phase:rnd(0,9),broken:rng()<TH.broken,x:p[0],z:p[1],forced:null});
     }
   });
 
@@ -2077,12 +2295,13 @@ function buildFloor(fi){
     const sm=new THREE.Mesh(sg,MAT.hsign); sm.receiveShadow=true;
     F.group.add(sm);
   }
-  if(DECO.v){
+  for(const D of DECOT){
+    if(!D.v) continue;
     const dg=new THREE.BufferGeometry();
-    dg.setAttribute('position',new THREE.Float32BufferAttribute(DECO.p,3));
-    dg.setAttribute('normal',new THREE.Float32BufferAttribute(DECO.n,3));
-    dg.setAttribute('color',new THREE.Float32BufferAttribute(DECO.c,3));
-    dg.setIndex(DECO.i); dg.computeBoundingSphere();
+    dg.setAttribute('position',new THREE.Float32BufferAttribute(D.p,3));
+    dg.setAttribute('normal',new THREE.Float32BufferAttribute(D.n,3));
+    dg.setAttribute('color',new THREE.Float32BufferAttribute(D.c,3));
+    dg.setIndex(D.i); dg.computeBoundingSphere(); dg.computeBoundingBox();
     const dm=new THREE.Mesh(dg,MAT.prop); dm.castShadow=true; dm.receiveShadow=true;
     F.group.add(dm);
   }
@@ -2511,7 +2730,13 @@ function movePlayer(dt){
 function setFloor(f){
   P.floor=f;
   for(const k in Int.floors) Int.floors[k].group.visible=Math.abs(+k-f)<=1;
-  ui.floorlab.textContent=FLOOR_NAME(f);
+  /* Re-pick the lamps on the same frame the floor changes. Left to its own
+     clock the budget spends up to a fifth of a second seeing only the two
+     lamps on the camera, and that different light count makes three.js
+     rebuild every shader - which is exactly the stutter you feel stepping
+     off a staircase. */
+  try{ LightBudget.t=0; LightBudget.scanT=0; LightBudget.update(0); }catch(_){}
+  ui.floorlab.textContent=FLOOR_NAME(f)+(P.inside&&FLOOR_DEPT(f)?' · '+FLOOR_DEPT(f):'');
   Story.onFloor(f);
 }
 function teleport(floor,x,z,yaw){
@@ -2953,6 +3178,170 @@ const Silh={
     p.t-=dt; if(p.t<=0) p.m.visible=false; } }
 };
 
+/* ═════════════ SCARE — she is there, and then she is not ═════════════
+   Naina's scripted appearances belong to the missions and are rare by
+   design. This is the other thing: every twenty-odd seconds the building
+   shows her to you and takes her away again before you can look properly.
+   It uses a second mesh sharing her geometry and material, so it costs
+   nothing while it is hidden and one draw call while it is not, and it
+   never touches Ghost.mode — a scripted chase is left alone.            */
+const Scare={
+  obj:null, t:rnd(9,14), last:-1, live:0, ready:false,
+  build(geo){
+    const m=new THREE.Mesh(geo,MAT.ghost);
+    m.visible=false; m.castShadow=false; m.frustumCulled=false;
+    Int.group.add(m); this.obj=m; this.ready=true;
+  },
+  /* somewhere she can actually stand, down the axis you are facing */
+  spot(F,dist,back){
+    const a=P.yaw+(back?Math.PI:0);
+    for(let r=dist;r<=dist+3.0;r+=0.45){
+      const x=P.x-Math.sin(a)*r, z=P.z-Math.cos(a)*r;
+      if(navFree(F,x,z)) return [x,z];
+    }
+    return null;
+  },
+  show(x,z,secs,scale){
+    const F=Int.floors[P.floor]; if(!F||!this.obj) return false;
+    this.obj.position.set(x,F.y,z);
+    this.obj.rotation.y=Math.atan2(-(P.x-x),-(P.z-z));
+    const k=scale||1;
+    this.obj.scale.set(k,k,k);
+    this.obj.visible=true;
+    this.live=secs;
+    return true;
+  },
+  hide(){ if(this.obj) this.obj.visible=false; this.live=0; },
+  /* the whole floor loses its light, then finds it again one tube at a
+     time, starting at the far end — so the dark walks back towards you */
+  blackout(F,hold){
+    if(!F) return;
+    const ls=F.lights.slice().sort((a,b)=>
+      dist2(b.L.position.x,b.L.position.z,P.x,P.z)-dist2(a.L.position.x,a.L.position.z,P.x,P.z));
+    ls.forEach(l=>{ l.forced=0; });
+    ls.forEach((l,i)=>setTimeout(()=>{ l.forced=null; }, hold*1000+i*260));
+  },
+  /* everything that lands on the same frame */
+  hit(v,opts){
+    const o=opts||{};
+    A.scream(v,{force:true,gain:1.25,dip:3.4,muffle:!!o.far});
+    panditAnswers(v);
+    A.sting();
+    Effects.shake(o.shake===undefined?1.5:o.shake);
+    Effects.pulse(o.pulse===undefined?0.85:o.pulse);
+    Torch.storm=Math.max(Torch.storm,o.storm===undefined?2.6:o.storm);
+    if(o.blackout) Torch.forceOff=Math.max(Torch.forceOff,o.blackout);
+    P.pulse=Math.min(180,P.pulse+34);
+    Effects.red(0.55); setTimeout(()=>Effects.red(0),520);
+    Walls.amt=Math.max(Walls.amt,0.9);
+    if(typeof Touch!=='undefined'&&Touch.on&&Touch.haptics&&navigator.vibrate){
+      try{ navigator.vibrate([0,60,40,120,40,220]); }catch(_){}
+    }
+  },
+  fire(){
+    const F=Int.floors[P.floor]; if(!F||!this.ready) return;
+    /* never the same one twice running */
+    let k=0;
+    for(let i=0;i<6;i++){ k=(Math.random()*5)|0; if(k!==this.last) break; }
+    this.last=k;
+    if(k===0){                                   /* right in your face */
+      const sp=this.spot(F,rnd(2.1,2.9));
+      if(!sp) return this.doorway(F);
+      this.show(sp[0],sp[1],rnd(0.30,0.45),1.16);
+      this.hit(1,{blackout:0.55});
+      F.lights.forEach(l=>{ l.surge=2.4; });
+    } else if(k===1){                            /* the end of the corridor */
+      const sp=this.spot(F,rnd(10,16));
+      if(!sp) return this.doorway(F);
+      this.show(sp[0],sp[1],rnd(0.7,1.1),1.0);
+      this.hit(0.75,{far:true,shake:0.6,pulse:0.35,storm:1.4});
+      this.blackout(F,0.9);
+    } else if(k===2){                            /* behind you */
+      const sp=this.spot(F,rnd(2.6,4.2),true);
+      if(!sp) return this.doorway(F);
+      this.show(sp[0],sp[1],rnd(0.45,0.7),1.05);
+      A.bam(0.9,'wood'); A.growl(1);
+      this.hit(0.9,{shake:1.2,storm:2.0});
+    } else if(k===3){                            /* her face, one frame */
+      Dread.face();
+      Walls.amt=Math.max(Walls.amt,0.8);
+      panditAnswers(1);
+    } else {
+      this.doorway(F);
+    }
+  },
+  /* standing in a doorway you have already walked past */
+  doorway(F){
+    let best=null,bd=1e9;
+    for(const D of F.doors){
+      const d=dist2(D.x,D.z,P.x,P.z);
+      if(d>3.2&&d<15&&d<bd){ bd=d; best=D; }
+    }
+    if(!best) return;
+    this.show(best.x,best.z,rnd(0.5,0.8),1.0);
+    this.hit(0.8,{shake:0.9,storm:1.8});
+  },
+  update(dt){
+    if(this.live>0){
+      this.live-=dt;
+      if(this.live<=0) this.hide();
+    }
+    if(!P.inside||!State.playing||State.over||Cine.active||Tape.active||P.noteOpen){ return; }
+    /* while she is really here, hunting, the building does not need to
+       pretend — the scripted Naina is scare enough */
+    if(Ghost.mode!=='off'&&Ghost.floor===P.floor){ this.t=rnd(16,22); return; }
+    this.t-=dt;
+    if(this.t<=0){ this.t=rnd(22,28); this.fire(); }
+  },
+  reset(){ this.t=rnd(9,14); this.last=-1; this.hide(); }
+};
+
+/* ═════════════ MOOD — the light works on you, not on the room ═════════════
+   None of this is a new light or a new pass; it leans on the lamps the
+   floor already has. What it buys is the feeling that the building is
+   aware of you: it breathes, it flickers where you are not looking, it
+   closes in when she is near, and a tube you stare at long enough gives
+   up.                                                                    */
+const Mood={
+  breath:1, phase:0, stareT:0, stareL:null, creep:0,
+  update(dt){
+    this.phase+=dt*0.42;
+    /* a slow inhale across the whole floor, under everything else */
+    this.breath=0.86+0.14*Math.sin(this.phase)+0.03*Math.sin(this.phase*2.7);
+    /* how much the walls have closed in: her nearness, plus a slow drift
+       upward the longer you are on a floor with no light */
+    const want=clamp(P.danger*0.9+(Torch.lit()?0:0.35),0,1);
+    this.creep=lerp(this.creep,want,1-Math.exp(-1.4*dt));
+    /* the torch narrows as the dread rises: the world literally shrinks */
+    if(Torch.spot){
+      Torch.spot.angle=0.66-0.13*this.creep;
+      Torch.spot.penumbra=0.70+0.18*this.creep;
+    }
+    /* stare at a tube long enough and it dies */
+    const F=Int.floors[P.floor];
+    if(F&&State.playing&&P.inside){
+      const fx=-Math.sin(P.yaw), fz=-Math.cos(P.yaw);
+      let look=null, bestDot=0.985;
+      for(const l of F.lights){
+        if(l.red||l.forced!==null) continue;
+        const dx=l.L.position.x-P.x, dz=l.L.position.z-P.z, d=Math.hypot(dx,dz);
+        if(d<2.5||d>16) continue;
+        const dot=(dx*fx+dz*fz)/d;
+        if(dot>bestDot){ bestDot=dot; look=l; }
+      }
+      if(look&&look===this.stareL){
+        this.stareT+=dt;
+        if(this.stareT>1.5){
+          this.stareT=0;
+          look.forced=0; A.lightClick();
+          setTimeout(()=>{ look.forced=null; }, rnd(6000,11000));
+        }
+      } else { this.stareL=look; this.stareT=0; }
+    }
+  },
+  reset(){ this.breath=1; this.creep=0; this.stareT=0; this.stareL=null; }
+};
+
 /* ═════════════ light budget ═════════════
    three.js evaluates EVERY visible light for every fragment it draws, and
    three floors are on screen at once so the stairwells read — that is 37
@@ -2985,16 +3374,17 @@ const LightBudget={
     for(let i=0;i<this.list.length;i++){
       const L=this.list[i];
       if(L.userData&&L.userData.always){ L.visible=true; continue; }
-      /* a dark lamp still costs a full light loop in every fragment */
-      if(L.intensity<=0.002){ L.visible=false; continue; }
       /* a lamp inside a hidden group (another floor, an item not spawned
          yet, the whole exterior) is never drawn, so it must not take one of
-         the slots either — keeping the number of lamps that actually reach
-         the shader CONSTANT is what stops three.js recompiling every
-         material mid-turn, which is felt as a stutter, not a frame rate */
+         the slots — keeping the number of lamps that actually reach the
+         shader CONSTANT is what stops three.js recompiling every material
+         mid-turn, which is felt as a stutter, not a frame rate */
       let par=L.parent, shown=true;
       while(par){ if(!par.visible){ shown=false; break; } par=par.parent; }
       if(!shown){ L.visible=false; continue; }
+      /* a dark lamp adds nothing to the picture, but it is still allowed to
+         hold a slot so the count never changes between floors */
+      const dark=L.intensity<=0.002;
       L.getWorldPosition(_lbP);
       const reach=L.distance||60;
       /* nothing outside the lamp's own radius can be lit by it, so if that
@@ -3006,7 +3396,7 @@ const LightBudget={
       /* on screen always beats off screen; after that, the nearest and
          brightest win. Keeping the COUNT steady matters as much as the
          cull itself — three.js recompiles every shader when it changes. */
-      L.userData._w=(seen?1e6:0)+L.intensity*reach/(1+d*0.6);
+      L.userData._w=(dark?0:1e9)+(seen?1e6:0)+L.intensity*reach/(1+d*0.6);
       live.push(L);
     }
     const keep=Math.min(this.max,live.length);
@@ -3105,6 +3495,16 @@ function updateLights(dt){
       /* while she is near, every tube on the floor stutters */
       if(l.surge>0){ l.surge-=dt; v*=(Math.random()<0.45)?rnd(0.02,0.25):rnd(0.8,1.25); }
       else if(on&&P.danger>0.12&&Math.random()<P.danger*0.5) v*=rnd(0.05,0.4);
+      /* A tube you are looking straight at behaves itself; the ones at the
+         edge of your eye do not. You never catch it happening, you only
+         ever notice that it happened. */
+      if(on&&f===P.floor){
+        const dx=l.L.position.x-P.x, dz=l.L.position.z-P.z, dd=Math.hypot(dx,dz)||1;
+        const dot=(dx*(-Math.sin(P.yaw))+dz*(-Math.cos(P.yaw)))/dd;
+        if(dot<0.35&&Math.random()<dt*(1.1+P.danger*2.4)) v*=rnd(0.05,0.45);
+      }
+      /* and the whole floor breathes, slowly, under all of it */
+      v*=Mood.breath;
       l.L.intensity=on?l.base*v:0;
       l.tube.visible=on&&v>0.05;
       l.tube.material.color.setScalar(on?clamp(v,0.05,1):0);
@@ -4611,7 +5011,7 @@ const Dread={
     /* the rare, expensive one: her face */
     this.faceT-=dt;
     if(this.faceT<=0){
-      this.faceT=rnd(70,140);
+      this.faceT=rnd(150,240);          /* Scare runs the frequent ones now */
       if(Ghost.mode==='off'&&P.danger<0.1){
         /* half the time it is the picture, half the time it is her, standing
            in the corridor you were just looking down. She does not chase —
@@ -5332,7 +5732,7 @@ function frame(now){
       Torch.update(dt,P.danger);
       scanFocus(); Story.update(dt); Ending.update(dt); Guide.update(dt);
       Effects.update(dt); updateScare(dt); Dread.update(dt); Quality.watch(dt);
-      Walls.update(dt); Jolt.update(dt);
+      Walls.update(dt); Jolt.update(dt); Mood.update(dt); Scare.update(dt);
       if(!P.inside) updateExterior(dt,P.x,P.camY,P.z);
     }
     updateHUD(dt);
@@ -5394,7 +5794,7 @@ async function boot(){
     handTex.needsUpdate=handNrm.needsUpdate=true;
     Torch.init();
     buildExterior(model);
-    Ghost.build(ch); Silh.make(ch);
+    Ghost.build(ch); Silh.make(ch); Scare.build(ch);
     await new Promise(r=>setTimeout(r,16));
     for(let f=BASEMENT;f<=TOP;f++){
       buildFloor(f);
@@ -5475,6 +5875,7 @@ function startRun(m,quiet){
   P.startT=performance.now();
   fadeTo(0,400);
   Guide.reset(); Guide.on=true; Dread.reset(); Walls.reset(); Jolt.reset();
+  Scare.reset(); Mood.reset();
   P.grace=0; P.fallen=null;
   if(quiet) startMission(m,true);
   else if(m===1){ startMission(1); card(1); }
@@ -5549,7 +5950,8 @@ $('chapbtn').onclick=()=>{
 };
 
 window.IGMC={P,State,Story,Ghost,Torch,Int,Ext,A,Music,Scream,Pandit,ITEMS,MISSIONS,MAT,camera,renderer,scene,key,head,
-  Intro,Guide,Dread,Touch,Quality,LightBudget,Walls,Jolt,INTRO_FRAMES,INTRO_PIC,Sketch,
+  Intro,Guide,Dread,Touch,Quality,LightBudget,Walls,Jolt,Scare,Mood,FTHEME,FLOOR_DEPT,
+  INTRO_FRAMES,INTRO_PIC,Sketch,
   startRun,startMission,teleport,setFloor,roomC,FLOOR_H,HX,HZ,SWR,RUN,ELEV,Cine,Tape,Ending,
   give:(id)=>{ if(!ITEMS[id]) ITEMS[id]={label:id}; giveItem(id); },
   tp(x,z,yaw){ P.x=x; P.z=z; if(yaw!==undefined) P.yaw=yaw;
