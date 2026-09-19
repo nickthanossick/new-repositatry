@@ -543,7 +543,7 @@ import * as THREE from "data:text/javascript;base64,LyoqCiAqIEBsaWNlbnNlCiAqIENv
 
 const TERRAIN={ X0:-45, X1:57, Z0:-35, Z1:67, MAXH:40, N:512 };
 const PORCH_Y=0.90, YARD_Y=0.0, DOOR_Z=9.40, DOOR_X=0.0;
-const SPAWN={x:0,z:32};
+const SPAWN={x:-2.2,z:12.2,y:0.36,yaw:-0.67};
 const SITE={x0:-43,x1:55,z0:-33,z1:65};
 
 /* interior plan (metres, floor-local, centred on 0) */
@@ -1478,20 +1478,20 @@ function buildExterior(model){
 
   /* the big hoarding above the entrance canopy */
   if(signTex){
-    const SW_=21, SH_=2.6, SY=24.6, SZ=9.62;
+    const SW_=13.0, SH_=1.9, SY=10.6, SZ=9.22;
     const fr=new Builder();
     fr.box(0,SY,SZ-0.18, SW_+0.6,SH_+0.6,0.30, 0x1b2b3a,0.5,0.05);
     fr.box(0,SY+SH_/2+0.5,SZ+0.26, SW_+0.6,0.20,0.8, 0x39434c,1.2);
-    for(const bx of [-1,1]) fr.box(bx*(SW_/2-1.2),SY-SH_/2-1.0,SZ-0.30, 0.20,2.0,0.20, 0x2a3138,2);
+    for(const bx of [-1,1]) fr.box(bx*(SW_/2-1.2),SY-SH_/2-0.7,SZ-0.26, 0.16,1.4,0.16, 0x2a3138,2);
     G.add(fr.mesh(MAT.metal));
     const board=new THREE.Mesh(new THREE.PlaneGeometry(SW_,SH_),
       new THREE.MeshStandardMaterial({map:signTex,roughness:.82,
         emissive:0xffffff,emissiveMap:signTex,emissiveIntensity:0.20}));
     board.position.set(0,SY,SZ+0.02); G.add(board);
-    for(let i=-2;i<=2;i++){
-      const L=new THREE.SpotLight(0xfff0d0,34,22,0.55,0.8,1.1);
-      L.position.set(i*5.0, SY+SH_/2+1.2, SZ+1.6);
-      L.target.position.set(i*5.0, SY-0.3, SZ); G.add(L); G.add(L.target);
+    for(let i=-1;i<=1;i++){
+      const L=new THREE.SpotLight(0xfff0d0,30,18,0.55,0.8,1.1);
+      L.position.set(i*4.4, SY+SH_/2+1.0, SZ+1.3);
+      L.target.position.set(i*4.4, SY-0.3, SZ); G.add(L); G.add(L.target);
     }
   }
 
@@ -2606,7 +2606,7 @@ $('iskip').onclick=()=>Intro.finish();
 })();
 
 /* ═════════════ player ═════════════ */
-const P={ x:SPAWN.x,z:SPAWN.z,footY:YARD_Y,camY:YARD_Y+EYE,
+const P={ x:SPAWN.x,z:SPAWN.z,footY:SPAWN.y,camY:SPAWN.y+EYE,
   yaw:0,pitch:-0.05,vx:0,vz:0,bob:0,stepPhase:0,
   inside:false,floor:0,run:false,alive:true,frozen:0,
   pulse:62,danger:0,noteOpen:false,items:new Set(),startT:0 };
@@ -5853,12 +5853,12 @@ function startMission(m,quiet){
     Ext.group.visible=true; Int.group.visible=false; Ext.jeep.visible=false;
     for(const k in Int.floors) Int.floors[k].group.visible=false;
     P.inside=false; P.floor=-1;
-    P.x=SPAWN.x; P.z=SPAWN.z; P.footY=YARD_Y; P.camY=YARD_Y+EYE; P.yaw=0; P.pitch=-0.04;
+    P.x=SPAWN.x; P.z=SPAWN.z; P.footY=SPAWN.y; P.camY=SPAWN.y+EYE; P.yaw=SPAWN.yaw; P.pitch=-0.02;
     head.position.set(P.x,P.camY,P.z); head.rotation.y=P.yaw;
     setRain(true); A.indoor(false);
     ui.floorlab.textContent='OUTSIDE';
     ui.misslab.textContent=MISSION_TITLES[0][0];
-    setObjective('Seedhiyan chadho — main gate','IGMC · Emergency block');
+    setObjective('Main gate se andar jao','IGMC · Emergency block');
     Story.mission=1; Story.beats=[]; Story.beat=-1; Story.mt=0; Story.cleanup();
     Story.beats=MISSIONS[1]();
     /* the first beat waits until the player is inside */
