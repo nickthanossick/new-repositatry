@@ -108,3 +108,61 @@ RI.update=function(dt){
    Wherever a legacy box was replaced, the same number of draws is made,
    so the rest of the floor rolls exactly the layout it always did. */
 RI.burn=function(n){ for(let i=0;i<n;i++) Math.random(); };
+
+/* ═════════════ GPU warm-up ═════════════
+   three.js compiles a shader the first time a material is drawn with a given
+   light set, and uploads a mesh the first time it is drawn. Left alone that
+   happens the moment a mission teleports you to a floor you have not seen —
+   a multi-second freeze behind the black transition. All of it is done here,
+   once, while the loading bar is still up. */
+RI.warmup=async function(set){
+  const t0=performance.now();
+  const say=(p,t)=>{ if(set) set(p,t); };
+  const busy=()=>State.playing&&!State.paused;          // the player got there first: stop
+  const tex=new Set(), addTex=v=>{ if(v&&v.isTexture) tex.add(v); };
+  scene.traverse(o=>{ const ms=o.material?(Array.isArray(o.material)?o.material:[o.material]):[];
+    for(const m of ms){
+      for(const k of ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','alphaMap','aoMap','envMap','bumpMap','lightMap']) addTex(m[k]);
+      if(m.uniforms) for(const k in m.uniforms) addTex(m.uniforms[k]&&m.uniforms[k].value);
+    } });
+  for(const k in RIU) addTex(RIU[k].value);
+  let n=0; for(const t of tex){ if(busy()) return; try{ renderer.initTexture(t); }catch(_){} if(++n%10===0) await new Promise(r=>setTimeout(r,0)); }
+  /* programs: everything is made visible only for the synchronous part of
+     compile() — the async wait for the driver happens with the scene back
+     exactly as it was */
+  const compile=async(cfg)=>{
+    if(busy()) return;
+    const vis=[]; scene.traverse(o=>vis.push([o,o.visible]));
+    let p=null;
+    try{ scene.traverse(o=>{ o.visible=true; }); cfg();
+      LightBudget.t=0; LightBudget.scanT=0; LightBudget.update(0);
+      p=renderer.compileAsync?renderer.compileAsync(scene,camera):(renderer.compile(scene,camera),null);
+    }catch(e){ console.warn('RI warmup compile',e); }
+    finally{ for(const [o,v] of vis) o.visible=v; LightBudget.t=0; LightBudget.scanT=0; }
+    if(p) try{ await p; }catch(_){}
+  };
+  say(.2,'PREPARING GPU');
+  await compile(()=>{ Int.group.visible=false; Ext.group.visible=true; });
+  await compile(()=>{ Ext.group.visible=false; Int.group.visible=true; });
+  /* one draw of every floor from above uploads its meshes and textures */
+  const cam=new THREE.OrthographicCamera(-HX-2,HX+2,HZ+2,-HZ-2,.1,220);
+  cam.up.set(0,0,-1); cam.position.set(0,110,0); cam.lookAt(0,0,0); cam.updateMatrixWorld(true);
+  const rt=new THREE.WebGLRenderTarget(64,64);
+  const order=[1,2,0,3,4,5,6,7,8,9,10].filter(f=>Int.floors[f]);
+  for(const f of order){
+    if(busy()) break;
+    const vis=[]; scene.traverse(o=>vis.push([o,o.visible]));
+    try{
+      Ext.group.visible=false; Int.group.visible=true;
+      for(const k in Int.floors){ const F=Int.floors[k], kk=+k; F.group.visible=IS_TOUCH?(kk===f):Math.abs(kk-f)<=1;
+        if(F.riDetail) for(const m of F.riDetail) m.visible=(kk===f); }
+      LightBudget.t=0; LightBudget.scanT=0; LightBudget.update(0);
+      const prev=renderer.getRenderTarget();
+      renderer.setRenderTarget(rt); renderer.render(scene,cam); renderer.setRenderTarget(prev);
+    }finally{ for(const [o,v] of vis) o.visible=v; this._detFloor=undefined; LightBudget.t=0; LightBudget.scanT=0; }
+    await new Promise(r=>setTimeout(r,30));
+  }
+  rt.dispose();
+  this.warm=true;
+  console.log('RI warmup ms',Math.round(performance.now()-t0));
+};

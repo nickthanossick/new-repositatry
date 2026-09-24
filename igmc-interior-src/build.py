@@ -12,7 +12,7 @@ def rep(old, new, count=1):
     s = s.replace(old, new)
 
 ri = ''.join(open(D + f, encoding='utf-8').read() for f in
-             ['ri_a_core.js', 'ri_b_geo.js', 'ri_c_props.js', 'ri_d_arch.js', 'ri_e_fx.js'])
+             ['ri_a_core.js', 'ri_b_geo.js', 'ri_c_props.js', 'ri_d_arch.js', 'ri_e_fx.js', 'ri_g_haunt.js', 'ri_h_hand.js'])
 
 # 0. header note
 rep('<title>IGMC: NIGHT WATCH — REAL IGMC INTERIOR REDO</title>',
@@ -310,7 +310,110 @@ rep("""    updateHUD(dt);
 
 # 20. expose for debugging
 rep("""window.IGMC={P,State,Story,Ghost,Torch,Int,Ext,A,Music,Scream,Pandit,ITEMS,MISSIONS,MAT,camera,renderer,scene,key,head,""",
-    """window.IGMC={P,State,Story,Ghost,Torch,Int,Ext,A,Music,Scream,Pandit,ITEMS,MISSIONS,MAT,camera,renderer,scene,key,head,RI,RIU,""")
+    """window.IGMC={P,State,Story,Ghost,Torch,Int,Ext,A,Music,Scream,Pandit,ITEMS,MISSIONS,MAT,camera,renderer,scene,key,head,RI,RIU,
+  UI:{say,toast,setObjective,setPrompt,openDoc,closeDoc,die,pauseGame},""")
+
+# 21. warm the GPU before the menu appears
+rep("""    Intro.build();                       // decode the storyboard while the menu is up
+    $('loader').classList.add('hide'); $('menu').classList.remove('hide');""",
+"""    Intro.build();                       // decode the storyboard while the menu is up
+    Quality.apply('high');
+    $('loader').classList.add('hide'); $('menu').classList.remove('hide');
+    /* the GPU warms up behind the menu and the intro, not on the loading bar */
+    setTimeout(()=>{ RI.warmup(null).catch(e=>console.warn('RI warmup',e)); },120);""")
+
+# 22. shorter mission transitions: the card is read in under two seconds
+rep("""  $('card').classList.add('on');
+  setTimeout(()=>{ $('card').classList.remove('on'); if(then) then(); },3000);""",
+"""  $('card').classList.add('on');
+  setTimeout(()=>{ $('card').classList.remove('on'); if(then) then(); },1900);""")
+rep("""    fadeTo(1,next===6?520:900);
+    if(next===6){
+      setTimeout(()=>{ fadeTo(0,900); this.begin(6); toast('FINAL RITUAL — AB KOI BREAK NAHI.'); },650);
+    } else setTimeout(()=>{ card(next,()=>{ fadeTo(0,900); this.begin(next); }); },1000);""",
+"""    fadeTo(1,next===6?450:500);
+    if(next===6){
+      setTimeout(()=>{ fadeTo(0,700); this.begin(6); toast('FINAL RITUAL — AB KOI BREAK NAHI.'); },500);
+    } else setTimeout(()=>{ card(next,()=>{ fadeTo(0,650); this.begin(next); }); },520);""")
+
+# 23. the light budget sees a new lamp the frame it is created, so the
+#     number of lights reaching the shaders never changes mid-mission
+rep("""/* ═════════════ effects ═════════════ */
+const Effects={""",
+"""LightBudget.dirty=false;
+{ const _lbUpd=LightBudget.update.bind(LightBudget);
+  LightBudget.update=function(dt){ if(this.dirty){ this.dirty=false; this.scanT=0; this.t=0; } return _lbUpd(dt); }; }
+{ const _o3dAdd=THREE.Object3D.prototype.add;
+  THREE.Object3D.prototype.add=function(){
+    for(let i=0;i<arguments.length;i++){ const o=arguments[i]; if(o&&o.isPointLight){ LightBudget.dirty=true; break; } }
+    return _o3dAdd.apply(this,arguments); }; }
+
+/* ═════════════ effects ═════════════ */
+const Effects={""")
+
+# 24. English text layer and the quieter HUD
+txt = open(D + 'ri_f_text.js', encoding='utf-8').read()
+rep("""const TERRAIN={ X0:-45, X1:57""",
+    txt + """
+{ const st=document.createElement('style'); st.textContent=RI_HUD_CSS; document.head.appendChild(st); }
+riHudInit();
+
+const TERRAIN={ X0:-45, X1:57""")
+
+# 25. the static screens, in English
+for a, b in [
+    ('<div class="h">SAAMAAN</div>', '<div class="h">ITEMS</div>'),
+    ('<div id="docclose">[ E / CLICK &mdash; BAND KARO ]</div>', '<div id="docclose">[ E / CLICK &mdash; CLOSE ]</div>'),
+    ("""    Tu <em>Dev Pandit</em> hai. IGMC ke purane block me ek aurat ki aawaz hai jo
+    <em>dus minute</em> se nikal nahi paa rahi. Chhe mission. Dus manzil. Ek torch.<br/>
+    Usse maarna nahi hai. Usse <em>sach</em> dena hai.""",
+     """    You are <em>Dev Pandit</em>. In the old block of IGMC, a woman is trapped inside
+    the same <em>ten minutes</em>. Six missions. Ten floors. One torch.<br/>
+    You are not here to kill her. You are here to give her the <em>truth</em>."""),
+    ('<button class="btn" id="chapbtn">Mission chuno</button>', '<button class="btn" id="chapbtn">Select mission</button>'),
+    ("""    <b>W A S D</b><span>chalna</span>
+    <b>SHIFT</b><span>daudna &mdash; awaaz hoti hai</span>
+    <b>F</b><span>torch on / off</span>
+    <b>E</b><span>interact &middot; darwaza &middot; uthao</span>
+    <b>R</b><span>torch cell badlo</span>
+    <b>TAB</b><span>objective yaad karo</span>
+    <b>J</b><span>test &mdash; chudail bulao / hatao</span>
+    <b>ESC</b><span>pause</span>""",
+     """    <b>W A S D</b><span>move</span>
+    <b>SHIFT</b><span>run &mdash; she hears it</span>
+    <b>F</b><span>torch</span>
+    <b>E</b><span>use &middot; doors &middot; pick up</span>
+    <b>R</b><span>swap torch cell</span>
+    <b>TAB</b><span>show objective</span>
+    <b>ESC</b><span>pause</span>"""),
+    ('<div class="stat">Headphones lagao.</div>', '<div class="stat">Play with headphones.</div>'),
+    ('<div class="title" style="font-size:clamp(22px,4.6vw,40px)">SAANS LE</div>', '<div class="title" style="font-size:clamp(22px,4.6vw,40px)">BREATHE</div>'),
+    ('<div class="sub" id="deathsub">Usne tujhe chhoo liya</div>\n  <div class="title">MAUT</div>',
+     '<div class="sub" id="deathsub">She touched you</div>\n  <div class="title">YOU DIED</div>'),
+    ('<button class="btn primary" id="retrybtn">Wahin se phir</button>', '<button class="btn primary" id="retrybtn">Retry</button>'),
+    ('<div class="title">SUBAH</div>', '<div class="title">MORNING</div>'),
+    ('<button class="btn primary" id="againbtn">Phir se khelo</button>', '<button class="btn primary" id="againbtn">Play again</button>'),
+    ("""<div id="rot">PHONE GHUMAO &mdash; <b>landscape</b><br/><br/>Andhera landscape me hi chalta hai.<br/>
+Headphone laga lo &mdash; cheekh peeche se aati hai.</div>""",
+     """<div id="rot">TURN YOUR PHONE &mdash; <b>landscape</b><br/><br/>The dark only works in landscape.<br/>
+Wear headphones &mdash; the screams come from behind.</div>"""),
+]:
+    rep(a, b)
+
+# 26. the corridor notices are English boards drawn at load (and 600 KB lighter)
+s, n = re.subn(r"hindiTex=await loadImageTex\('data:image/jpeg;base64,[A-Za-z0-9+/=]+'[^)]*\);",
+               "hindiTex=riSignAtlas();", s)
+if n != 1: raise SystemExit('hindiTex anchor %d' % n)
+
+# 27. the new wall-standing furniture collides with the player (the ghost's nav is unchanged)
+rep("""function collide(F,px,pz,r){
+  for(const rect of F.rects){""","""function collide(F,px,pz,r){
+  for(const rect of (F.riCol&&F.riCol.length?F.rects.concat(F.riCol):F.rects)){""")
+
+# 28. the view model: a modelled hand gripping a modelled torch
+s, n = re.subn(r"    const tb=new Builder\(\);\n    tb\.cyl\(0, 0\.115,0.*?    this\.viewBase=this\.view\.position\.clone\(\);\n",
+               "    RI.burn(76); RI.buildView(this);\n", s, flags=re.S)
+if n != 1: raise SystemExit('view model anchor %d' % n)
 
 open(OUT, 'w', encoding='utf-8').write(s)
 print('patched OK', len(s))

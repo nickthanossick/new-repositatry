@@ -240,6 +240,12 @@ const RI_SRC={
   detailR:'.5'
 };
 
+/* macro variation for the runtime shaders: four tileable noise fields,
+   read with one texture fetch instead of dozens of hash evaluations */
+const RI_MACRO=`
+  vec4 bake(vec2 uv){
+    return vec4(riFBM(uv*4.,vec2(4.),5),riFBM(uv*8.+3.7,vec2(8.),5),riVN(uv*64.,vec2(64.)),riFBM(uv*16.+1.3,vec2(16.),4));
+  }`;
 /* the view from the windows: Shimla hills at night, lights on the ridges */
 const RI_PANO=`
   float ridge(float u,float base,float amp,float fq,float seed){
@@ -286,7 +292,7 @@ const RIU={
   uRItiA:{value:null}, uRItiN:{value:null},
   uRIceA:{value:null}, uRIceN:{value:null},
   uRIdetA:{value:null}, uRIdetN:{value:null},
-  uRIpano:{value:null}
+  uRIpano:{value:null}, uRImac:{value:null}
 };
 
 const RI_VS_PARS=`
@@ -305,7 +311,9 @@ varying vec3 vRIw; varying vec3 vRIwn;
 uniform float uRItime; uniform float uRIpow; uniform float uRIflash;
 uniform float uRIdmg[11];
 uniform sampler2D uRIAO; uniform vec4 uRIAOi;
+uniform sampler2D uRImac;
 `+RI_NOISE+`
+vec4 riMx(vec2 p){ return texture2D(uRImac,p); }
 float riFloorOf(float y){ return clamp(floor((y+.3)/3.6)+1.,0.,10.); }
 float riDmgOf(float fi){ return uRIdmg[int(fi)]; }
 vec3 riAOs(vec3 p){
@@ -353,36 +361,37 @@ float riSat=0.;
 #endif
 float riGloss=smoothstep(.08,.2,riSat);
 riC*=.88+.2*riA.r;
-float riM1=riF3(vRIw*.33+vec3(riFi*7.1));
+vec2 riFo=vec2(riFi*.37,riFi*.61);
+float riM1=riMx(riUV*.0825+riFo).r;
 float riTop=smoothstep(1.6,3.05,riLy);
 float riSV=riM1*.85+riTop*.32*riDm+riA.w*.08;
 float riSt=smoothstep(.58,.70,riSV)*(.22+.78*riDm);
 float riRing=(smoothstep(.57,.60,riSV)-smoothstep(.60,.655,riSV))*(.3+.7*riDm);
 riC=mix(riC,riC*vec3(.80,.71,.54),riSt*.55);
 riC*=1.-riRing*.2;
-float riDr=smoothstep(.70,.95,riN3(vec3(riUV.x*15.,riLy*.33,riFi*3.)))*smoothstep(.4,2.6,riLy)*riDm;
+float riDr=smoothstep(.70,.95,riMx(vec2(riUV.x*.234,riLy*.0052)+riFo).b)*smoothstep(.4,2.6,riLy)*riDm;
 riC=mix(riC,riC*vec3(.76,.72,.64),riDr*.55);
 float riKick=1.-smoothstep(.0,.42,riLy);
-float riSc=smoothstep(.76,.92,riN3(vec3(riUV.x*5.,riLy*14.,riFi)))*(1.-smoothstep(.1,.85,riLy));
+float riSc=smoothstep(.76,.92,riMx(vec2(riUV.x*.078,riLy*.219)+riFo.yx).b)*(1.-smoothstep(.1,.85,riLy));
 riC*=1.-.16*riKick*(.4+riDm)-.24*riSc*(1.-riGloss*.5);
 float riDamp=max(1.-smoothstep(.15,1.1,riLy),riSt*1.2)+riDm*.35;
-float riPf=riF3(vRIw*2.6+vec3(0.,0.,riFi*2.3))*.66+riF3(vRIw*9.+3.)*.22+riN3(vRIw*38.)*.12+riA.w*.05;
+float riPf=riMx(riUV*.65+riFo*1.3).r*.66+riMx(riUV*.5625+.3).a*.22+riMx(riUV*.594+.7).b*.12+riA.w*.05;
 float riPth=.83-.12*riDm-.09*clamp(riDamp,0.,1.);
 float riPeel=smoothstep(riPth,riPth+.012,riPf)*step(.12,riDm);
 float riDeep=smoothstep(riPth+.095,riPth+.105,riPf)*step(.5,riDm);
 float riPeelEdge=smoothstep(riPth-.012,riPth,riPf)*(1.-riPeel)*step(.12,riDm);
-vec3 riBare=vec3(.50,.50,.485)*(.78+.3*riA.r)*(.85+.15*riN3(vRIw*14.));
+vec3 riBare=vec3(.50,.50,.485)*(.78+.3*riA.r)*(.85+.15*riMx(riUV*.219).b);
 riC=mix(riC,riBare,riPeel);
 riC*=1.-.22*riPeelEdge;
 vec2 riBk=vec2(riUV.x/.235,riLy/.085); riBk.x+=mod(floor(riBk.y),2.)*.5;
 vec2 riBf=fract(riBk);
 float riMortar=1.-smoothstep(.05,.11,min(min(riBf.x,1.-riBf.x)*2.76,min(riBf.y,1.-riBf.y)));
 vec3 riBrick=mix(vec3(.25,.115,.07)*(.62+.5*riH12(floor(riBk)))*(.7+.45*riA.r),vec3(.33,.31,.28),riMortar);
-riBrick=mix(riBrick,riBare*.8,smoothstep(.55,.8,riF3(vRIw*6.+9.))*.6);
+riBrick=mix(riBrick,riBare*.8,smoothstep(.55,.8,riMx(riUV*.75+.3).g)*.6);
 riBrick*=.75+.25*smoothstep(.0,.6,riLy);
 riC=mix(riC,riBrick,riDeep);
 riC*=1.-riA.z*(.10+.30*riDm)*(1.-riDeep);
-float riMo=smoothstep(.62,.8,riF3(vRIw*2.4+5.))*(1.-smoothstep(.0,1.1,riLy))*riDm;
+float riMo=smoothstep(.62,.8,riMx(riUV*.6+.5).r)*(1.-smoothstep(.0,1.1,riLy))*riDm;
 riC=mix(riC,vec3(.10,.11,.08),riMo*.6);
 diffuseColor.rgb=riC;
 `;
@@ -437,12 +446,13 @@ float riPid=riH12(floor(riUV/.3)+riFi*3.);
 #endif
 vec3 riC=diffuseColor.rgb*riFromSRGB(riA.rgb)*1.12;
 riC*=.965+.07*riPid;
-float riM=riF3(vec3(riUV*.42,riFi*5.3));
-float riM2=riF3(vec3(riUV*1.9,riFi*2.1+7.));
+vec2 riFo=vec2(riFi*.37,riFi*.61);
+float riM=riMx(riUV*.105+riFo).r;
+float riM2=riMx(riUV*.2375+riFo.yx).g;
 vec3 riAo=riAOs(vRIw+vec3(0.,.05,0.));
 float riDirt=clamp(riAo.r*1.1+riAo.g*.7,0.,1.);
 riC*=1.-.34*riDirt*(.5+.5*riM2)-.13*smoothstep(.45,.8,riM)*(.3+riDm);
-float riWet=smoothstep(.69-.12*riDm,.715-.12*riDm,riF3(vec3(riUV*.55,riFi*9.1))+riM2*.12)*smoothstep(.12,.3,riDm)*riTop;
+float riWet=smoothstep(.69-.12*riDm,.715-.12*riDm,riMx(riUV*.1375+riFo*1.7+.13).r+riM2*.12)*smoothstep(.12,.3,riDm)*riTop;
 riC*=1.-.38*riWet;
 riC=mix(riC,vec3(.60,.44,.21)*(.55+.35*riM2),riStrip);
 diffuseColor.rgb=riC;
@@ -490,16 +500,17 @@ float riMiss=step(1.-.05*riDm*riDm-.003,riH12(riId+riFi*5.+.7))*riBot;
 float riStn=step(1.-.12*riDm-.02,riH12(riId+riFi*2.+3.3))*riBot;
 vec2 riScn=vec2(riH12(riId+1.1),riH12(riId+2.2))*.6+.2;
 vec2 riSq=(riF-riScn)*vec2(1.+.6*riH12(riId+4.4),1.+.6*riH12(riId+5.5));
-float riSd=length(riSq)+.22*(riN3(vec3(riT*4.,riFi))-.5)+.10*(riN3(vec3(riT*11.,riFi+3.))-.5);
+vec2 riFo=vec2(riFi*.37,riFi*.61);
+float riSd=length(riSq)+.22*(riMx(riT*.0625+riFo).b-.5)+.10*(riMx(riT*.172+riFo+.5).b-.5);
 float riStain=riStn*(1.-smoothstep(.18,.34,riSd));
 float riStR=riStn*(smoothstep(.26,.31,riSd)-smoothstep(.31,.37,riSd));
 vec3 riC=diffuseColor.rgb*mix(1.,.74+.3*riA.r,riBot);
 riC=mix(riC,riC*vec3(.83,.74,.57),riStain*.55);
 riC*=1.-riStR*.26;
 riC*=1.-.32*riGr;
-riC=mix(riC,diffuseColor.rgb*.92*(.86+.1*riN3(vec3(riT*40.,1.))),riBar);
+riC=mix(riC,diffuseColor.rgb*.92*(.86+.1*riMx(riT*.625).b),riBar);
 riC=mix(riC,vec3(.010,.010,.012),riMiss*(1.-riBar));
-float riMac=riF3(vec3(vRIw.xz*.5,riFi*3.));
+float riMac=riMx(vRIw.xz*.125+riFo).r;
 riC*=1.-.12*smoothstep(.5,.8,riMac)*(.3+riDm);
 diffuseColor.rgb=riC;
 `;
@@ -562,7 +573,7 @@ vec3 riC=diffuseColor.rgb;
 float riWm=smoothstep(.52,.86,riD.g+riWr*.3)*riWr;
 if(riId==1.){
   riNs=.10;
-  float ch=smoothstep(.84-.3*riWr,.86-.3*riWr,riD.g*.7+riD.b*.3)*smoothstep(.2,.36,riWr);
+  float ch=smoothstep(.9-.2*riWr,.92-.2*riWr,riD.g*.7+riD.b*.3)*smoothstep(.2,.36,riWr)*smoothstep(.56,.72,riMx(vRIo.xy*.45+vRIo.z*.31+.2).r);
   riC=mix(riC,mix(vec3(.15,.145,.14),vec3(.30,.13,.06),clamp(riWr*1.3,0.,1.)),ch);
   riRo=mix(riRo,.66,ch); riMe=mix(riMe,.45,ch*(1.-riWr));
 } else if(riId==2.){
@@ -572,7 +583,7 @@ if(riId==1.){
   vec3 q=vRIo*420.; float wv=.5+.5*sin(q.x+q.z)*sin(q.y-q.z*.7);
   riC*=.85+.22*wv; riNs=.28; riRo=max(riRo,.84);
 } else if(riId==4.){
-  float g=riF3(vec3(vRIo.x*3.,vRIo.y*42.,vRIo.z*3.));
+  float g=riMx(vec2((vRIo.x+vRIo.z)*.75,vRIo.y*10.5)).r;
   riC*=.76+.34*(.5+.5*sin(g*26.)); riNs=.08;
 } else if(riId==5.){
   riNs=.07; riC*=.95+.1*riD.r;
@@ -641,7 +652,7 @@ const RI_GLASS_EMIT=`
   vec2 gx=vec2(abs(g1.x)<abs(g2.x)?g1.x:g2.x,dFdx(v)), gy=vec2(abs(g1.y)<abs(g2.y)?g1.y:g2.y,dFdy(v));
   vec3 pano=riFromSRGB(textureGrad(uRIpano,vec2(u,v),gx,gy).rgb);
   float tw=.82+.18*riN3(vec3(u*300.,v*300.,uRItime*1.7));
-  float dirt=smoothstep(.45,.85,riF3(vec3(gp*3.,7.)));
+  float dirt=smoothstep(.45,.85,riMx(gp*.75+.2).r);
   vec3 em=pano*tw*2.2*(1.+uRIflash*7.)+vec3(.30,.34,.42)*uRIflash*.22;
   em*=mix(1.,.5,dirt)*(1.-.25*wetm);
   em+=vec3(.012,.014,.018)*dirt;

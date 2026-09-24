@@ -208,6 +208,7 @@ const RI={
     const ce=await step(.45,'CEILING TILES',()=>RIBake.set(s2,.6,.004,RI_SRC.ceil,RI_SRC.ceilA,RI_SRC.ceilR));
     const de=await step(.6,'MICRO DETAIL',()=>RIBake.set(512,.25,.0012,RI_SRC.detail,RI_SRC.detailA,RI_SRC.detailR));
     const pano=await step(.75,'SHIMLA NIGHT',()=>RIBake.run(RIQ.pano,RIQ.pano/2,RI_PANO,null,true));
+    const mac=RIBake.run(512,512,RI_MACRO,null,true); RIU.uRImac.value=mac.texture; this.macRT=mac;
     RIU.uRIplA.value=pl.A; RIU.uRIplN.value=pl.N; RIU.uRItzA.value=tz.A; RIU.uRItzN.value=tz.N;
     RIU.uRItiA.value=ti.A; RIU.uRItiN.value=ti.N; RIU.uRIceA.value=ce.A; RIU.uRIceN.value=ce.N;
     RIU.uRIdetA.value=de.A; RIU.uRIdetN.value=de.N; RIU.uRIpano.value=pano.texture;
@@ -251,48 +252,48 @@ const RI={
     const c=document.createElement('canvas'); c.width=512; c.height=160; const g=c.getContext('2d');
     g.fillStyle='#0c7a3a'; g.fillRect(0,0,512,160);
     g.strokeStyle='rgba(255,255,255,.9)'; g.lineWidth=6; g.strokeRect(8,8,496,144);
-    g.fillStyle='#f4fff6'; g.font='700 78px Arial,Helvetica,sans-serif'; g.textAlign='left'; g.textBaseline='middle';
-    g.fillText('EXIT',150,62);
-    g.font='600 40px "Nirmala UI","Mangal","Noto Sans Devanagari",sans-serif'; g.fillText('निकास',160,122);
+    g.fillStyle='#f4fff6'; g.font='700 86px Arial,Helvetica,sans-serif'; g.textAlign='left'; g.textBaseline='middle';
+    g.fillText('EXIT',138,84);
     g.save(); g.translate(78,80); g.fillStyle='#f4fff6';
     g.beginPath(); g.arc(8,-40,11,0,7); g.fill(); g.lineWidth=11; g.lineCap='round'; g.strokeStyle='#f4fff6';
     g.beginPath(); g.moveTo(2,-24); g.lineTo(-6,8); g.lineTo(-26,30); g.moveTo(-6,8); g.lineTo(16,22); g.lineTo(16,44);
     g.moveTo(0,-18); g.lineTo(24,-6); g.moveTo(0,-18); g.lineTo(-22,-4); g.stroke(); g.restore();
-    g.fillStyle='#f4fff6'; g.beginPath(); g.moveTo(440,80); g.lineTo(402,52); g.lineTo(402,68); g.lineTo(372,68); g.lineTo(372,92); g.lineTo(402,92); g.lineTo(402,108); g.closePath(); g.fill();
+    g.fillStyle='#f4fff6'; g.beginPath(); g.moveTo(478,80); g.lineTo(440,52); g.lineTo(440,68); g.lineTo(400,68); g.lineTo(400,92); g.lineTo(440,92); g.lineTo(440,108); g.closePath(); g.fill();
     const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=RIQ.aniso; return t;
   },
   deptTex(fi){
-    const HIN=['शवगृह एवं सेवाएँ','नई ओपीडी / पंजीकरण','मेडिसिन वार्ड','अभिलेख एवं प्रशासन','शिशु वार्ड','ऑपरेशन थियेटर एवं रेडियोलॉजी',
-      'फार्मेसी भंडार','पुराना बंद विंग','मानसिक स्वास्थ्य विभाग','आई.सी.यू. / गहन चिकित्सा','प्रसूति वार्ड'];
+    const SUB=['BASEMENT · MORTUARY · STORES · GENERATOR','GROUND FLOOR · CASUALTY · REGISTRATION','GENERAL MEDICINE · MALE & FEMALE WARDS',
+      'MEDICAL RECORDS · ADMINISTRATION','PAEDIATRICS · NEONATAL CARE','OPERATION THEATRES · X-RAY · RADIOLOGY',
+      'CENTRAL PHARMACY · DRUG STORE','WING CLOSED · NO ENTRY','PSYCHIATRY · COUNSELLING','INTENSIVE CARE · HIGH DEPENDENCY','LABOUR ROOM · MATERNITY · NURSERY'];
     const c=document.createElement('canvas'); c.width=1024; c.height=176; const g=c.getContext('2d');
     g.fillStyle='#ece5cf'; g.fillRect(0,0,1024,176);
     g.fillStyle='#1f5f55'; g.beginPath(); g.arc(78,88,58,0,7); g.fill();
     g.fillStyle='#ece5cf'; g.font='700 30px Arial,sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('IGMC',78,80);
     g.font='600 15px Arial,sans-serif'; g.fillText('SHIMLA',78,106);
     g.fillStyle='#1b2a26'; g.textAlign='left';
-    g.font='700 54px "Nirmala UI","Mangal","Noto Sans Devanagari",sans-serif'; g.fillText(HIN[fi]||'',160,58);
-    g.font='700 44px Arial,Helvetica,sans-serif'; g.fillText((FTHEME[fi]&&FTHEME[fi].name)||'',160,128);
+    g.font='700 60px Arial,Helvetica,sans-serif'; g.fillText((FTHEME[fi]&&FTHEME[fi].name)||'',160,70);
+    g.font='600 25px Arial,Helvetica,sans-serif'; g.fillStyle='#3d4a45'; g.fillText(SUB[fi]||'',162,128);
     g.fillStyle='#7d1010'; g.fillRect(900,40,96,96); g.fillStyle='#ece5cf'; g.font='700 56px Arial,sans-serif'; g.textAlign='center';
-    g.fillText(fi===0?'B':String(fi===1?'G':fi-1),948,90);
+    g.fillText(fi===0?'B':(fi===1?'G':String(fi)),948,90);
     for(let i=0;i<260;i++){ const h=k=>riHash(i,k,fi); g.fillStyle='rgba(90,70,40,'+(h(1)*.08).toFixed(3)+')'; g.fillRect(h(2)*1024,h(3)*176,2+h(4)*30,1+h(5)*6); }
     const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=RIQ.aniso; return t;
   },
   plateTex(fi,rooms){
-    const KN={ward:['वार्ड','WARD'],wardA:['वार्ड','WARD'],wardB:['वार्ड','WARD'],store:['भंडार','STORE'],storeA:['भंडार','STORE'],storeB:['दवा भंडार','DRUG STORE'],
-      office:['कार्यालय','OFFICE'],duty:['ड्यूटी कक्ष','DUTY ROOM'],waiting:['प्रतीक्षालय','WAITING'],records:['अभिलेख','RECORDS'],records2:['अभिलेख','RECORDS'],
-      peds:['शिशु वार्ड','CHILD WARD'],ot:['ओ.टी.','O.T.'],ot2:['ओ.टी.','O.T.'],pharmacy:['फार्मेसी','PHARMACY'],icu:['आई.सी.यू.','I.C.U.'],
-      psych:['मनोरोग','PSYCHIATRY'],morgue:['शवगृह','MORTUARY'],maternity:['प्रसूति कक्ष','LABOUR ROOM'],prayer:['पूजा कक्ष','PRAYER']};
+    const KN={ward:['WARD','GENERAL'],wardA:['WARD','MALE'],wardB:['WARD','FEMALE'],store:['STORE','STAFF ONLY'],storeA:['STORE','STAFF ONLY'],storeB:['DRUG STORE','STAFF ONLY'],
+      office:['OFFICE','ADMIN'],duty:['DUTY ROOM','NURSING'],waiting:['WAITING','PATIENTS'],records:['RECORDS','FILES'],records2:['RECORDS','FILES'],
+      peds:['CHILD WARD','PAEDIATRIC'],ot:['O.T.','NO ENTRY'],ot2:['O.T.','NO ENTRY'],pharmacy:['PHARMACY','DISPENSARY'],icu:['I.C.U.','NO ENTRY'],
+      psych:['PSYCHIATRY','OPD'],morgue:['MORTUARY','STAFF ONLY'],maternity:['LABOUR ROOM','MATERNITY'],prayer:['PRAYER','ROOM']};
     const cols=8, rows=4, W=128, H=64, c=document.createElement('canvas'); c.width=cols*W; c.height=rows*H;
     const g=c.getContext('2d');
     rooms.forEach((r,k)=>{ const x=(k%cols)*W, y=((k/cols)|0)*H;
       g.fillStyle='#f1eee4'; g.fillRect(x,y,W,H); g.fillStyle='#1d5f56'; g.fillRect(x,y,34,H);
       g.fillStyle='#f1eee4'; g.font='700 22px Arial,sans-serif'; g.textAlign='center'; g.textBaseline='middle';
-      const pre=fi===0?'B':(fi===1?'G':String(fi-1));
+      const pre=fi===0?'B':(fi===1?'G':String(fi));
       g.save(); g.translate(x+17,y+H/2); g.rotate(-Math.PI/2); g.fillText(pre,0,1); g.restore();
       g.fillStyle='#1b1f1e'; g.font='700 26px Arial,sans-serif'; g.fillText(pre+String(k+1).padStart(2,'0'),x+82,y+17);
-      const kn=KN[r.kind]||['कक्ष','ROOM'];
-      g.font='600 16px "Nirmala UI","Mangal","Noto Sans Devanagari",sans-serif'; g.fillText(kn[0],x+82,y+38);
-      g.font='700 11px Arial,sans-serif'; g.fillText(kn[1],x+82,y+54);
+      const kn=KN[r.kind]||['ROOM',''];
+      g.font='700 '+(kn[0].length>8?13:16)+'px Arial,sans-serif'; g.fillText(kn[0],x+82,y+39);
+      g.font='600 10px Arial,sans-serif'; g.fillStyle='#5a5f5c'; g.fillText(kn[1],x+82,y+54);
       for(let i=0;i<30;i++){ const h=j=>riHash(i,j+k*7,fi); g.fillStyle='rgba(80,60,30,'+(h(1)*.1).toFixed(3)+')'; g.fillRect(x+h(2)*W,y+h(3)*H,1+h(4)*9,1+h(5)*3); }
     });
     const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=RIQ.aniso; return t;
@@ -697,6 +698,7 @@ const RI={
   /* ---------------- close a floor ---------------- */
   endFloor(ctx){
     const {F}=ctx;
+    try{ this.haunt(ctx); }catch(e){ console.warn('RI haunt',e); ctx.blood=null; }
     if(!ctx.arch.empty()){ const m=new THREE.Mesh(ctx.arch.geometry(),MAT.prop); m.castShadow=!IS_TOUCH; m.receiveShadow=true; F.group.add(m); }
     if(!ctx.glass.empty()){ const m=new THREE.Mesh(ctx.glass.geometry(),MAT.glassWin); m.castShadow=false; m.receiveShadow=false; F.group.add(m); }
     /* instanced batches, split into floor quarters so the frustum can cull them */
